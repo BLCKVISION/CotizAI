@@ -1,0 +1,42 @@
+# Desarrollo del backend aislado: API con recarga + PostgreSQL con pgvector.
+name: evaluador-backend
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: evaluador
+      POSTGRES_DB: evaluador
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports: ["127.0.0.1:5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evaluador -d evaluador"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  api:
+    build: .
+    command: ["uvicorn", "evaluador.adapters.inbound.http.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      EVALUADOR_ENTORNO: desarrollo
+      EVALUADOR_PERSISTENCIA: postgres
+      EVALUADOR_CLAVE_CIFRADO: ${EVALUADOR_CLAVE_CIFRADO:-}
+      EVALUADOR_SEMILLA_CLAVE: ${EVALUADOR_SEMILLA_CLAVE:-}
+      EVALUADOR_ORIGENES_CORS: '["http://localhost:8081","http://localhost:19006"]'
+      EVALUADOR_BASE_DE_DATOS_URL: postgresql://evaluador:${POSTGRES_PASSWORD}@db:5432/evaluador
+      EVALUADOR_IA_BASE_URL: ${EVALUADOR_IA_BASE_URL:-http://host.docker.internal:11434/v1}
+      EVALUADOR_IA_MODELO: ${EVALUADOR_IA_MODELO:-qwen2.5:7b}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes:
+      - ./src:/app/src:ro
+      - modelos:/modelos
+      - documentos:/datos
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+volumes:
+  pgdata:
+  modelos:
+  documentos:

@@ -1,0 +1,66 @@
+# Pila de servidor: nginx del host (estáticos + proxy) → api (FastAPI + LangGraph) → db (PostgreSQL + pgvector).
+# Uso: cp infra/.env.example infra/.env  &&  docker compose -f infra/compose.yml --env-file infra/.env up -d --build
+name: evaluador
+x-endurecido: &endurecido
+  restart: unless-stopped
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  db:
+    <<: *endurecido
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: evaluador
+      POSTGRES_DB: evaluador
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD en infra/.env}
+    cap_add: [CHOWN, SETUID, SETGID, FOWNER, DAC_OVERRIDE]  # mínimo que necesita el entrypoint de postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks: [interna]            # sin puertos publicados
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evaluador -d evaluador"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    <<: *endurecido
+    build: ../backend
+    environment:
+      EVALUADOR_ENTORNO: produccion
+      EVALUADOR_PERSISTENCIA: postgres
+      EVALUADOR_CLAVE_CIFRADO: ${EVALUADOR_CLAVE_CIFRADO:-}
+      EVALUADOR_CONFIAR_EN_PROXY: "true"
+      EVALUADOR_ORIGENES_CORS: '["https://hackathon.exmachina.systems","https://cotiz-ai.exmachina.systems","http://hackathon.exmachina.systems","http://cotiz-ai.exmachina.systems"]'
+      EVALUADOR_SEMILLA_CLAVE: ${EVALUADOR_SEMILLA_CLAVE:-}
+      EVALUADOR_USUARIO_DEMO_CORREO: ${EVALUADOR_USUARIO_DEMO_CORREO:-}
+      EVALUADOR_USUARIO_DEMO_CLAVE: ${EVALUADOR_USUARIO_DEMO_CLAVE:-}
+      EVALUADOR_PERMITIR_SEMILLA_EN_PRODUCCION: ${EVALUADOR_PERMITIR_SEMILLA_EN_PRODUCCION:-false}
+      EVALUADOR_BASE_DE_DATOS_URL: postgresql://evaluador:${POSTGRES_PASSWORD}@db:5432/evaluador
+      EVALUADOR_IA_PROVEEDOR: ${EVALUADOR_IA_PROVEEDOR:-openai_compatible}
+      EVALUADOR_IA_MODELO: ${EVALUADOR_IA_MODELO:-qwen2.5:7b}
+      EVALUADOR_IA_BASE_URL: ${EVALUADOR_IA_BASE_URL:-http://host.docker.internal:11434/v1}
+      EVALUADOR_IA_API_KEY: ${EVALUADOR_IA_API_KEY:-}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    read_only: true
+    tmpfs: [/tmp]
+    volumes:
+      - modelos:/modelos           # caché del modelo de embeddings (se descarga una vez)
+      - documentos:/datos          # propuestas cifradas con AES-256-GCM
+    ports: ["127.0.0.1:18001:8000"]   # solo loopback: el ingreso es el nginx del host
+    networks: [interna]
+    depends_on:
+      db: { condition: service_healthy }
+
+
+networks:
+  interna: {}
+volumes:
+  pgdata:
+  modelos:
+  documentos:

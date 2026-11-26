@@ -1,0 +1,16 @@
+import type { Dato } from '@/design/graficos';
+import { ESTADOS, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+
+import type { Estadisticas } from './api';
+
+export const porEstado = (e: Estadisticas): Dato[] =>
+  ORDEN_DE_ESTADOS.map((k) => ({ etiqueta: ESTADOS[k].etiqueta, valor: e.por_estado[k] }));
+export const porFormato = (e: Estadisticas): Dato[] =>
+  (['pdf', 'jpg', 'png', 'xlsx'] as const).map((k) => ({ etiqueta: k.toUpperCase(), valor: e.por_formato[k] }));
+export const porUbicacion = (e: Estadisticas): Dato[] =>
+  Object.entries(e.por_ubicacion).map(([etiqueta, valor]) => ({ etiqueta, valor }));
+export const porMes = (e: Estadisticas): Dato[] =>
+  Object.entries(e.por_mes).map(([m, valor]) => {
+    const [anio, mes] = m.split('-').map(Number);
+    return { etiqueta: new Date(anio, mes - 1, 1).toLocaleDateString('es-VE', { month: 'short', year: '2-digit' }), valor };
+  });
