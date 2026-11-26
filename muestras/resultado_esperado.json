@@ -1,0 +1,78 @@
+{
+  "nota": "Datos ficticios. Resultado esperado declarado a mano.",
+  "delta": 3,
+  "ranking": [
+    "P02_Beta",
+    "P01_Alfa",
+    "P03_Gamma",
+    "P10_Kappa",
+    "P04_Delta",
+    "P05_Epsilon",
+    "P06_Zeta",
+    "P07_Eta",
+    "P08_Theta",
+    "P09_Iota"
+  ],
+  "propuestas": {
+    "P01_Alfa": {
+      "veredicto": "valida",
+      "codigos": [],
+      "puntaje": "75.75",
+      "costo_real": "11000"
+    },
+    "P02_Beta": {
+      "veredicto": "valida",
+      "codigos": [],
+      "puntaje": "74.65",
+      "costo_real": "9570"
+    },
+    "P03_Gamma": {
+      "veredicto": "valida",
+      "codigos": [],
+      "puntaje": "60.00",
+      "costo_real": "8250"
+    },
+    "P04_Delta": {
+      "veredicto": "descartada",
+      "codigos": [
+        "COMPAT"
+      ]
+    },
+    "P05_Epsilon": {
+      "veredicto": "descartada",
+      "codigos": [
+        "ARITMETICA"
+      ]
+    },
+    "P06_Zeta": {
+      "veredicto": "descartada",
+      "codigos": [
+        "MANIPULACION"
+      ]
+    },
+    "P07_Eta": {
+      "veredicto": "descartada",
+      "codigos": [
+        "CALIDAD"
+      ]
+    },
+    "P08_Theta": {
+      "veredicto": "descartada",
+      "codigos": [
+        "ABUSIVO"
+      ]
+    },
+    "P09_Iota": {
+      "veredicto": "descartada",
+      "codigos": [
+        "CAPACIDAD"
+      ]
+    },
+    "P10_Kappa": {
+      "veredicto": "pendiente_de_revision",
+      "codigos": [
+        "LECTURA"
+      ]
+    }
+  }
+}

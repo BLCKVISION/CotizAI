@@ -18,6 +18,12 @@ class ModeloDeLenguaje(Protocol):
     def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[T]) -> T: ...
 
 
+class ModeloConVision(Protocol):
+    """Lee una imagen y devuelve datos validados contra un esquema. Sin herramientas; la imagen es un dato."""
+
+    def estructurar_imagen(self, *, instrucciones: str, imagen: bytes, mime: str, esquema: type[T]) -> T: ...
+
+
 class Embebedor(Protocol):
     @property
     def dimension(self) -> int: ...

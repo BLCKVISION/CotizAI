@@ -35,6 +35,15 @@ class Configuracion(BaseSettings):
     embeddings_cache: str | None = None
     base_de_datos_url: SecretStr = SecretStr("postgresql://evaluador:evaluador@localhost:5432/evaluador")
 
+    # --- Modo lote (CLI) ---
+    lote_paralelo: int = 4  # archivos procesados a la vez (límite configurable; el tiempo es desempate)
+    lote_reintentos: int = 2
+    lote_repositorio: str | None = None  # ruta del GitLab del evento; si falta, se usa el remoto `origin`
+    lote_requerimiento: str = (
+        "Dotar un laboratorio de 11 computadoras: 11 equipos completos con gabinete, monitor, teclado, ratón y "
+        "protector eléctrico, con instalación, garantía y soporte."
+    )
+
     @property
     def es_produccion(self) -> bool:
         return self.entorno.strip().lower() in {"produccion", "production", "prod"}

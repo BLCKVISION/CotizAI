@@ -10,7 +10,7 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 4. **Inmutabilidad por defecto.** Devolver copias nuevas; no mutar argumentos.
 5. **Fallar de forma explícita.** Sin `except: pass`, sin valores por defecto que oculten errores.
 6. **Seguridad por defecto:** mínimo privilegio, sin secretos en el repositorio, entradas externas = no confiables.
-7. **Idioma (obligatorio):** todo **código nuevo en inglés** (nombres, archivos, comentarios, docstrings, pruebas, rutas, campos, variables de entorno y códigos de error). El **texto que lee el usuario** y la documentación siguen en **español**. El código existente en español se migra solo en cambios dedicados; los nombres que fija el enunciado (p. ej. las claves de `salida.json`) no se traducen. Un mismo concepto, un mismo nombre en todo el sistema. Regla completa: [`AGENTS.md`](../AGENTS.md).
+7. **Idioma:** el **código del backend y la API van en inglés** (identificadores, módulos, rutas, campos JSON, valores de enums, tests, commits); la **interfaz, los mensajes para la persona usuaria y la documentación van en español**. Excepciones fijadas por el enunciado: claves de `salida.json` y códigos de descarte (`ALCANCE`, `COMPAT`…). Un mismo concepto, un mismo nombre en todo el sistema. Detalle y tabla en [`SYSTEM_DESIGN.md`](SYSTEM_DESIGN.md#convención-de-idioma-obligatoria). Regla para personas y agentes: [`AGENTS.md`](../AGENTS.md).
 
 ## 2. Backend (Python 3.12)
 
@@ -29,7 +29,7 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 - Sin `print`; usar `logging`.
 
 ### API HTTP
-- Prefijo `/api/v1`, recursos en **plural**, sin verbos en la ruta (`POST /sesiones`, no `/login`). Acciones de estado como sub-recurso (`/proyectos/{id}/transiciones`).
+- Prefijo `/api/v1`, recursos en **plural**, sin verbos en la ruta (`POST /sessions`, no `/login`). Acciones de estado como sub-recurso (`/projects/{id}/transitions`). Rutas en **inglés**.
 - **DTO de entrada** por endpoint: `extra="forbid"`, longitudes y patrones acotados, `SecretStr` para secretos. Nunca recibir dicts ni modelos de dominio.
 - **DTO de salida** explícito; no exponer entidades (ni hashes, ni ids internos de otros tenants).
 - Autenticación y autorización por **guards** (`Depends`); trazabilidad y cabeceras por **interceptores**.

@@ -31,5 +31,11 @@ class DatoInvalido(ErrorDeDominio):
     codigo = "dato_invalido"
 
 
+class TasaNoDisponible(ErrorDeDominio):
+    """No hay tasa vigente para comparar monedas: se pide registrar una manualmente (con fuente y fecha)."""
+
+    codigo = "tasa_no_disponible"
+
+
 class ServicioNoDisponible(ErrorDeDominio):
     codigo = "servicio_no_disponible"
