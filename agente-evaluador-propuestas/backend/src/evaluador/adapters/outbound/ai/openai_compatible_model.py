@@ -5,6 +5,8 @@ from __future__ import annotations
 import httpx
 from pydantic import BaseModel
 
+from evaluador.application.ports.agent import T
+
 from ._common import build_messages, extract_json, image_base64, system_for_image
 
 
@@ -14,7 +16,7 @@ class OpenAiCompatibleModel:
         self._http = httpx.Client(base_url=base_url.rstrip("/"), headers=hdr, timeout=timeout)
         self._model = model
 
-    def structure(self, *, instructions: str, untrusted_content: str, schema: type[BaseModel]):
+    def structure(self, *, instructions: str, untrusted_content: str, schema: type[T]) -> T:
         r = self._http.post(
             "/chat/completions",
             json={

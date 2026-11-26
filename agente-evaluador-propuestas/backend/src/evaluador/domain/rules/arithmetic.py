@@ -29,7 +29,7 @@ def validate_arithmetic(e: ProposalExtraction) -> list[Finding]:
     valid_sum = True
     for i, ln in enumerate(e.lines, start=1):
         qty, price, total = _d(ln.quantity), _d(ln.unit_price), _d(ln.line_total)
-        if None in (qty, price, total):
+        if qty is None or price is None or total is None:
             findings.append(
                 Finding(
                     FindingCode.LECTURA,

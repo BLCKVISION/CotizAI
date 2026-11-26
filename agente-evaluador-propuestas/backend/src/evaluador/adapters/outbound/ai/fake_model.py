@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import cast
 
 from pydantic import BaseModel
+
+from evaluador.application.ports.agent import T
 
 
 class FakeModel:
@@ -13,10 +16,10 @@ class FakeModel:
         self.calls: list[tuple[str, str]] = []
         self.image_calls: list[tuple[str, str]] = []  # (instrucciones, mime)
 
-    def structure(self, *, instructions: str, untrusted_content: str, schema: type[BaseModel]):
+    def structure(self, *, instructions: str, untrusted_content: str, schema: type[T]) -> T:
         self.calls.append((instructions, untrusted_content))
         r = self._responses[schema]
-        return r(untrusted_content) if callable(r) else r
+        return cast(T, r(untrusted_content) if callable(r) else r)
 
     def structure_image(self, *, instructions: str, image: bytes, mime: str, schema: type[BaseModel]) -> BaseModel:
         self.image_calls.append((instructions, mime))

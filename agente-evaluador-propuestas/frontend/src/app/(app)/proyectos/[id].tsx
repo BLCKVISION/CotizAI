@@ -89,32 +89,36 @@ export default function ProjectDetail() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { withSession } = useSession();
-  const [project, setProject] = useState<Project | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // El resultado lleva el id al que pertenece: al cambiar de proyecto se descarta solo, sin reiniciar estado en el efecto.
+  const projectId = String(id);
+  const [result, setResult] = useState<{ id: string; project?: Project; error?: string } | null>(null);
+  const current = result?.id === projectId ? result : null;
+  const project = current?.project ?? null;
+  const error = current?.error ?? null;
 
   useEffect(() => {
-    let current = true;
-    setProject(null);
-    setError(null);
+    let active = true;
     (async () => {
       try {
-        const data = await withSession(getProjectApi(String(id)));
-        if (current) setProject(data);
+        const data = await withSession(getProjectApi(projectId));
+        if (active) setResult({ id: projectId, project: data });
       } catch (e) {
-        if (!current) return;
-        setError(
-          e instanceof ErrorApi
-            ? e.status === 404
-              ? 'No se encontró el proyecto.'
-              : `${e.message}${e.trackId ? ` (ref. ${e.trackId})` : ''}`
-            : 'Error inesperado.',
-        );
+        if (!active) return;
+        setResult({
+          id: projectId,
+          error:
+            e instanceof ErrorApi
+              ? e.status === 404
+                ? 'No se encontró el proyecto.'
+                : `${e.message}${e.trackId ? ` (ref. ${e.trackId})` : ''}`
+              : 'Error inesperado.',
+        });
       }
     })();
     return () => {
-      current = false;
+      active = false;
     };
-  }, [withSession, id]);
+  }, [withSession, projectId]);
 
   const back = <Button label="Proyectos" variant="ghost" icon="arrow-left" onPress={() => router.replace('/proyectos')} />;
 

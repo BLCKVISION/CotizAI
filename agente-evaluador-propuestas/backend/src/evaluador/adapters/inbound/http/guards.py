@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict, deque
+from collections.abc import Callable
 from threading import Lock
 from time import monotonic
 from typing import Annotated
@@ -29,12 +30,14 @@ async def current_session(request: Request, token: Annotated[str, Depends(header
     Es async a propósito: un guard síncrono corre en un hilo con una copia del contexto y sus cambios se perderían
     para el log de acceso y la auditoría. La consulta (síncrona) va al pool de hilos.
     """
-    session = await run_in_threadpool(request.app.state.container.authenticate_token.execute, token)
+    session: AuthenticatedSession = await run_in_threadpool(
+        request.app.state.container.authenticate_token.execute, token
+    )
     context.enrich(session_id=session.session_id, tenant_id=session.tenant_id, user_id=session.user.id)
     return session
 
 
-def require(permission: Permission):
+def require(permission: Permission) -> Callable[..., AuthenticatedSession]:
     """Guard de autorización por permiso. Los casos de uso lo vuelven a comprobar (defensa en profundidad)."""
 
     def _guard(session: Annotated[AuthenticatedSession, Depends(current_session)]) -> AuthenticatedSession:

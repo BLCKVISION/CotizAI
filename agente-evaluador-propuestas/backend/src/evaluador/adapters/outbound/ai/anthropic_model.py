@@ -5,6 +5,8 @@ from __future__ import annotations
 import httpx
 from pydantic import BaseModel
 
+from evaluador.application.ports.agent import T
+
 from ._common import build_messages, extract_json, image_base64, system_for_image
 
 
@@ -17,7 +19,7 @@ class AnthropicModel:
         )
         self._model = model
 
-    def structure(self, *, instructions: str, untrusted_content: str, schema: type[BaseModel]):
+    def structure(self, *, instructions: str, untrusted_content: str, schema: type[T]) -> T:
         system, user = build_messages(instructions, untrusted_content, schema)
         r = self._http.post(
             "/v1/messages",

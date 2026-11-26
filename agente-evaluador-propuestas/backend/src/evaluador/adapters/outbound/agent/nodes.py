@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from evaluador.application.ports.agent import Embedder, LanguageModel, VectorIndex
 from evaluador.domain.contract import validate_contract
@@ -41,11 +42,19 @@ _INSTR_SCOPE = (
 )
 
 
+def _extraction(s: EvaluationState) -> ProposalExtraction:
+    """El grafo desvía a `decide` si la lectura falló, así que aquí la extracción siempre existe."""
+    ext = s.get("extraction")
+    if ext is None:
+        raise ValueError("Nodo ejecutado sin extracción: el grafo debía desviar a 'decide'.")
+    return ext
+
+
 class EvaluationNodes:
     def __init__(self, model: LanguageModel, embedder: Embedder, index: VectorIndex, k_context: int = 6) -> None:
         self._model, self._embedder, self._index, self._k = model, embedder, index, k_context
 
-    def retrieve_context(self, s: EvaluationState) -> dict:
+    def retrieve_context(self, s: EvaluationState) -> dict[str, Any]:
         """RAG: evidencia más cercana al requerimiento, dentro del tenant y de la propuesta."""
         query = f"{s['requirement']} instalación garantía soporte equipos nuevos"
         results = self._index.search(
@@ -56,7 +65,7 @@ class EvaluationNodes:
         )
         return {"context": [r.chunk.content for r in results]}
 
-    def extract(self, s: EvaluationState) -> dict:
+    def extract(self, s: EvaluationState) -> dict[str, Any]:
         for attempt in (1, 2):  # un error de lectura se relee una vez antes de pedir revisión
             try:
                 ext = self._model.structure(
@@ -74,22 +83,22 @@ class EvaluationNodes:
                                    "No se pudo leer la propuesta de forma fiable.", "", Origin.RULE)],
         }  # fmt: skip
 
-    def manipulation(self, s: EvaluationState) -> dict:
-        return {"findings": detect_manipulation(s["text"], s["extraction"].manipulation_suspicions)}
+    def manipulation(self, s: EvaluationState) -> dict[str, Any]:
+        return {"findings": detect_manipulation(s["text"], _extraction(s).manipulation_suspicions)}
 
-    def arithmetic(self, s: EvaluationState) -> dict:
-        return {"findings": validate_arithmetic(s["extraction"])}
+    def arithmetic(self, s: EvaluationState) -> dict[str, Any]:
+        return {"findings": validate_arithmetic(_extraction(s))}
 
-    def technical_rules(self, s: EvaluationState) -> dict:
+    def technical_rules(self, s: EvaluationState) -> dict[str, Any]:
         """COMPAT, CAPACIDAD, CALIDAD y ABUSIVO: reglas deterministas sobre la extracción (sin modelo)."""
-        e = s["extraction"]
+        e = _extraction(s)
         # Sin precios de mercado todavía (búsqueda web pendiente): ABUSIVO solo juzga flete y cláusulas.
         return {
             "findings": [*validate_compatibility(e), *validate_capacity(e), *validate_quality(e), *validate_abuse(e)]
         }
 
-    def scope(self, s: EvaluationState) -> dict:
-        findings = validate_fixed_scope(s["extraction"])
+    def scope(self, s: EvaluationState) -> dict[str, Any]:
+        findings = validate_fixed_scope(_extraction(s))
         context = "\n---\n".join(s.get("context", []))
         if not context.strip():  # sin evidencia recuperada no se puede juzgar: revisión humana, no descarte
             findings.append(Finding(FindingCode.LECTURA, Severity.WARNING, False,
@@ -114,7 +123,7 @@ class EvaluationNodes:
                                       "No se pudo juzgar el alcance cualitativo.", "", Origin.RULE))  # fmt: skip
         return {"findings": findings}
 
-    def decide(self, s: EvaluationState) -> dict:
+    def decide(self, s: EvaluationState) -> dict[str, Any]:
         """Decisión en código: solo hallazgos que descartan, o error de lectura -> revisión humana."""
         findings = s.get("findings", [])
         if s.get("read_error"):

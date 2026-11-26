@@ -23,4 +23,5 @@ class LanggraphEngine:
                 "findings": [],
             }  # fmt: skip
         )
-        return final["result"]
+        result: EvaluationResult = final["result"]
+        return result

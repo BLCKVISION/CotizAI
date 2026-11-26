@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -19,12 +20,13 @@ def build_messages(instructions: str, content: str, schema: type[BaseModel]) -> 
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
 
-def extract_json(text: str) -> dict:
+def extract_json(text: str) -> dict[str, Any]:
     """Tolera cercas de código o texto alrededor; falla (ValueError) si no hay JSON válido."""
     m = re.search(r"\{.*\}", text, re.DOTALL)
     if not m:
         raise ValueError("La respuesta del modelo no contiene JSON.")
-    return json.loads(m.group(0))
+    data: dict[str, Any] = json.loads(m.group(0))
+    return data
 
 
 def system_for_image(instructions: str, schema: type[BaseModel]) -> str:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+from functools import partial
 from typing import Any
 
 import pdfplumber
@@ -20,6 +21,14 @@ def _is_white(color: Any) -> bool:
     if len(color) == 4:  # CMYK: sin tinta
         return all(c == 0 for c in color)
     return all(c == 1 for c in color)  # gris o RGB blanco
+
+
+def _is_visible(o: dict[str, Any], reasons: dict[int, str | None]) -> bool:
+    return bool(o.get("object_type") != "char" or reasons.get(id(o)) is None)
+
+
+def _has_reason(o: dict[str, Any], reasons: dict[int, str | None], reason: str) -> bool:
+    return bool(o.get("object_type") == "char" and reasons.get(id(o)) == reason)
 
 
 def _hidden_reason(ch: dict[str, Any], page: Any) -> str | None:
@@ -42,16 +51,14 @@ def read_pdf(data: bytes, *, max_pages: int = MAX_PAGES) -> ReadContent:
                 raise InvalidData("El PDF excede el máximo de páginas permitido.")
             for n, page in enumerate(pdf.pages, start=1):
                 reasons = {id(c): _hidden_reason(c, page) for c in page.chars}
-                visible = page.filter(lambda o, mt=reasons: o.get("object_type") != "char" or mt.get(id(o)) is None)
+                visible = page.filter(partial(_is_visible, reasons=reasons))
                 text = (visible.extract_text() or "").strip()
                 if text:
                     sections.append(f"[p.{n}]\n{text}")
                 elif not page.chars:
                     notices.append(f"p.{n} sin texto (¿escaneada?)")
                 for reason in sorted({m for m in reasons.values() if m}):
-                    hidden_text = page.filter(
-                        lambda o, m=reason, mt=reasons: o.get("object_type") == "char" and mt.get(id(o)) == m
-                    ).extract_text()
+                    hidden_text = page.filter(partial(_has_reason, reasons=reasons, reason=reason)).extract_text()
                     if hidden_text and hidden_text.strip():
                         hidden.append(f"[OCULTO] [p.{n}] ({reason}): {hidden_text.strip()}")
                         notices.append(f"texto {reason} en p.{n}")
