@@ -23,6 +23,7 @@ ignore = ["S101"]
 python_version = "3.12"
 strict = true
 mypy_path = "src"
+plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
 module = ["openpyxl.*", "pdfplumber.*"]
