@@ -1,0 +1,1175 @@
+// ── Relay · Sistema de Diseño Obsidian & Emerald Glassmorphism ───────────
+// Extraído y adaptado de relay_saas_platform.ts con precisión milimétrica.
+
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  color-scheme: dark;
+  --font-main: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  // ── Capa de Fondo Base Reemplazable (Imagen o Color) ────────────────────────
+  // Para reemplazar todo el fondo por una imagen fija en el futuro, asignar:
+  // --app-bg-image: url('/assets/images/tu-fondo.webp');
+  --app-bg-image: none;
+  --app-bg-color: #030504;
+
+  --bg-deep: #030504;
+  --bg-surface: #060907;
+  --accent: #22c55e;
+  --accent-neon: #32eb6b;
+  --accent-glow: rgba(34, 197, 94, 0.25);
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-card: 24px;
+  --r-pill: 12px; // Semi-redondeado suave para items activos
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html, body {
+  height: 100vh;
+  width: 100vw;
+  max-height: 100vh;
+  max-width: 100vw;
+  overflow: hidden !important;
+  font-family: var(--font-main);
+  font-size: 14.5px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ── Fondo Base Estilo Nulox (Negro Puro Mate & Sutil Halo Esmeralda) ───────
+body {
+  background-color: var(--app-bg-color, #040605);
+  background-image:
+    var(--app-bg-image, none),
+    radial-gradient(circle at 50% -10%, rgba(22, 101, 52, 0.08) 0%, rgba(4, 6, 5, 0) 65%),
+    radial-gradient(circle at 85% 100%, rgba(20, 80, 40, 0.04) 0%, rgba(4, 6, 5, 0) 55%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  position: relative;
+}
+
+// Halos ambientales ultra-suaves (sin manchas verdes saturadas)
+.ambient-glow-bottom-left,
+.ambient-glow-top-right,
+.ambient-glow-center {
+  display: none !important;
+}
+
+// Grano cinematográfico muy suave
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.02;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+// ── Tarjeta Biselada de Cristal Oscuro Universal (.relay-card / .card) ───
+.relay-card, .dash-card, .card {
+  background: linear-gradient(165deg, rgba(20, 26, 22, 0.76) 0%, rgba(10, 14, 12, 0.88) 100%) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.20),
+    inset 0 -12px 28px rgba(255, 255, 255, 0.02),
+    0 18px 40px -12px rgba(0, 0, 0, 0.78) !important;
+  transition: all 0.25s var(--ease);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.18) !important;
+  }
+}
+
+// ── Barra Lateral Flotante (.sidebar-glass) ─────────────────────────
+.sidebar-glass, .sidebar {
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(20, 26, 22, 0.85) 0%, rgba(9, 13, 11, 0.94) 100%) !important;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.22),
+    inset 0 -12px 28px rgba(255, 255, 255, 0.02),
+    0 20px 50px rgba(0, 0, 0, 0.85) !important;
+}
+
+// ── Tarjetas KPI ───────────────────────────────────────────────────
+.kpi-card {
+  border-radius: 24px !important;
+  background: linear-gradient(165deg, rgba(20, 26, 22, 0.76) 0%, rgba(10, 14, 12, 0.88) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.20),
+    inset 0 -10px 22px rgba(255, 255, 255, 0.035),
+    0 14px 30px -10px rgba(0, 0, 0, 0.75) !important;
+  transition: all 0.25s var(--ease);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    transform: translateY(-2px);
+  }
+}
+
+// ── Barras de Gráfico de Actividad ──────────────────────────────────
+.bar-neon-green {
+  background: linear-gradient(180deg, #32eb6b 0%, #16933c 100%) !important;
+  box-shadow:
+    0 0 18px rgba(42, 224, 100, 0.40),
+    inset 0 1px 1px rgba(255, 255, 255, 0.45) !important;
+  border: 1px solid rgba(50, 235, 107, 0.45) !important;
+}
+
+.bar-muted-glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+// ── Filas de Pipelines de Leads (Cápsulas Biseladas) ────────────────
+.glass-pill-row {
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(18, 24, 21, 0.76) 0%, rgba(12, 17, 15, 0.88) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s var(--ease);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.20);
+    background: linear-gradient(180deg, rgba(22, 29, 25, 0.84) 0%, rgba(16, 21, 19, 0.94) 100%);
+  }
+}
+
+// ── Tarjetas Biseladas de Pendientes ────────────────────────────────
+.pending-item-card {
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(19, 25, 22, 0.74) 0%, rgba(12, 16, 14, 0.86) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 1.2px rgba(255, 255, 255, 0.16),
+    inset 0 -6px 14px rgba(255, 255, 255, 0.02),
+    0 6px 16px rgba(0, 0, 0, 0.45);
+  transition: all 0.22s var(--ease);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.20);
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.22),
+      0 10px 24px rgba(0, 0, 0, 0.55);
+  }
+}
+
+// ── Glassmorphism Global para todas las páginas del CRM ─────────────
+.page, .crm-page, .productos-page, .agenda-page, .reportes-page, .config-page, .plantillas-page, .whatsapp-onboarding-page {
+  font-family: var(--font-main);
+  background: transparent !important;
+  color: #ffffff;
+  width: 100%;
+  max-width: 95%;
+  margin: 0 auto;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+// Encabezados de página globales
+.page-header {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  h1 {
+    font-size: 26px;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+  }
+
+  .subtitle {
+    font-size: 13.5px;
+    font-weight: 300;
+    color: #6e7772;
+    margin-top: 2px;
+  }
+}
+
+// Tablas en cristal oscuro
+.crm-table, table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  thead th {
+    background: rgba(15, 21, 18, 0.85);
+    backdrop-filter: blur(12px);
+    color: #8c9691;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    &:first-child { border-top-left-radius: 14px; }
+    &:last-child { border-top-right-radius: 14px; }
+  }
+
+  tbody tr {
+    background: rgba(12, 17, 14, 0.65);
+    transition: background 0.18s ease;
+
+    &:hover {
+      background: rgba(24, 33, 28, 0.85) !important;
+    }
+
+    td {
+      padding: 13px 16px;
+      font-size: 13.5px;
+      font-weight: 300;
+      color: rgba(255, 255, 255, 0.9);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    &:last-child td:first-child { border-bottom-left-radius: 14px; }
+    &:last-child td:last-child { border-bottom-right-radius: 14px; }
+  }
+}
+
+// ── Sistema Universal de Formularios y Campos ─────────────────────────
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+  }
+}
+
+// Inputs y controles en cristal
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='search'],
+select,
+textarea {
+  width: 100% !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  background: rgba(14, 18, 16, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+  color: #ffffff !important;
+  font-family: var(--font-main) !important;
+  font-size: 13.5px !important;
+  font-weight: 300 !important;
+  padding: 10px 14px !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+
+  &:focus {
+    border-color: rgba(34, 197, 94, 0.5) !important;
+    box-shadow: 0 0 14px rgba(34, 197, 94, 0.2) !important;
+    background: rgba(18, 24, 20, 0.95) !important;
+  }
+
+  &::placeholder {
+    color: #64748b !important;
+  }
+}
+
+// Botones Obsidian Glass y Esmeralda
+// Botones Primarios estilo Imagen 1: Electric Lime pill con texto e icono negro
+.btn-primary, .btn-emerald, .btn-create, .btn-action-lime, button.btn-primary, button.btn-emerald {
+  background: #d4f938 !important;
+  color: #000000 !important;
+  border: none !important;
+  border-radius: 999px !important;
+  font-family: var(--font-main) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  padding: 8px 20px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 14px rgba(212, 249, 56, 0.38) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+
+  .material-symbols-rounded, svg {
+    color: #000000 !important;
+    stroke: #000000 !important;
+    font-size: 18px !important;
+    transition: transform 0.2s ease !important;
+  }
+
+  &:hover {
+    background: #dbfa4d !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 22px rgba(212, 249, 56, 0.52) !important;
+
+    .material-symbols-rounded, svg {
+      transform: scale(1.1) !important;
+    }
+  }
+
+  &:active {
+    transform: scale(0.97) !important;
+  }
+
+  &:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+.btn-secondary, .btn-ghost {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #c9d2cd !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: 12px !important;
+  font-family: var(--font-main) !important;
+  font-weight: 300 !important;
+  padding: 8px 16px !important;
+  cursor: pointer !important;
+  transition: all 0.2s var(--ease) !important;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+  }
+}
+
+// Modales en Glassmorphism
+.modal, .modal-backdrop, .overlay {
+  background: rgba(3, 5, 4, 0.78) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.modal-content, .modal-card, .dialog-card {
+  background: linear-gradient(165deg, rgba(20, 26, 22, 0.94) 0%, rgba(10, 14, 12, 0.97) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 24px !important;
+  box-shadow:
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.25),
+    0 24px 64px rgba(0, 0, 0, 0.9) !important;
+}
+
+// ── Animación Stagger ───────────────────────────────────────────────
+@keyframes relayStaggerIn {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stagger-1 { animation: relayStaggerIn 0.5s var(--ease) 0.03s backwards; }
+.stagger-2 { animation: relayStaggerIn 0.5s var(--ease) 0.09s backwards; }
+.stagger-3 { animation: relayStaggerIn 0.5s var(--ease) 0.15s backwards; }
+.stagger-4 { animation: relayStaggerIn 0.5s var(--ease) 0.21s backwards; }
+.stagger-5 { animation: relayStaggerIn 0.5s var(--ease) 0.27s backwards; }
+
+// Scrollbars
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.09); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(34, 197, 94, 0.35); }
+
+// ── Glassmorphism para Conversaciones ──────────────────────────────
+.inbox-layout {
+  background: transparent !important;
+}
+
+.conv-list {
+  background: linear-gradient(180deg, rgba(16, 22, 19, 0.78) 0%, rgba(9, 13, 11, 0.9) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.09) !important;
+}
+
+.chat-area {
+  background: transparent !important;
+}
+
+.chat-header {
+  background: rgba(14, 20, 17, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.chat-input-bar, .chat-input-wrap, .input-area {
+  background: rgba(14, 20, 17, 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.message-bubble.bot, .message-bubble.incoming {
+  background: linear-gradient(165deg, rgba(22, 30, 26, 0.85) 0%, rgba(14, 19, 17, 0.95) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16) !important;
+  border-radius: 18px !important;
+}
+
+.message-bubble.outgoing, .message-bubble.agent {
+  background: linear-gradient(165deg, rgba(22, 90, 44, 0.85) 0%, rgba(15, 68, 32, 0.95) 100%) !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.15) !important;
+  border-radius: 18px !important;
+}
+
+.info-drawer, .contact-drawer, .detail-drawer {
+  background: linear-gradient(180deg, rgba(16, 22, 19, 0.82) 0%, rgba(9, 13, 11, 0.92) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.09) !important;
+}
+
+// ── Glassmorphism para CRM y Kanban ────────────────────────────────
+.table-container {
+  background: linear-gradient(165deg, rgba(20, 26, 22, 0.76) 0%, rgba(10, 14, 12, 0.88) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 22px !important;
+  box-shadow:
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.18),
+    0 18px 40px -12px rgba(0, 0, 0, 0.78) !important;
+  overflow: hidden !important;
+}
+
+.kanban-column {
+  background: linear-gradient(180deg, rgba(18, 24, 21, 0.75) 0%, rgba(10, 14, 12, 0.88) 100%) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: 18px !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+.contact-card, .kanban-card {
+  background: linear-gradient(180deg, rgba(24, 32, 28, 0.78) 0%, rgba(16, 21, 18, 0.9) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.11) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16) !important;
+  border-radius: 14px !important;
+  transition: all 0.2s var(--ease) !important;
+
+  &:hover {
+    border-color: rgba(34, 197, 94, 0.4) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// ── TEMA CLARO · Estilo Superpower / Apple Health (iPad Reference) ────
+// ═════════════════════════════════════════════════════════════════════
+body.theme-light {
+  color-scheme: light;
+  --bg-deep: #eff1f5;
+  --bg-surface: #ffffff;
+  --accent: #0f172a;
+  --accent-neon: #000000;
+  --accent-glow: rgba(0, 0, 0, 0.08);
+
+  background-color: #eff1f5 !important;
+  background-image:
+    radial-gradient(ellipse at 85% 10%, rgba(254, 215, 170, 0.38) 0%, rgba(239, 241, 245, 0) 55%),
+    radial-gradient(ellipse at 15% 85%, rgba(187, 247, 208, 0.30) 0%, rgba(239, 241, 245, 0) 50%) !important;
+  color: #0f172a !important;
+
+  &::after {
+    opacity: 0.015 !important;
+    mix-blend-mode: multiply !important;
+  }
+
+  // ── Tarjetas Biseladas de Cristal Blanco con Mayor Elevación (Z-Index Visual) ───
+  .relay-card, .dash-card, .card,
+  .kpi-card, .kpi-card-emerald,
+  .activity-card, .pipeline-card, .bot-card, .pendientes-card {
+    background: rgba(255, 255, 255, 0.90) !important;
+    backdrop-filter: blur(28px) !important;
+    -webkit-backdrop-filter: blur(28px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow:
+      0 8px 30px -4px rgba(0, 0, 0, 0.06),
+      0 2px 6px 0 rgba(0, 0, 0, 0.02),
+      inset 0 1px 1.5px 0 #ffffff !important;
+    color: #0f172a !important;
+    transition: all 0.25s var(--ease) !important;
+
+    &:hover {
+      border-color: #ffffff !important;
+      box-shadow:
+        0 14px 38px -4px rgba(0, 0, 0, 0.09),
+        0 4px 10px 0 rgba(0, 0, 0, 0.03),
+        inset 0 1px 1.5px 0 #ffffff !important;
+    }
+  }
+
+  // ── Sidebar Flotante Frosted Blanca ──────────────────────────────
+  .sidebar {
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(32px) !important;
+    -webkit-backdrop-filter: blur(32px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow:
+      0 12px 40px -8px rgba(0, 0, 0, 0.06),
+      0 1px 3px rgba(0, 0, 0, 0.02),
+      inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+
+    .sidebar-header .brand-name {
+      color: #000000 !important;
+      font-weight: 500 !important;
+    }
+
+    .brand-mini-badge {
+      background: #ffffff !important;
+      border: 1px solid rgba(0, 0, 0, 0.08) !important;
+      color: #000000 !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), inset 0 1px 1px #ffffff !important;
+      .toggle-svg { stroke: #000000 !important; }
+    }
+
+    .sidebar-toggle-btn {
+      background: rgba(0, 0, 0, 0.03) !important;
+      border: 1px solid rgba(0, 0, 0, 0.06) !important;
+      color: #64748b !important;
+      &:hover {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border-color: rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+      }
+    }
+
+    .sidebar-divider, .config-section-divider {
+      background: rgba(0, 0, 0, 0.06) !important;
+    }
+
+    // Nav Items estilo píldora Superpower con relieve y texto negro en active
+    .nav-item {
+      background: rgba(255, 255, 255, 0.40) !important;
+      border: 1px solid rgba(255, 255, 255, 0.65) !important;
+      border-radius: 15px !important;
+      margin: 3px 8px !important;
+      padding: 10px 14px !important;
+      color: #52525b !important;
+      transition: all 0.22s var(--ease) !important;
+
+      .nav-item-icon {
+        color: #64748b !important;
+        .nav-svg-icon { stroke: currentColor !important; }
+      }
+
+      &:hover {
+        color: #000000 !important;
+        background: rgba(255, 255, 255, 0.75) !important;
+        border-color: rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+        .nav-item-icon { color: #000000 !important; }
+      }
+
+      // ACTIVE: Blanco puro, elevado (mayor Z-index visual) y texto NEGRO sólido
+      &.active {
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        color: #000000 !important;
+        font-weight: 600 !important;
+        box-shadow:
+          0 8px 24px -2px rgba(0, 0, 0, 0.08),
+          0 2px 6px rgba(0, 0, 0, 0.04),
+          inset 0 1px 1px #ffffff !important;
+        transform: translateY(-1px) !important;
+        position: relative !important;
+        z-index: 5 !important;
+
+        .nav-item-icon {
+          color: #000000 !important;
+          .nav-svg-icon { stroke: #000000 !important; }
+        }
+      }
+    }
+
+    .config-section-label {
+      color: #94a3b8 !important;
+    }
+
+    .nav-dropdown-trigger {
+      color: #52525b !important;
+      &:hover { color: #000000 !important; }
+      &.active {
+        color: #000000 !important;
+        background: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+      }
+    }
+
+    .nav-dropdown-content {
+      border-left-color: rgba(0, 0, 0, 0.06) !important;
+    }
+
+    .nav-sub-item {
+      color: #52525b !important;
+      border-radius: 12px !important;
+      &:hover { color: #000000 !important; background: rgba(0, 0, 0, 0.03) !important; }
+      &.active {
+        color: #000000 !important;
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), inset 0 1px 1px #ffffff !important;
+        font-weight: 600 !important;
+        .sub-icon, .sub-svg { color: #000000 !important; stroke: #000000 !important; }
+      }
+    }
+
+    .logout-btn {
+      color: #64748b !important;
+      &:hover {
+        color: #dc2626 !important;
+        background: rgba(239, 68, 68, 0.08) !important;
+        .nav-item-icon { color: #dc2626 !important; }
+      }
+    }
+
+    .status-indicator {
+      color: #94a3b8 !important;
+    }
+  }
+
+  // ── Topbar en Tema Claro ──────────────────────────────────────────
+  .topbar {
+    .topbar-left {
+      .hamburger-btn {
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(0, 0, 0, 0.07) !important;
+        color: #475569 !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+        &:hover {
+          background: #ffffff !important;
+          color: #000000 !important;
+          border-color: rgba(0, 0, 0, 0.12) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+        }
+      }
+
+      .topbar-breadcrumb {
+        color: #64748b !important;
+        .breadcrumb-root { color: #64748b !important; }
+        .breadcrumb-sep { color: #cbd5e1 !important; }
+        .breadcrumb-current { color: #000000 !important; font-weight: 600 !important; }
+        .breadcrumb-cmd-svg { stroke: #0f172a !important; }
+      }
+    }
+
+    .topbar-right {
+      .search-box {
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(0, 0, 0, 0.07) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+        input {
+          color: #000000 !important;
+          &::placeholder { color: #94a3b8 !important; }
+        }
+        .search-svg { stroke: #64748b !important; }
+        .search-kbd {
+          background: rgba(0, 0, 0, 0.04) !important;
+          border-color: rgba(0, 0, 0, 0.07) !important;
+          color: #64748b !important;
+        }
+      }
+
+      .icon-action-btn {
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(0, 0, 0, 0.07) !important;
+        color: #475569 !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+        outline: none !important;
+        &:focus, &:focus-visible {
+          outline: none !important;
+          border-color: rgba(0, 0, 0, 0.07) !important;
+        }
+        &:hover {
+          background: #ffffff !important;
+          color: #000000 !important;
+          border-color: rgba(0, 0, 0, 0.12) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+        }
+      }
+
+      .user-profile-btn .user-avatar-circle {
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+        .avatar-letter { color: #000000 !important; font-weight: 600 !important; }
+      }
+
+      .notifications-dropdown, .user-dropdown-menu {
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(28px) !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.10) !important;
+
+        .notif-header, .user-dropdown-name { color: #000000 !important; font-weight: 600 !important; }
+        .notif-title { color: #1e293b !important; }
+        .notif-time, .user-dropdown-email { color: #64748b !important; }
+        .dropdown-divider { background: rgba(0, 0, 0, 0.06) !important; }
+
+        .notif-item:hover, .user-dropdown-item:hover {
+          background: rgba(0, 0, 0, 0.035) !important;
+          color: #000000 !important;
+        }
+        .user-dropdown-item {
+          color: #334155 !important;
+          &.logout { color: #dc2626 !important; }
+        }
+      }
+    }
+  }
+
+  // ── Dashboard Component en Tema Claro ─────────────────────────────
+  .dash-greeting-block {
+    .dash-greeting {
+      .user-greeting {
+        color: #000000 !important;
+        .greeting-lead, .user-name { color: #000000 !important; }
+      }
+      .dash-subtitle {
+        color: #64748b !important;
+      }
+    }
+
+    .period-pill-group {
+      background: rgba(255, 255, 255, 0.70) !important;
+      border: 1px solid rgba(0, 0, 0, 0.07) !important;
+
+      .period-btn {
+        color: #64748b !important;
+        &:hover { color: #000000 !important; background: rgba(0, 0, 0, 0.04) !important; }
+        // Periodo activo: Blanco puro, elevado y texto NEGRO
+        &.active {
+          background: #ffffff !important;
+          color: #000000 !important;
+          border: 1px solid rgba(0, 0, 0, 0.08) !important;
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), inset 0 1px 1px #ffffff !important;
+          font-weight: 600 !important;
+        }
+      }
+    }
+  }
+
+  // KPI Cards
+  .kpi-card, .kpi-card-emerald {
+    .kpi-title { color: #64748b !important; }
+    .kpi-value { color: #000000 !important; }
+  }
+
+  // Actividad de Mensajes
+  .activity-card {
+    .card-head {
+      .card-title { color: #000000 !important; font-weight: 500 !important; }
+      .card-subtitle { color: #64748b !important; }
+      .active-day-badge .badge-text {
+        color: #64748b !important;
+        strong { color: #000000 !important; font-weight: 700 !important; }
+      }
+    }
+
+    .bar-chart-container {
+      .y-ticks-col { color: #94a3b8 !important; }
+
+      .bars-flex-grid {
+        .bar-button-item {
+          .bar-pillar-fill {
+            &.bar-neon-green {
+              background: linear-gradient(180deg, #d4f938 0%, #a3e635 100%) !important;
+              box-shadow: 0 4px 18px rgba(212, 249, 56, 0.45) !important;
+              border: none !important;
+            }
+            &.bar-muted-glass {
+              background: linear-gradient(180deg, #e2e8f0 0%, #cbd5e1 100%) !important;
+              box-shadow: none !important;
+              border: none !important;
+            }
+          }
+
+          .bar-day-label {
+            color: #64748b !important;
+            &.active-day { color: #000000 !important; font-weight: 700 !important; }
+          }
+
+          &:hover .bar-day-label { color: #000000 !important; }
+          &:hover .bar-pillar-fill:not(.bar-neon-green) {
+            background: #94a3b8 !important;
+          }
+        }
+      }
+    }
+  }
+
+  // Pipelines de Leads
+  .pipeline-card {
+    .card-head {
+      .card-title { color: #000000 !important; font-weight: 500 !important; }
+      .card-link-subtle {
+        color: #64748b !important;
+        &:hover { color: #000000 !important; }
+      }
+    }
+
+    .glass-pill-row {
+      background: rgba(255, 255, 255, 0.70) !important;
+      border: 1px solid rgba(0, 0, 0, 0.05) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025), inset 0 1px 1px #ffffff !important;
+
+      &:hover {
+        background: #ffffff !important;
+        border-color: rgba(0, 0, 0, 0.10) !important;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07), inset 0 1px 1px #ffffff !important;
+        transform: translateY(-1.5px) !important;
+      }
+
+      .pill-left-content {
+        .stage-label-progress {
+          .stage-name-text { color: #1e293b !important; }
+          .stage-mini-track { background: rgba(0, 0, 0, 0.06) !important; }
+        }
+      }
+
+      .stage-counter-number { color: #000000 !important; font-weight: 600 !important; }
+    }
+  }
+
+  // Rendimiento del Bot
+  .bot-card {
+    .card-head {
+      .card-title { color: #000000 !important; font-weight: 500 !important; }
+      .bot-engine-subtitle { color: #64748b !important; }
+      .bot-badge-live {
+        background: rgba(0, 0, 0, 0.04) !important;
+        color: #0f172a !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        font-weight: 500 !important;
+        .live-dot { background: #d4f938 !important; box-shadow: 0 0 6px rgba(212, 249, 56, 0.6) !important; }
+      }
+    }
+
+    .donut-box-relative {
+      .donut-svg circle:first-child {
+        stroke: rgba(0, 0, 0, 0.07) !important;
+      }
+      // circle:last-child uses dynamic SVG stroke matching the active metric
+      .donut-center-content {
+        .donut-pct-text {
+          color: #0f172a !important;
+          font-weight: 700 !important;
+        }
+        .donut-sub-text { color: #64748b !important; }
+      }
+    }
+
+    .bot-metric-pills {
+      .metric-pill-item {
+        background: rgba(255, 255, 255, 0.75) !important;
+        border: 1px solid rgba(0, 0, 0, 0.06) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+        .m-label { color: #475569 !important; }
+        .m-val { color: #334155 !important; font-weight: 600 !important; }
+
+        &:hover {
+          background: #ffffff !important;
+          border-color: rgba(0, 0, 0, 0.12) !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+          .m-label { color: #000000 !important; }
+          .m-val { color: #000000 !important; }
+        }
+
+        &.active {
+          background: #ffffff !important;
+          border-color: var(--pill-accent) !important;
+          box-shadow: 0 4px 14px var(--pill-glow), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+          .m-label { color: #000000 !important; font-weight: 600 !important; }
+          .m-val { color: #000000 !important; font-weight: 700 !important; }
+        }
+      }
+    }
+
+    .bot-footer-action {
+      background: rgba(255, 255, 255, 0.70) !important;
+      border: 1px solid rgba(0, 0, 0, 0.06) !important;
+      color: #000000 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+      &:hover {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border-color: rgba(0, 0, 0, 0.12) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+      }
+    }
+  }
+
+  // Pendientes
+  .pendientes-card {
+    .card-head {
+      .card-title { color: #000000 !important; font-weight: 500 !important; }
+      .realtime-tag { color: #64748b !important; }
+    }
+
+    .pending-item-card {
+      background: rgba(255, 255, 255, 0.70) !important;
+      border: 1px solid rgba(0, 0, 0, 0.05) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025), inset 0 1px 1px #ffffff !important;
+
+      &:hover {
+        background: #ffffff !important;
+        border-color: rgba(0, 0, 0, 0.10) !important;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07), inset 0 1px 1px #ffffff !important;
+        transform: translateY(-1.5px) !important;
+      }
+
+      .pending-item-left {
+        .pending-icon-box {
+          color: #000000 !important;
+          .p-svg { stroke: #000000 !important; }
+        }
+        .pending-text-block {
+          .pending-title { color: #000000 !important; font-weight: 600 !important; }
+          .pending-sub { color: #64748b !important; }
+        }
+      }
+
+      .pending-right-badge {
+        .pending-count { color: #000000 !important; font-weight: 600 !important; }
+        .pending-arrow { color: #94a3b8 !important; }
+      }
+    }
+
+    .pendientes-sync-footer {
+      color: #94a3b8 !important;
+    }
+
+    .pendientes-sim-footer {
+      border-top: 1px solid rgba(0, 0, 0, 0.07) !important;
+
+      .sim-launcher-pill {
+        background: #d4f938 !important;
+        border: 1px solid rgba(0, 0, 0, 0.12) !important;
+        color: #000000 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 2px 10px rgba(212, 249, 56, 0.45) !important;
+
+        &:hover {
+          background: #c5ee25 !important;
+          box-shadow: 0 4px 16px rgba(212, 249, 56, 0.65) !important;
+        }
+
+        .pulse-dot {
+          background: #000000 !important;
+          box-shadow: 0 0 6px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .sim-title {
+          color: #000000 !important;
+        }
+
+        .sim-live-badge {
+          background: #000000 !important;
+          color: #d4f938 !important;
+          font-weight: 800 !important;
+        }
+
+        .sim-arrow {
+          color: #000000 !important;
+        }
+      }
+    }
+  }
+
+  // Páginas del CRM, Reportes, Productos, Plantillas
+  .page, .crm-page, .productos-page, .agenda-page, .reportes-page, .config-page, .plantillas-page, .whatsapp-onboarding-page {
+    color: #000000 !important;
+
+    .page-header {
+      h1 { color: #000000 !important; font-weight: 400 !important; }
+      .subtitle { color: #64748b !important; }
+    }
+
+    .crm-table, table {
+      thead th {
+        background: rgba(241, 245, 249, 0.95) !important;
+        color: #475569 !important;
+        border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+      }
+      tbody tr {
+        background: rgba(255, 255, 255, 0.85) !important;
+        color: #000000 !important;
+        border-bottom-color: rgba(0, 0, 0, 0.05) !important;
+        &:hover {
+          background: rgba(248, 250, 252, 0.95) !important;
+        }
+      }
+    }
+
+    input, select, textarea {
+      background: rgba(255, 255, 255, 0.90) !important;
+      border: 1px solid rgba(0, 0, 0, 0.10) !important;
+      color: #000000 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+      &:focus {
+        border-color: #0f172a !important;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08) !important;
+      }
+    }
+  }
+
+  // Conversaciones en Tema Claro
+  .inbox-layout {
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow:
+      0 18px 45px -10px rgba(0, 0, 0, 0.06),
+      0 2px 10px rgba(0, 0, 0, 0.02),
+      inset 0 1px 1px #ffffff !important;
+  }
+}
+
+
+// ── Optimizaciones Responsive Globales para Teléfonos Móviles (< 640px) ─────
+@media (max-width: 640px) {
+  .page, .crm-page, .productos-page, .agenda-page, .reportes-page, .config-page, .plantillas-page, .whatsapp-onboarding-page {
+    max-width: 100% !important;
+    padding: 12px 10px !important;
+  }
+
+  .page-header {
+    margin-bottom: 14px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+
+    h1 {
+      font-size: 21px !important;
+    }
+
+    .subtitle {
+      font-size: 12px !important;
+    }
+
+    .header-actions, .actions {
+      width: 100% !important;
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+
+      button, .btn, a {
+        flex: 1 1 auto !important;
+        justify-content: center !important;
+      }
+    }
+  }
+
+  // Contenedores con scroll horizontal táctil suave para que las tablas no rompan el viewport
+  .table-container, .table-responsive, .crm-table-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin-bottom: 12px !important;
+  }
+
+  // Popups, drawers y modales adaptados a pantallas móviles
+  .modal-dialog, .modal-content, .dialog-box, .popup-modal {
+    width: calc(100vw - 20px) !important;
+    max-width: 100% !important;
+    margin: 10px auto !important;
+    padding: 16px 14px !important;
+  }
+}
+
+// ── Lightbox & Modals Overlay Priority (Navbar never visible above) ─────────
+.modal-backdrop,
+.lightbox,
+.modal-overlay,
+.dialog-overlay,
+.media-lightbox {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 999999 !important;
+}
+
+body:has(.lightbox),
+body:has(.modal-backdrop),
+body:has(.modal-overlay),
+body:has(.dialog-overlay),
+body:has(.media-lightbox) {
+  .sidebar,
+  .topbar,
+  .sidebar-backdrop {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.15s ease, visibility 0.15s ease !important;
+  }
+
+  .shell-main,
+  .page-content {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    contain: none !important;
+    z-index: 99999 !important;
+  }
+}

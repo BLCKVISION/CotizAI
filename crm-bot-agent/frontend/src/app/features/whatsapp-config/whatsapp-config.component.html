@@ -1,0 +1,112 @@
+<div class="whatsapp-onboarding-page">
+  <div class="onboarding-header">
+    <div class="header-tag">CONFIGURACIÓN</div>
+    <h1>{{ status()?.connected ? 'WhatsApp Business conectado' : 'Conecta tu WhatsApp Business' }}</h1>
+    <p class="subtitle">
+      Conexión con la API oficial de WhatsApp Business (Meta Cloud API). Tus mensajes entran por el webhook y las respuestas del agente salen por tu número.
+    </p>
+    <div class="conn-status" *ngIf="status() as s">
+      <span class="conn-dot" [class.on]="s.connected"></span>
+      {{ s.connected ? ('Conectado' + (s.displayPhone ? ' · ' + s.displayPhone : '')) : 'Sin conectar' }}
+    </div>
+  </div>
+
+  <div class="dash-card" *ngIf="loadError()" style="padding: 20px; margin-bottom: 20px">
+    No se pudo consultar el estado de WhatsApp. <button class="btn btn-secondary" (click)="load()">Reintentar</button>
+  </div>
+
+  <div class="onboarding-grid" *ngIf="status() as s">
+    <!-- Columna izquierda: conexión -->
+    <div class="dash-card main-cta-card">
+      <div class="wa-icon-circle">
+        <span class="material-symbols-rounded">{{ s.connected ? 'verified' : 'chat' }}</span>
+      </div>
+
+      <ng-container *ngIf="s.connected && !showForm()">
+        <h2 class="cta-title">Número conectado</h2>
+        <div class="conn-details">
+          <div><span>Número</span><b>{{ s.displayPhone || s.phoneNumber || '—' }}</b></div>
+          <div><span>Phone Number ID</span><b>{{ s.phoneNumberId || '—' }}</b></div>
+          <div *ngIf="s.wabaId"><span>WABA ID</span><b>{{ s.wabaId }}</b></div>
+          <div *ngIf="s.qualityRating"><span>Calidad</span><b>{{ s.qualityRating }}</b></div>
+        </div>
+        <p class="cta-desc">El token de acceso está guardado cifrado en el servidor y nunca se muestra.</p>
+        <div class="btn-row">
+          <button class="btn btn-secondary" (click)="showForm.set(true)"><span class="material-symbols-rounded">key</span>Actualizar credenciales</button>
+          <button class="btn btn-danger" (click)="disconnect()"><span class="material-symbols-rounded">link_off</span>Desconectar</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="showForm()">
+        <h2 class="cta-title">{{ s.connected ? 'Actualizar credenciales' : 'Conecta tu número' }}</h2>
+        <p class="cta-desc">Se validan contra Meta antes de guardarse.</p>
+        <form class="manual-form" (ngSubmit)="connect()" autocomplete="off">
+          <div class="form-error" *ngIf="error()">{{ error() }}</div>
+          <div class="form-group">
+            <label>Phone Number ID</label>
+            <input type="text" name="phoneNumberId" [(ngModel)]="phoneNumberId" placeholder="109845728492019" inputmode="numeric" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label>WABA ID (opcional)</label>
+            <input type="text" name="wabaId" [(ngModel)]="wabaId" placeholder="394857201928475" inputmode="numeric" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label>Access Token permanente</label>
+            <input type="password" name="accessToken" [(ngModel)]="accessToken" placeholder="EAAG…" autocomplete="new-password" />
+            <small>Usa un token de usuario del sistema con permisos whatsapp_business_messaging.</small>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-wa-connect" [disabled]="busy()">
+              <span class="material-symbols-rounded">chat</span>
+              {{ busy() ? 'Verificando con Meta…' : (s.connected ? 'Guardar credenciales' : 'Conectar WhatsApp') }}
+            </button>
+            <button type="button" class="btn btn-ghost" *ngIf="s.connected" (click)="showForm.set(false); error.set('')">Cancelar</button>
+          </div>
+        </form>
+      </ng-container>
+
+      <div class="trust-badges-footer">
+        <div class="trust-badge"><span class="material-symbols-rounded">verified_user</span><span>API oficial de Meta</span></div>
+        <div class="trust-badge"><span class="material-symbols-rounded">lock</span><span>Token cifrado en el servidor</span></div>
+        <div class="trust-badge"><span class="material-symbols-rounded">fact_check</span><span>Webhook con firma verificada</span></div>
+      </div>
+    </div>
+
+    <!-- Columna derecha: webhook y guía -->
+    <div class="info-column">
+      <div class="dash-card step-guide-card">
+        <div class="guide-header">
+          <span class="material-symbols-rounded guide-icon">webhook</span>
+          <h3>Webhook para Meta</h3>
+        </div>
+        <p class="webhook-hint">En tu app de Meta → WhatsApp → Configuración → Webhook, pega estos datos y suscríbete al campo <b>messages</b>. La URL debe ser pública y con HTTPS.</p>
+        <div class="copy-field">
+          <label>URL de devolución de llamada</label>
+          <div class="copy-row"><input readonly [value]="s.webhookUrl" /><button class="btn btn-secondary" (click)="copy(s.webhookUrl, 'url')">{{ copied() === 'url' ? '✓' : 'Copiar' }}</button></div>
+        </div>
+        <div class="copy-field" *ngIf="s.verifyToken; else noToken">
+          <label>Token de verificación</label>
+          <div class="copy-row"><input readonly [value]="s.verifyToken" /><button class="btn btn-secondary" (click)="copy(s.verifyToken, 'tok')">{{ copied() === 'tok' ? '✓' : 'Copiar' }}</button><button class="btn btn-ghost" (click)="rotate()" title="Generar un token nuevo">Rotar</button></div>
+        </div>
+        <ng-template #noToken><p class="webhook-hint">El token de verificación se genera al conectar tu número.</p></ng-template>
+      </div>
+
+      <div class="dash-card step-guide-card">
+        <div class="guide-header">
+          <span class="material-symbols-rounded guide-icon">info</span>
+          <h3>Cómo conectarlo</h3>
+        </div>
+        <div class="guide-steps-list">
+          <div class="guide-step"><div class="step-number-circle blue">1</div><div class="step-text"><div class="step-title">Crea una app en Meta for Developers</div><div class="step-desc">Añade el producto WhatsApp y un número</div></div></div>
+          <div class="guide-step"><div class="step-number-circle blue">2</div><div class="step-text"><div class="step-title">Copia el Phone Number ID y el token</div><div class="step-desc">Genera un token permanente de usuario del sistema</div></div></div>
+          <div class="guide-step"><div class="step-number-circle blue">3</div><div class="step-text"><div class="step-title">Pégalos aquí y conecta</div><div class="step-desc">Verificamos las credenciales con Meta</div></div></div>
+          <div class="guide-step"><div class="step-number-circle green"><span class="material-symbols-rounded">check</span></div><div class="step-text"><div class="step-title">Registra el webhook en Meta</div><div class="step-desc">Con la URL y el token de arriba</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="return-link-row">
+    <a routerLink="/dashboard" class="return-link">← Volver al Dashboard</a>
+  </div>
+</div>

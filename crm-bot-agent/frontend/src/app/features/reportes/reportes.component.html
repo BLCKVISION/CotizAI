@@ -1,0 +1,233 @@
+<div class="reportes-page">
+  <!-- Top Header -->
+  <div class="page-top-header">
+    <div class="title-group">
+      <h1>Reportes</h1>
+      <p class="subtitle">Análisis de rendimiento y conversión</p>
+    </div>
+
+    <div class="header-controls">
+      <!-- Period Selector -->
+      <div class="period-pill-group">
+        <button
+          class="period-btn"
+          [class.active]="period() === '7'"
+          (click)="setPeriod('7')"
+        >
+          7 días
+        </button>
+        <button
+          class="period-btn"
+          [class.active]="period() === '30'"
+          (click)="setPeriod('30')"
+        >
+          30 días
+        </button>
+        <button
+          class="period-btn"
+          [class.active]="period() === '90'"
+          (click)="setPeriod('90')"
+        >
+          90 días
+        </button>
+      </div>
+
+      <!-- Raw Data Button -->
+      <button class="btn btn-secondary" (click)="viewRawData()">
+        <span class="material-symbols-rounded">description</span>
+        Ver datos crudos
+      </button>
+    </div>
+  </div>
+
+  <div class="empty-state-mini" *ngIf="loadError()">
+    No se pudieron cargar los reportes. <button class="btn btn-secondary" (click)="load()">Reintentar</button>
+  </div>
+
+  <!-- 4 Top KPI Cards -->
+  <div class="kpi-grid">
+    <!-- Card 1: Nuevos leads -->
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-title">Nuevos leads</span>
+        <div class="kpi-icon-box blue">
+          <span class="material-symbols-rounded">person</span>
+        </div>
+      </div>
+      <div class="kpi-value">{{ data()?.newLeads ?? 0 }}</div>
+      <div class="kpi-meta">
+        <span class="meta-desc">en este período · {{ data()?.totalContacts ?? 0 }} en total</span>
+      </div>
+    </div>
+
+    <!-- Card 2: Leads calificados -->
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-title">Leads calificados</span>
+        <div class="kpi-icon-box green">
+          <span class="material-symbols-rounded">check_circle</span>
+        </div>
+      </div>
+      <div class="kpi-value">{{ data()?.qualifiedLeads ?? 0 }}</div>
+      <div class="kpi-meta">
+        <span class="meta-desc">{{ data()?.qualifiedPct ?? 0 }}% de los nuevos</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Cerrados (ganados) -->
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-title">Cerrados (ganados)</span>
+        <div class="kpi-icon-box green">
+          <span class="material-symbols-rounded">trending_up</span>
+        </div>
+      </div>
+      <div class="kpi-value">{{ data()?.wonContacts ?? 0 }}</div>
+      <div class="kpi-meta">
+        <span class="meta-desc">{{ data()?.closedPct ?? 0 }}% de calificados</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Citas agendadas -->
+    <div class="kpi-card">
+      <div class="kpi-top">
+        <span class="kpi-title">Citas agendadas</span>
+        <div class="kpi-icon-box purple">
+          <span class="material-symbols-rounded">calendar_today</span>
+        </div>
+      </div>
+      <div class="kpi-value">{{ data()?.appointmentsCount ?? 0 }}</div>
+      <div class="kpi-meta">
+        <span class="meta-desc">{{ data()?.appointmentsByAi ?? 0 }} agendadas por la IA</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Row: Funnel de conversión + Indicadores clave -->
+  <div class="bottom-split-grid">
+    <!-- Left: Funnel de conversión -->
+    <div class="dash-card funnel-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Funnel de conversión</h2>
+          <p class="card-subtitle">Cómo fluyen los leads por cada etapa</p>
+        </div>
+      </div>
+
+      <div class="empty-state-mini" *ngIf="!funnel().length"><p>Sin datos todavía</p></div>
+      <div class="funnel-stage-list">
+        <div class="funnel-row" *ngFor="let f of funnel()">
+          <div class="funnel-name">
+            <span class="funnel-dot" [style.backgroundColor]="f.color"></span>
+            <span>{{ f.name }}</span>
+          </div>
+          <div class="funnel-badge">{{ f.count }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Indicadores clave -->
+    <div class="dash-card kpi-indicators-card">
+      <div class="card-head">
+        <h2 class="card-title">Indicadores clave</h2>
+      </div>
+
+      <div class="indicators-list">
+        <!-- Row 1 -->
+        <div class="indicator-row">
+          <div class="ind-info">
+            <div class="ind-title">Tasa de respuesta</div>
+            <div class="ind-desc">IA + agente vs mensajes entrantes</div>
+          </div>
+          <div class="ind-value">{{ data()?.responseRate ?? 0 }}%</div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="indicator-row">
+          <div class="ind-info">
+            <div class="ind-title">Mensajes por lead</div>
+            <div class="ind-desc">Promedio de conversación</div>
+          </div>
+          <div class="ind-value">{{ data()?.messagesPerLead ?? 0 }}</div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="indicator-row">
+          <div class="ind-info">
+            <div class="ind-title">Hora pico</div>
+            <div class="ind-desc">Mayor actividad de clientes</div>
+          </div>
+          <div class="ind-value">{{ peakHour() }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Row: Conversión por fuente + Actividad por hora del día -->
+  <div class="hourly-sources-grid">
+    <!-- Card 1: Conversión por fuente -->
+    <div class="dash-card sources-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Conversión por fuente</h2>
+          <p class="card-subtitle">Qué canales traen mejores leads</p>
+        </div>
+      </div>
+      <div class="empty-state-mini" *ngIf="!sources().length">
+        <p>Sin fuentes todavía</p>
+      </div>
+      <div class="source-list" *ngIf="sources().length">
+        <div class="source-row" *ngFor="let s of sources()">
+          <span class="source-name">{{ s.label }}</span>
+          <span class="source-bar"><i [style.width.%]="s.pct"></i></span>
+          <span class="source-num">{{ s.closed }}/{{ s.leads }} · {{ s.pct }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Actividad por hora del día -->
+    <div class="dash-card hourly-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Actividad por hora del día</h2>
+          <p class="card-subtitle">Mensajes entrantes de clientes</p>
+        </div>
+      </div>
+      <div class="heatmap-container">
+        <div class="heatmap-cells">
+          <div
+            *ngFor="let h of hours24"
+            class="hour-cell"
+            [style.background]="hourColor(h)"
+            [title]="h + ':00 · ' + (data()?.hours?.[h] ?? 0) + ' mensajes'"
+          ></div>
+        </div>
+        <div class="heatmap-labels">
+          <span>00h</span>
+          <span>06h</span>
+          <span>12h</span>
+          <span>18h</span>
+          <span>23h</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Datos del reporte -->
+  <div class="modal-backdrop" *ngIf="showRawDataModal()" (click)="showRawDataModal.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Datos del reporte</h3>
+        <button class="close-btn" (click)="showRawDataModal.set(false)" aria-label="Cerrar"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <div class="modal-body">
+        <p style="color: #94a3b8; font-size: 13px;">Resumen de los últimos {{ period() }} días tal como lo devuelve el servidor. Descarga la serie diaria en CSV para Excel o Google Sheets.</p>
+        <pre class="raw-code">{{ rawJson() }}</pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showRawDataModal.set(false)">Cerrar</button>
+        <button class="btn btn-emerald" (click)="downloadCsv()">Descargar CSV</button>
+      </div>
+    </div>
+  </div>
+</div>

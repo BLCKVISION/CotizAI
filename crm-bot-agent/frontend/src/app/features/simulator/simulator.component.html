@@ -1,0 +1,274 @@
+<div class="simulator-wrapper" [class.dark-theme]="!isLight()">
+
+  <!-- ════ HEADER SUPERIOR DE CONTROL Y COMPARTICIÓN ════ -->
+  <header class="sim-topbar">
+    <div class="topbar-left">
+      <a routerLink="/dashboard" class="back-crm-btn" title="Volver al CRM">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        <span>Volver al Dashboard</span>
+      </a>
+      <div class="brand-pill">
+        <span class="live-pulse"></span>
+        <span class="brand-name">Simulador WhatsApp en Vivo</span>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <!-- Botón de sonido -->
+      <button
+        type="button"
+        class="sim-action-btn"
+        (click)="sound.toggleMute()"
+        [title]="sound.isMuted() ? 'Activar alertas sonoras' : 'Silenciar sonidos'"
+      >
+        <span *ngIf="!sound.isMuted()">🔊 Sonido activado</span>
+        <span *ngIf="sound.isMuted()">🔇 Sonido silenciado</span>
+      </button>
+
+      <!-- Selector de Tema Claro / Oscuro -->
+      <button
+        type="button"
+        class="sim-action-btn"
+        (click)="themeService.toggleTheme()"
+        [title]="isLight() ? 'Modo oscuro' : 'Modo claro'"
+      >
+        <span *ngIf="isLight()">🌙 Modo Oscuro</span>
+        <span *ngIf="!isLight()">☀️ Modo Claro</span>
+      </button>
+
+      <!-- Botón Compartir Simulación -->
+      <button
+        type="button"
+        class="sim-share-btn"
+        (click)="copyShareableLink()"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+        <span>Compartir Simulación</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Toast de Enlace Copiado -->
+  <div class="share-toast" *ngIf="shareToastVisible()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M20 6L9 17l-5-5"/>
+    </svg>
+    <span>¡Enlace del simulador copiado! Compártelo con tu cliente.</span>
+  </div>
+
+  <!-- ════ CONTENEDOR CENTRAL: MOCKUP DE SMARTPHONE WHATSAPP ════ -->
+  <main class="sim-main-stage">
+
+    <div class="phone-frame">
+      <!-- Altavoz / Isla superior del teléfono -->
+      <div class="phone-notch">
+        <span class="notch-camera"></span>
+        <span class="notch-speaker"></span>
+      </div>
+
+      <!-- Cabecera de WhatsApp Business -->
+      <div class="wa-header">
+        <div class="wa-header-left">
+          <div class="wa-avatar">
+            <span class="avatar-letter">{{ companyName().charAt(0) }}</span>
+            <span class="wa-online-dot"></span>
+          </div>
+          <div class="wa-contact-info">
+            <div class="wa-name-row">
+              <span class="wa-contact-name">{{ companyName() }}</span>
+              <!-- Check verde verificado de WhatsApp Business -->
+              <svg class="verified-badge-svg" viewBox="0 0 24 24" fill="#22c55e">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            </div>
+            <span class="wa-contact-status" *ngIf="!isHumanMode()">
+              {{ isTyping() ? 'escribiendo...' : 'en línea • Cuenta oficial' }}
+            </span>
+            <span class="wa-contact-status human" *ngIf="isHumanMode()">
+              👤 Asesor Albert en vivo
+            </span>
+          </div>
+        </div>
+
+        <div class="wa-header-icons">
+          <!-- Icono de reiniciar chat -->
+          <button type="button" class="wa-icon-btn" (click)="resetChat()" title="Reiniciar chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Acciones Rápidas del Simulador -->
+      <div class="sim-quick-actions">
+        <button
+          type="button"
+          class="sim-action-chip voice-chip"
+          (click)="sendSimulatedVoiceNote()"
+          title="Simular envío de nota de voz con transcripción Whisper"
+        >
+          🎤 Probar Nota de Voz
+        </button>
+
+        <button
+          type="button"
+          class="sim-action-chip receipt-chip"
+          (click)="sendSimulatedPaymentReceipt()"
+          title="Simular envío y validación de comprobante Pago Móvil"
+        >
+          🧾 Enviar Comprobante
+        </button>
+
+        <button
+          type="button"
+          class="sim-action-chip human-chip"
+          (click)="requestHumanAgent()"
+          title="Simular alerta y traspaso a asesor humano"
+        >
+          👤 Pedir Asesor
+        </button>
+      </div>
+
+      <!-- Área de Mensajes de WhatsApp -->
+      <div class="wa-messages-area" #chatScroll>
+        <div class="wa-encryption-notice">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Los mensajes y llamadas están cifrados de extremo a extremo. Nadie fuera de este chat, ni siquiera WhatsApp, puede leerlos ni escucharlos.</span>
+        </div>
+
+        <div class="wa-message-row" *ngFor="let msg of messages()" [class.from-me]="msg.sender === 'client'" [class.system-row]="msg.sender === 'system'">
+
+          <!-- Mensaje del sistema (traspaso humano) -->
+          <div class="system-pill" *ngIf="msg.sender === 'system'">
+            {{ msg.text }}
+          </div>
+
+          <!-- Burbuja normal de chat -->
+          <div class="wa-bubble" *ngIf="msg.sender !== 'system'" [class.client-bubble]="msg.sender === 'client'" [class.bot-bubble]="msg.sender === 'bot'" [class.agent-bubble]="msg.sender === 'agent'">
+
+            <!-- 1. NOTA DE VOZ (Transcrita por IA Whisper) -->
+            <div class="voice-note-card" *ngIf="msg.type === 'voice_note'">
+              <div class="voice-player-row">
+                <button type="button" class="voice-play-circle" title="Reproducir audio">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                  </svg>
+                </button>
+                <div class="voice-waveform">
+                  <span class="bar b1"></span>
+                  <span class="bar b2"></span>
+                  <span class="bar b3"></span>
+                  <span class="bar b4"></span>
+                  <span class="bar b5"></span>
+                  <span class="bar b6"></span>
+                  <span class="bar b7"></span>
+                  <span class="bar b8"></span>
+                </div>
+                <span class="voice-duration">{{ msg.voiceNote?.duration }}</span>
+              </div>
+
+              <!-- Transcripción por Whisper -->
+              <div class="transcription-badge-box">
+                <div class="transcription-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  </svg>
+                  <span>Transcrito por IA</span>
+                </div>
+                <p class="transcription-text">"{{ msg.voiceNote?.transcription }}"</p>
+              </div>
+            </div>
+
+            <!-- 2. COMPROBANTE DE PAGO (Validado por OCR / Vision) -->
+            <div class="payment-receipt-card" *ngIf="msg.type === 'payment_receipt'">
+              <div class="receipt-preview-img">
+                <div class="receipt-badge-status valid">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>COMPROBANTE VALIDADO</span>
+                </div>
+                <div class="receipt-data-preview">
+                  <div class="receipt-row">
+                    <span class="r-k">Banco:</span>
+                    <span class="r-v">{{ msg.receipt?.bank }}</span>
+                  </div>
+                  <div class="receipt-row">
+                    <span class="r-k">Referencia:</span>
+                    <span class="r-v font-mono">{{ msg.receipt?.reference }}</span>
+                  </div>
+                  <div class="receipt-row">
+                    <span class="r-k">Monto:</span>
+                    <span class="r-v font-bold text-emerald-400">{{ msg.receipt?.amount }} {{ msg.receipt?.currency }}</span>
+                  </div>
+                </div>
+              </div>
+              <p class="receipt-caption" *ngIf="msg.text">{{ msg.text }}</p>
+            </div>
+
+            <!-- 3. TEXTO NORMAL -->
+            <p class="bubble-text" *ngIf="msg.type === 'text'">{{ msg.text }}</p>
+
+            <!-- Metadatos de la burbuja (Hora + Doble check azul) -->
+            <div class="bubble-meta">
+              <span class="bubble-time">{{ msg.time }}</span>
+              <span class="double-check" *ngIf="msg.sender === 'client'">
+                <svg viewBox="0 0 24 24" fill="#38bdf8">
+                  <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.41 11.93l-1.41 1.41 5.66 5.66 12-12-1.42-1.41zM.41 13.34l5.66 5.66 1.41-1.41L1.82 11.93.41 13.34z"/>
+                </svg>
+              </span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Indicador de bot escribiendo -->
+        <div class="typing-bubble" *ngIf="isTyping()">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+        </div>
+      </div>
+
+      <!-- Barra Inferior de Entrada de WhatsApp -->
+      <form class="wa-input-bar" (ngSubmit)="sendTextMessage()">
+        <button type="button" class="wa-attach-btn" title="Adjuntar archivo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+          </svg>
+        </button>
+
+        <input
+          type="text"
+          [(ngModel)]="inputText"
+          name="simulatorInput"
+          placeholder="Escribe un mensaje en WhatsApp..."
+          class="wa-text-input"
+          autocomplete="off"
+        />
+
+        <button type="submit" class="wa-send-btn" [class.active]="inputText.trim().length > 0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </form>
+
+    </div>
+
+  </main>
+</div>
+

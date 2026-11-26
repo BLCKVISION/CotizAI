@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+.angular
+*.tsbuildinfo
+scratch/
+newfile.html

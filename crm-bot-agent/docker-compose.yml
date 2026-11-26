@@ -1,0 +1,60 @@
+# Stack completo: docker compose up -d --build   (configuración en .env, ver .env.example)
+# Solo la base de datos para desarrollo local:   docker compose up -d db
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crm_dev}
+      POSTGRES_DB: crm_bot
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm_bot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: crm
+      DB_PASS: ${POSTGRES_PASSWORD:-crm_dev}
+      DB_NAME: crm_bot
+      # Aún no hay migraciones: crea/actualiza las tablas al arrancar.
+      DB_SYNC: "true"
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env}
+      CORS_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:8080}
+      # URL pública con el prefijo /api: es la que se registra como webhook en Meta.
+      PUBLIC_URL: ${PUBLIC_ORIGIN:-http://localhost:8080}/api
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5-5}
+      AGENT_TIMEZONE: ${AGENT_TIMEZONE:-Europe/Madrid}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      DATA_KEY: ${DATA_KEY:-}          # cifra los tokens de WhatsApp en la BD; si falta se deriva de JWT_SECRET
+      TRUST_PROXY: '1'                 # detrás de nginx: usa la IP real para el límite de peticiones
+      BCV_RATE_URL: ${BCV_RATE_URL:-https://ve.dolarapi.com/v1/dolares/oficial}
+    volumes:
+      - uploads:/app/uploads         # imágenes del catálogo (persisten entre despliegues)
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  pgdata:
+  uploads:

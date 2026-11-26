@@ -1,0 +1,388 @@
+<div class="dashboard-page select-none">
+  <!-- ── Greeting Block ────────────────────────────────────────── -->
+  <section class="dash-greeting-block">
+    <div class="dash-header-wrap">
+      <div class="dash-greeting">
+        <h1 class="user-greeting">
+          <span class="greeting-lead">Hola , </span><span class="user-name">{{ currentUser()?.name || 'Emanuel' }}</span>
+        </h1>
+        <p class="dash-subtitle">Rendimiento de los ultimos {{ period() }} dias</p>
+      </div>
+
+      <!-- Period Filter Pills -->
+      <div class="period-pill-group">
+        <button class="period-btn" [class.active]="period() === '7'" (click)="setPeriod('7')">7 días</button>
+        <button class="period-btn" [class.active]="period() === '30'" (click)="setPeriod('30')">30 días</button>
+        <button class="period-btn" [class.active]="period() === '90'" (click)="setPeriod('90')">90 días</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4 KPI Cards Row (Exact Replica de relay_saas_platform.ts) ── -->
+  <section class="kpi-grid">
+    <!-- KPI 1: Mensajes IA -->
+    <div
+      (click)="incrementKpi('ai')"
+      class="relay-card kpi-card cursor-pointer group transition-transform duration-200 hover:-translate-y-0.5"
+      title="Clic para simular incremento"
+    >
+      <p class="kpi-title">
+        Mensajes IA
+      </p>
+      <div class="kpi-value">
+        {{ stats().aiMessages | number }}
+      </div>
+    </div>
+
+    <!-- KPI 2: Nuevos leads -->
+    <div
+      (click)="incrementKpi('leads')"
+      class="relay-card kpi-card cursor-pointer group transition-transform duration-200 hover:-translate-y-0.5"
+      title="Clic para simular incremento"
+    >
+      <p class="kpi-title">
+        Nuevos leads
+      </p>
+      <div class="kpi-value">
+        +{{ stats().newLeads | number }}
+      </div>
+    </div>
+
+    <!-- KPI 3: Citas Agendadas -->
+    <div
+      (click)="incrementKpi('appointments')"
+      class="relay-card kpi-card cursor-pointer group transition-transform duration-200 hover:-translate-y-0.5"
+      title="Clic para simular incremento"
+    >
+      <p class="kpi-title">
+        Citas Agendadas
+      </p>
+      <div class="kpi-value">
+        {{ stats().appointmentsPeriod }}
+      </div>
+    </div>
+
+    <!-- KPI 4: Tasa de Respuesta -->
+    <div
+      (click)="incrementKpi('rate')"
+      class="relay-card kpi-card cursor-pointer group transition-transform duration-200 hover:-translate-y-0.5"
+      title="Clic para simular incremento"
+    >
+      <p class="kpi-title">
+        Tasa de Respuesta
+      </p>
+      <div class="kpi-value">
+        {{ stats().responseRate }}%
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MAIN ASYMMETRIC GRID: Left/Center (8 cols) + Right Pendientes (4 cols) ── -->
+  <section class="dash-main-grid">
+
+    <!-- Left/Center Column (8 of 12 cols on XL) -->
+    <div class="dash-left-column">
+
+      <!-- Card: Actividad de Mensajes (Exacta a relay_saas_platform.ts) -->
+      <div class="relay-card activity-card">
+        <div class="card-head">
+          <div class="head-titles">
+            <h2 class="card-title">
+              Actividad de Mensajes
+            </h2>
+            <p class="card-subtitle">
+              Mensajes IA vs de Clientes &nbsp;-&nbsp; 7 Dias
+            </p>
+          </div>
+          <div class="active-day-badge">
+            <span class="badge-text">
+              Día activo:
+              <strong class="text-emerald-400 font-semibold">{{ selectedBar().day }}</strong>
+              ({{ selectedBar().aiMessages }} IA / {{ selectedBar().clientMessages }} Clientes)
+            </span>
+          </div>
+        </div>
+
+        <!-- Bar Chart Container (Exacto 148px / 118px) -->
+        <div class="bar-chart-container">
+          <div class="y-ticks-col">
+            <span>20</span>
+            <span>10</span>
+            <span>0</span>
+          </div>
+
+          <div class="bars-flex-grid">
+            <button
+              *ngFor="let bar of activityBars(); let i = index"
+              type="button"
+              (click)="selectBar(i)"
+              class="bar-button-item group focus:outline-none"
+              [title]="bar.day + ': ' + bar.aiMessages + ' IA, ' + bar.clientMessages + ' Clientes'"
+            >
+              <div class="bar-track-wrap">
+                <div
+                  class="bar-pillar-fill"
+                  [class.bar-neon-green]="bar.active"
+                  [class.bar-muted-glass]="!bar.active"
+                  [style.height.%]="bar.heightPct"
+                ></div>
+              </div>
+              <span
+                class="bar-day-label"
+                [class.active-day]="bar.active"
+              >
+                {{ bar.day }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Sub-Grid: Pipelines de Leads (7 cols) + Rendimiento del Bot (5 cols) -->
+      <div class="bottom-split-row">
+
+        <!-- Card: Pipelines de Leads (Exact Replica of relay_saas_platform.ts) -->
+        <div class="relay-card pipeline-card">
+          <div class="card-head">
+            <h3 class="card-title">
+              Pipelines de Leads
+            </h3>
+            <a routerLink="/crm" class="card-link-subtle">
+              Ver todo
+            </a>
+          </div>
+
+          <div class="pipeline-pills-stack">
+            <div
+              *ngFor="let stage of pipelineRows()"
+              routerLink="/crm"
+              class="glass-pill-row group"
+              [title]="stage.label"
+            >
+              <div class="pill-left-content">
+                <!-- Glowing Status Dot -->
+                <span
+                  class="stage-glowing-dot"
+                  [style.background-color]="stage.dotColor"
+                  [style.box-shadow]="'0 0 8px ' + stage.dotColor"
+                ></span>
+
+                <!-- Stage Label + Progress Bar -->
+                <div class="stage-label-progress">
+                  <div class="stage-name-text">
+                    {{ stage.label }}
+                  </div>
+                  <div class="stage-mini-track">
+                    <div
+                      class="stage-mini-fill"
+                      [style.width.%]="stage.progressPct"
+                      [style.background-color]="stage.barColor"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right SemiBold Counter -->
+              <span class="stage-counter-number">
+                {{ stage.count }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card: Rendimiento del Bot Mejorado (Exact Replica de relay_saas_platform.ts) -->
+        <div class="relay-card bot-card">
+          <div class="card-head">
+            <div>
+              <h3 class="card-title">
+                Rendimiento del Bot
+              </h3>
+              <p class="bot-engine-subtitle">
+                Motor OpenAI <span class="text-emerald-400 font-normal">gpt-4o-mini</span>
+              </p>
+            </div>
+            <span class="bot-badge-live">
+              <span class="live-dot"></span>
+              Online
+            </span>
+          </div>
+
+          <!-- Glowing Ring Gauge + Telemetry Metrics (Dynamic Ring Color matching Active Stat) -->
+          <div class="bot-body-layout">
+            <div class="donut-box-relative" [title]="'Estadística activa: ' + currentBotMetric().label">
+              <svg class="donut-svg" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="39"
+                  fill="transparent"
+                  [attr.stroke]="currentBotMetric().trackColor"
+                  stroke-width="9"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="39"
+                  fill="transparent"
+                  [attr.stroke]="currentBotMetric().color"
+                  stroke-width="9"
+                  stroke-linecap="round"
+                  [attr.stroke-dasharray]="circumference"
+                  [attr.stroke-dashoffset]="botRingOffset"
+                  [style.filter]="'drop-shadow(0 0 10px ' + currentBotMetric().glowColor + ')'"
+                  class="bot-donut-ring"
+                />
+              </svg>
+              <div class="donut-center-content">
+                <span class="donut-pct-text">
+                  {{ currentBotMetric().value }}
+                </span>
+                <span class="donut-sub-text">
+                  {{ currentBotMetric().shortLabel }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Real-time Bot Telemetry Pills (Click to switch active stat and ring color) -->
+            <div class="bot-metric-pills">
+              <button
+                type="button"
+                *ngFor="let m of botMetrics()"
+                class="metric-pill-item"
+                [class.active]="m.id === activeBotMetric()"
+                [style.--pill-accent]="m.color"
+                [style.--pill-glow]="m.glowColor"
+                (click)="selectBotMetric(m.id)"
+                [title]="'Activar métrica ' + m.label"
+              >
+                <div class="pill-left">
+                  <span
+                    class="metric-indicator-dot"
+                    [style.background-color]="m.color"
+                    [style.box-shadow]="'0 0 6px ' + m.glowColor"
+                  ></span>
+                  <span class="m-label">{{ m.label }}</span>
+                </div>
+                <span class="m-val">{{ m.value }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Footer Action to Open Workflow Canvas -->
+          <a routerLink="/ai-config" class="bot-footer-action">
+            <span>Abrir flujo del Agente IA</span>
+            <span>→</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Column: Tall Card "Pendientes" (Exact Replica de relay_saas_platform.ts) -->
+    <div class="dash-right-column">
+      <div class="relay-card pendientes-card">
+        <div class="pendientes-top-block">
+          <div class="card-head">
+            <h3 class="card-title">
+              Pendientes
+            </h3>
+            <span class="realtime-tag">
+              Tiempo real
+            </span>
+          </div>
+
+          <!-- 5 Beveled Glass Cards (Exact Replica de relay_saas_platform.ts) -->
+          <div class="pendientes-cards-stack">
+            <div
+              *ngFor="let item of pendingItems()"
+              [routerLink]="item.route"
+              class="pending-item-card group"
+              [title]="item.title + ' — ' + item.subtitle"
+            >
+              <div class="pending-item-left">
+                <!-- Clean Minimalist White Icon -->
+                <div class="pending-icon-box">
+                  <!-- Droplet (Amber) -->
+                  <svg *ngIf="item.id === 'human'" class="p-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                  </svg>
+
+                  <!-- Calendar (Emerald) -->
+                  <svg *ngIf="item.id === 'today'" class="p-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+
+                  <!-- Clock (Blue) -->
+                  <svg *ngIf="item.id === 'week'" class="p-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="12" r="9"/>
+                    <polyline points="12 7 12 12 15 15"/>
+                  </svg>
+
+                  <!-- Box (Amber) -->
+                  <svg *ngIf="item.id === 'stock'" class="p-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <polyline points="21 8 21 21 3 21 3 8"/>
+                    <rect x="1" y="3" width="22" height="5" rx="1"/>
+                    <line x1="10" y1="12" x2="14" y2="12"/>
+                  </svg>
+
+                  <!-- Book (Violet) -->
+                  <svg *ngIf="item.id === 'kb'" class="p-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                  </svg>
+                </div>
+
+                <!-- Title (SemiBold) & Subtitle (Light) -->
+                <div class="pending-text-block">
+                  <h4 class="pending-title">
+                    {{ item.title }}
+                  </h4>
+                  <p class="pending-sub">
+                    {{ item.subtitle }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Right Counter or Arrow -->
+              <div class="pending-right-badge">
+                <span *ngIf="item.hasArrow" class="pending-arrow">
+                  →
+                </span>
+                <span *ngIf="!item.hasArrow" class="pending-count">
+                  {{ item.count }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Status Footer -->
+        <div class="pendientes-sync-footer">
+          <span>Sincronizado con PostgreSQL 17</span>
+          <span class="sync-dot"></span>
+        </div>
+
+        <!-- Acceso al Simulador Interactivo de WhatsApp manteniendo su estilo -->
+        <div class="pendientes-sim-footer">
+          <a
+            routerLink="/simulador"
+            target="_blank"
+            class="sim-launcher-pill"
+            title="Abrir Simulador WhatsApp en Vivo (Compartible con clientes)"
+          >
+            <span class="sim-left-group">
+              <span class="pulse-dot"></span>
+              <span class="sim-title">Simulador de WhatsApp</span>
+              <span class="sim-live-badge">En vivo</span>
+            </span>
+            <span class="sim-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</div>

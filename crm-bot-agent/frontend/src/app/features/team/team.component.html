@@ -1,0 +1,375 @@
+<div class="page">
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-info">
+      <h1>Equipo & Asesores</h1>
+      <p class="subtitle">Gestión de miembros del equipo, roles de administrador y asignación de permisos de atención y CRM</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="openCreateModal()">
+        <span class="material-symbols-rounded">person_add</span>
+        Nuevo Asesor / Agente
+      </button>
+    </div>
+  </div>
+
+  <!-- ── KPI Stats Cards ───────────────────────────────────── -->
+  <div class="kpi-grid">
+    <div class="kpi-card card">
+      <div class="kpi-icon-wrap icon-blue">
+        <span class="material-symbols-rounded">group</span>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-label">Total Miembros</span>
+        <span class="kpi-value">{{ totalMembers() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card card">
+      <div class="kpi-icon-wrap icon-lime">
+        <span class="material-symbols-rounded">shield_person</span>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-label">Administradores</span>
+        <span class="kpi-value">{{ totalAdmins() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card card">
+      <div class="kpi-icon-wrap icon-emerald">
+        <span class="material-symbols-rounded">support_agent</span>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-label">Asesores Activos</span>
+        <span class="kpi-value">{{ activeAgents() }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card card">
+      <div class="kpi-icon-wrap icon-amber">
+        <span class="material-symbols-rounded">pause_circle</span>
+      </div>
+      <div class="kpi-body">
+        <span class="kpi-label">Pausados</span>
+        <span class="kpi-value">{{ pausedMembers() }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filters & Search Bar ──────────────────────────────── -->
+  <div class="filters-bar card">
+    <div class="search-box">
+      <span class="material-symbols-rounded">search</span>
+      <input
+        type="text"
+        placeholder="Buscar miembro por nombre, email o teléfono..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+      <button *ngIf="searchQuery()" class="clear-search" (click)="searchQuery.set('')">
+        <span class="material-symbols-rounded">close</span>
+      </button>
+    </div>
+
+    <div class="filter-pills">
+      <button
+        class="filter-pill"
+        [class.active]="roleFilter() === 'all'"
+        (click)="setRoleFilter('all')"
+      >
+        Todos
+        <span class="pill-count">{{ totalMembers() }}</span>
+      </button>
+      <button
+        class="filter-pill"
+        [class.active]="roleFilter() === 'admin'"
+        (click)="setRoleFilter('admin')"
+      >
+        Administradores
+        <span class="pill-count">{{ totalAdmins() }}</span>
+      </button>
+      <button
+        class="filter-pill"
+        [class.active]="roleFilter() === 'agent'"
+        (click)="setRoleFilter('agent')"
+      >
+        Asesores
+        <span class="pill-count">{{ activeAgents() + pausedMembers() }}</span>
+      </button>
+      <button
+        class="filter-pill"
+        [class.active]="roleFilter() === 'active'"
+        (click)="setRoleFilter('active')"
+      >
+        Activos
+        <span class="pill-count">{{ totalAdmins() + activeAgents() }}</span>
+      </button>
+      <button
+        class="filter-pill"
+        [class.active]="roleFilter() === 'paused'"
+        (click)="setRoleFilter('paused')"
+      >
+        Pausados
+        <span class="pill-count">{{ pausedMembers() }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Members Grid ──────────────────────────────────────── -->
+  <div class="members-grid">
+    <div *ngFor="let member of filteredMembers()" class="member-card card" [class.paused]="member.status === 'paused'">
+      <!-- Card Top: Avatar, Name, Role badge, Status switch -->
+      <div class="member-header">
+        <div class="avatar-wrap">
+          <div class="avatar" [style.background-color]="member.avatarBg || '#38bdf8'">
+            {{ member.initials || 'AG' }}
+          </div>
+          <span class="status-indicator" [class.online]="member.status === 'active'" [class.offline]="member.status === 'paused'"></span>
+        </div>
+
+        <div class="member-meta">
+          <div class="name-row">
+            <h3 class="member-name">{{ member.name }}</h3>
+            <span class="role-chip" [class.chip-admin]="member.role === 'admin'" [class.chip-agent]="member.role === 'agent'">
+              {{ member.role === 'admin' ? 'ADMINISTRADOR' : 'ASESOR COMERCIAL' }}
+            </span>
+          </div>
+          <span class="member-email">{{ member.email }}</span>
+          <span class="member-phone" *ngIf="member.phone">{{ member.phone }}</span>
+        </div>
+
+        <div class="member-status-action">
+          <label class="switch-toggle" [title]="member.role === 'admin' ? 'El Administrador siempre está activo' : 'Pausar o Activar asesor'">
+            <input
+              type="checkbox"
+              [checked]="member.status === 'active'"
+              [disabled]="member.role === 'admin'"
+              (change)="toggleStatus(member)"
+            />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Granular Permissions Matrix -->
+      <div class="permissions-section">
+        <div class="perm-title-row">
+          <span class="section-tag">PERMISOS GRANULARES DE OPERACIÓN</span>
+          <span class="perm-hint" *ngIf="member.role === 'admin'">Acceso maestro completo</span>
+        </div>
+
+        <div class="perms-grid">
+          <!-- 1. Responder chats -->
+          <div class="perm-tile" [class.granted]="member.permissions.conversationsReply">
+            <div class="perm-icon">
+              <span class="material-symbols-rounded">chat</span>
+            </div>
+            <div class="perm-info">
+              <span class="perm-name">Atención de Chats</span>
+              <span class="perm-desc">Responder en WhatsApp y tomar control manual</span>
+            </div>
+            <label class="perm-switch">
+              <input
+                type="checkbox"
+                [checked]="member.permissions.conversationsReply"
+                [disabled]="member.role === 'admin' || member.status === 'paused'"
+                (change)="togglePermission(member.id, 'conversationsReply')"
+              />
+              <span class="perm-slider"></span>
+            </label>
+          </div>
+
+          <!-- 2. Validar pagos -->
+          <div class="perm-tile" [class.granted]="member.permissions.paymentsVerify">
+            <div class="perm-icon">
+              <span class="material-symbols-rounded">receipt_long</span>
+            </div>
+            <div class="perm-info">
+              <span class="perm-name">Validar Pagos</span>
+              <span class="perm-desc">Aprobar Pago Móvil, Zelle y transferencias</span>
+            </div>
+            <label class="perm-switch">
+              <input
+                type="checkbox"
+                [checked]="member.permissions.paymentsVerify"
+                [disabled]="member.role === 'admin' || member.status === 'paused'"
+                (change)="togglePermission(member.id, 'paymentsVerify')"
+              />
+              <span class="perm-slider"></span>
+            </label>
+          </div>
+
+          <!-- 3. Catálogo -->
+          <div class="perm-tile" [class.granted]="member.permissions.catalogManage">
+            <div class="perm-icon">
+              <span class="material-symbols-rounded">inventory_2</span>
+            </div>
+            <div class="perm-info">
+              <span class="perm-name">Catálogo & Precios</span>
+              <span class="perm-desc">Crear y actualizar inventario y ofertas</span>
+            </div>
+            <label class="perm-switch">
+              <input
+                type="checkbox"
+                [checked]="member.permissions.catalogManage"
+                [disabled]="member.role === 'admin' || member.status === 'paused'"
+                (change)="togglePermission(member.id, 'catalogManage')"
+              />
+              <span class="perm-slider"></span>
+            </label>
+          </div>
+
+          <!-- 4. Reportes -->
+          <div class="perm-tile" [class.granted]="member.permissions.reportsView">
+            <div class="perm-icon">
+              <span class="material-symbols-rounded">monitoring</span>
+            </div>
+            <div class="perm-info">
+              <span class="perm-name">Métricas & Reportes</span>
+              <span class="perm-desc">Ver facturación, ingresos y conversión</span>
+            </div>
+            <label class="perm-switch">
+              <input
+                type="checkbox"
+                [checked]="member.permissions.reportsView"
+                [disabled]="member.role === 'admin' || member.status === 'paused'"
+                (change)="togglePermission(member.id, 'reportsView')"
+              />
+              <span class="perm-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Footer -->
+      <div class="member-footer">
+        <div class="footer-stats">
+          <span class="stat-item">
+            <span class="material-symbols-rounded">history</span>
+            {{ member.lastActive || 'Reciente' }}
+          </span>
+          <span class="stat-item" *ngIf="member.conversationsHandled !== undefined">
+            <span class="material-symbols-rounded">forum</span>
+            {{ member.conversationsHandled }} conversaciones atendidas
+          </span>
+        </div>
+
+        <button
+          *ngIf="member.role !== 'admin'"
+          class="btn-icon-danger"
+          title="Eliminar este agente"
+          (click)="deleteMember(member)"
+        >
+          <span class="material-symbols-rounded">delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state if search returns nothing -->
+  <div class="empty-state card" *ngIf="filteredMembers().length === 0">
+    <span class="material-symbols-rounded empty-icon">group_off</span>
+    <h3>No se encontraron miembros</h3>
+    <p>No hay asesores ni administradores que coincidan con la búsqueda o filtro seleccionado.</p>
+    <button class="btn btn-ghost" (click)="searchQuery.set(''); roleFilter.set('all')">Restablecer filtros</button>
+  </div>
+</div>
+
+<!-- ── Modal: Crear Nuevo Agente ───────────────────────────── -->
+<div class="modal-backdrop" *ngIf="modalOpen()" (click)="closeModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <span class="material-symbols-rounded modal-title-icon">person_add</span>
+        <div>
+          <h2>Crear Nuevo Asesor / Agente</h2>
+          <p class="modal-subtitle">Asigna credenciales y define qué acciones puede ejecutar en el CRM</p>
+        </div>
+      </div>
+      <button class="btn-close" (click)="closeModal()">
+        <span class="material-symbols-rounded">close</span>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label>Nombre y Apellido *</label>
+          <input type="text" [(ngModel)]="newName" placeholder="Ej. Valentina Morales" />
+        </div>
+        <div class="form-group flex-1">
+          <label>Rol en el CRM *</label>
+          <select [(ngModel)]="newRole">
+            <option value="agent">Asesor Comercial</option>
+            <option value="admin">Administrador Maestro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label>Correo Electrónico (Login) *</label>
+          <input type="email" [(ngModel)]="newEmail" placeholder="asesor@empresa.com" />
+        </div>
+        <div class="form-group flex-1">
+          <label>Teléfono / WhatsApp</label>
+          <input type="tel" [(ngModel)]="newPhone" placeholder="+58 412 123 4567" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña Temporal</label>
+        <input type="password" [(ngModel)]="newPassword" placeholder="••••••••••••" />
+      </div>
+
+      <!-- Permisos del nuevo agente -->
+      <div class="form-group" *ngIf="newRole === 'agent'">
+        <label class="perms-label">Permisos de Operación Concedidos</label>
+        <div class="perm-checkboxes">
+          <label class="perm-check-item">
+            <input type="checkbox" [(ngModel)]="newPerms.conversationsReply" />
+            <div class="check-text">
+              <strong>Atención de Chats:</strong> Responder mensajes en tiempo real y tomar control manual
+            </div>
+          </label>
+
+          <label class="perm-check-item">
+            <input type="checkbox" [(ngModel)]="newPerms.paymentsVerify" />
+            <div class="check-text">
+              <strong>Validación de Pagos:</strong> Revisar comprobantes y confirmar Pago Móvil / Zelle
+            </div>
+          </label>
+
+          <label class="perm-check-item">
+            <input type="checkbox" [(ngModel)]="newPerms.catalogManage" />
+            <div class="check-text">
+              <strong>Gestión de Catálogo:</strong> Modificar productos, precios e inventario
+            </div>
+          </label>
+
+          <label class="perm-check-item">
+            <input type="checkbox" [(ngModel)]="newPerms.reportsView" />
+            <div class="check-text">
+              <strong>Acceso a Reportes:</strong> Ver métricas financieras y conversiones de ventas
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="admin-notice" *ngIf="newRole === 'admin'">
+        <span class="material-symbols-rounded">verified_user</span>
+        <span>Los <strong>Administradores</strong> tienen acceso irrestricto a todas las funciones del CRM, facturación y gestión de otros agentes.</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="createMember()">
+        <span class="material-symbols-rounded">check</span>
+        Crear y Asignar Agente
+      </button>
+    </div>
+  </div>
+</div>
+

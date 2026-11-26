@@ -1,0 +1,343 @@
+<div class="inbox-layout" [class.drawer-open]="showLeadDrawer()" [class.has-active-conv]="!!selectedConv()">
+  <!-- Left Column: Conversations List -->
+  <aside class="conv-list">
+    <!-- List Header -->
+    <div class="conv-list-header">
+      <div class="header-top">
+        <h2>Mensajes</h2>
+        <span class="live-count-badge">{{ filteredConversations().length }}</span>
+      </div>
+
+      <!-- Search bar -->
+      <div class="search-box">
+        <span class="material-symbols-rounded">search</span>
+        <input
+          [(ngModel)]="searchQuery"
+          placeholder="Buscar por cliente o teléfono..."
+        />
+        <span
+          *ngIf="searchQuery"
+          class="material-symbols-rounded clear-icon"
+          (click)="searchQuery = ''"
+        >close</span>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="filter-tabs">
+        <button
+          class="tab-btn tab-all"
+          [class.active]="activeFilter() === 'all'"
+          (click)="activeFilter.set('all')"
+        >
+          Todos
+        </button>
+        <button
+          class="tab-btn tab-ai"
+          [class.active]="activeFilter() === 'bot'"
+          (click)="activeFilter.set('bot')"
+        >
+          <span class="material-symbols-rounded tab-ico">smart_toy</span>IA
+        </button>
+        <button
+          class="tab-btn tab-human"
+          [class.active]="activeFilter() === 'human'"
+          (click)="activeFilter.set('human')"
+        >
+          <span class="material-symbols-rounded tab-ico">person</span>Humano
+        </button>
+        <button
+          class="tab-btn tab-unread"
+          [class.active]="activeFilter() === 'unread'"
+          (click)="activeFilter.set('unread')"
+        >
+          No leídos
+        </button>
+      </div>
+    </div>
+
+    <!-- Conversations Scrollable Area -->
+    <div class="conv-items-scroll">
+      <div
+        class="conv-item"
+        *ngFor="let conv of filteredConversations()"
+        [class.active]="selectedConv()?.id === conv.id"
+        (click)="selectConversation(conv)"
+      >
+        <div class="avatar-box">
+          <div class="avatar-circle">
+            {{ conv.contact.name.charAt(0).toUpperCase() }}
+          </div>
+          <span
+            class="status-indicator-dot"
+            [class.bot]="conv.status === 'bot'"
+            [class.human]="conv.status === 'human'"
+          ></span>
+        </div>
+
+        <div class="conv-body">
+          <div class="conv-top-row">
+            <span class="conv-name">{{ conv.contact.name }}</span>
+            <span class="conv-time">{{ conv.lastMessageAt | date:'HH:mm' }}</span>
+          </div>
+
+          <div class="conv-preview-row">
+            <span class="conv-preview">{{ conv.lastMessagePreview }}</span>
+            <span class="unread-pill" *ngIf="conv.unreadCount > 0">{{ conv.unreadCount }}</span>
+          </div>
+
+          <div class="conv-bottom-row">
+            <span class="stage-tag">{{ conv.contact.stage }}</span>
+            <span class="mode-tag" [class.human]="conv.status !== 'bot'">{{ statusLabel(conv.status) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-list" *ngIf="loading()">
+        <p>Cargando conversaciones…</p>
+      </div>
+      <div class="empty-list" *ngIf="loadError() && !loading()">
+        <span class="material-symbols-rounded">cloud_off</span>
+        <p>No se pudieron cargar las conversaciones</p>
+        <button class="btn btn-ghost" (click)="loadConversations()">Reintentar</button>
+      </div>
+      <div class="empty-list" *ngIf="!loading() && !loadError() && filteredConversations().length === 0">
+        <span class="material-symbols-rounded">{{ conversations().length ? 'search_off' : 'forum' }}</span>
+        <p>{{ conversations().length ? 'No se encontraron chats con ese filtro' : 'Aún no hay conversaciones. Aparecerán cuando un cliente te escriba por WhatsApp.' }}</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Middle Column: Active Chat Window -->
+  <section class="chat-window" *ngIf="selectedConv() as conv; else noChatSelected">
+    <!-- Chat Top Header -->
+    <header class="chat-header">
+      <div class="contact-meta">
+        <button
+          type="button"
+          class="mobile-back-to-list-btn"
+          (click)="selectedConv.set(null)"
+          aria-label="Volver a la lista de mensajes"
+          title="Volver"
+        >
+          <span class="material-symbols-rounded">arrow_back</span>
+        </button>
+        <div class="avatar-circle lg">
+          {{ conv.contact.name.charAt(0).toUpperCase() }}
+        </div>
+        <div class="contact-titles">
+          <div class="name-with-stage">
+            <h3>{{ conv.contact.name }}</h3>
+            <span class="stage-badge">{{ conv.contact.stage }}</span>
+          </div>
+          <div class="contact-subinfo">
+            <span class="phone-link">{{ conv.contact.phone }}</span>
+            <ng-container *ngIf="conv.contact.city">
+              <span class="dot-separator">•</span>
+              <span class="location-text">{{ conv.contact.city }}</span>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Bot Mode Switch -->
+        <button
+          class="bot-toggle-btn"
+          [class.is-human]="conv.status !== 'bot'"
+          [disabled]="conv.status === 'resolved'"
+          (click)="toggleBotStatus()"
+          title="Alternar entre control de IA y asesor humano"
+        >
+          <span class="material-symbols-rounded">
+            {{ conv.status === 'bot' ? 'smart_toy' : 'person' }}
+          </span>
+          <span>{{ conv.status === 'bot' ? 'IA respondiendo · Pausar' : 'Humano al mando · Reanudar IA' }}</span>
+        </button>
+
+        <!-- Toggle Lead Info Drawer -->
+        <button
+          class="icon-action-btn"
+          [class.active]="showLeadDrawer()"
+          (click)="showLeadDrawer.set(!showLeadDrawer())"
+          title="Ver ficha del lead y datos de venta"
+        >
+          <span class="material-symbols-rounded">person_search</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Messages Container -->
+    <div class="messages-viewport" #messagesContainer>
+      <div class="empty-list" *ngIf="!messages().length"><p>Sin mensajes todavía.</p></div>
+      <ng-container *ngFor="let row of rows()">
+        <div class="date-divider" *ngIf="row.divider"><span>{{ row.divider }}</span></div>
+        <div
+          class="message-row"
+          [class.outbound]="row.m.sender === 'bot' || row.m.sender === 'agent'"
+          [class.inbound]="row.m.sender === 'customer'"
+          [class.system]="row.m.sender === 'system'"
+        >
+          <div *ngIf="row.m.sender === 'system'" class="system-pill"><span>{{ row.m.content }}</span></div>
+
+          <div *ngIf="row.m.sender !== 'system'" class="message-bubble">
+            <div class="bubble-sender" *ngIf="row.m.sender !== 'customer'">{{ senderLabel(row.m) }}</div>
+
+            <div *ngIf="row.m.type === 'audio'" class="audio-widget">
+              <div class="transcription-box" *ngIf="row.m.transcription">
+                <div class="transcription-label"><span class="material-symbols-rounded">graphic_eq</span><span>Nota de voz · transcripción:</span></div>
+                <p class="transcription-text">"{{ row.m.transcription }}"</p>
+              </div>
+            </div>
+
+            <div *ngIf="row.m.type !== 'audio'" class="bubble-text"><p>{{ row.m.content }}</p></div>
+
+            <div class="bubble-footer">
+              <span class="message-time">{{ row.m.createdAt | date:'HH:mm' }}</span>
+              <span *ngIf="row.m.sender !== 'customer'" class="material-symbols-rounded check-ticks">{{ row.m.status === 'read' ? 'done_all' : 'done' }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Plantillas guardadas como respuestas rápidas -->
+    <div class="quick-replies-bar" *ngIf="templates().length">
+      <span class="quick-title">Plantillas:</span>
+      <div class="chips-scroll">
+        <button *ngFor="let t of templates()" class="quick-chip" (click)="insertTemplate(t.body)" [title]="t.body">{{ t.name }}</button>
+      </div>
+    </div>
+
+    <div class="quick-replies-bar test-banner" *ngIf="testMode()">
+      <span class="material-symbols-rounded">science</span>
+      <span>Modo prueba: lo que escribas se registra como mensaje del cliente y la IA responde (útil sin WhatsApp real).</span>
+    </div>
+
+    <!-- Chat Input Bar -->
+    <footer class="chat-input-footer">
+      <button class="tool-btn" [class.active]="testMode()" (click)="testMode.set(!testMode())" title="Modo prueba: simular un mensaje entrante del cliente">
+        <span class="material-symbols-rounded">science</span>
+      </button>
+
+      <div class="input-field-wrapper">
+        <input
+          [(ngModel)]="newMessage"
+          [placeholder]="testMode() ? 'Escribe como si fueras el cliente…' : 'Escribe un mensaje en WhatsApp…'"
+          (keydown.enter)="sendMessage()"
+          [disabled]="sending()"
+        />
+      </div>
+
+      <button
+        class="send-btn"
+        (click)="sendMessage()"
+        [disabled]="!newMessage.trim() || sending()"
+        title="Enviar mensaje"
+      >
+        <span class="material-symbols-rounded">
+          {{ sending() ? 'hourglass_top' : 'send' }}
+        </span>
+      </button>
+    </footer>
+  </section>
+
+  <!-- Right Column: Lead Info Drawer (CRM Sidebar) -->
+  <aside class="lead-drawer" *ngIf="showLeadDrawer() && selectedConv() as conv">
+    <div class="drawer-header">
+      <h4>Ficha del Cliente</h4>
+      <button class="close-drawer-btn" (click)="showLeadDrawer.set(false)">
+        <span class="material-symbols-rounded">close</span>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- Contact profile card -->
+      <div class="profile-card">
+        <div class="profile-avatar">
+          {{ conv.contact.name.charAt(0).toUpperCase() }}
+        </div>
+        <h3 class="profile-name">{{ conv.contact.name }}</h3>
+        <span class="profile-ci" *ngIf="conv.contact.ci">C.I. {{ conv.contact.ci }}</span>
+        <span class="profile-phone">{{ conv.contact.phone }}</span>
+      </div>
+
+      <div class="drawer-actions-grid">
+        <button class="action-btn" (click)="openInCrm()">
+          <span class="material-symbols-rounded">person</span>
+          <span>Ver en CRM</span>
+        </button>
+        <button class="action-btn" (click)="toggleResolved()">
+          <span class="material-symbols-rounded">{{ conv.status === 'resolved' ? 'undo' : 'task_alt' }}</span>
+          <span>{{ conv.status === 'resolved' ? 'Reabrir' : 'Resolver' }}</span>
+        </button>
+      </div>
+
+      <!-- Details Sections -->
+      <div class="details-section">
+        <div class="section-title">ETAPA EN EL FUNNEL</div>
+        <div class="stage-pill-box">
+          <span class="stage-active-pill">{{ conv.contact.stage }}</span>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="conv.contact.budget">
+        <div class="section-title">PRESUPUESTO</div>
+        <div class="detail-value-highlight">{{ conv.contact.budget }}</div>
+      </div>
+
+      <div class="details-section" *ngIf="conv.contact.email">
+        <div class="section-title">CORREO ELECTRÓNICO</div>
+        <div class="detail-value">{{ conv.contact.email }}</div>
+      </div>
+
+      <div class="details-section" *ngIf="conv.contact.city">
+        <div class="section-title">UBICACIÓN / ZONA</div>
+        <div class="detail-value">{{ conv.contact.city }}</div>
+      </div>
+
+      <!-- Tags -->
+      <div class="details-section" *ngIf="conv.contact.tags?.length">
+        <div class="section-title">ETIQUETAS DEL LEAD</div>
+        <div class="tags-cloud">
+          <span class="lead-tag" *ngFor="let t of conv.contact.tags">{{ t }}</span>
+        </div>
+      </div>
+
+      <!-- Bot Controls Card -->
+      <div class="details-section bot-control-card">
+        <div class="section-title">AUTOMATIZACIÓN IA</div>
+        <div class="bot-status-row">
+          <div class="status-col">
+            <span class="bot-state-title">
+              {{ conv.status === 'bot' ? 'IA en modo autónomo' : conv.status === 'human' ? 'Intervención humana activa' : 'Conversación resuelta' }}
+            </span>
+            <span class="bot-state-desc">
+              {{ conv.status === 'bot' ? 'Responde usando tu funnel, catálogo y base de conocimiento.' : 'El bot no responderá hasta que lo reanudes.' }}
+            </span>
+          </div>
+          <button
+            class="mode-switch-btn"
+            [class.human-mode]="conv.status !== 'bot'"
+            [disabled]="conv.status === 'resolved'"
+            (click)="toggleBotStatus()"
+          >
+            {{ conv.status === 'bot' ? 'Pausar' : 'Reanudar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Placeholder if no chat selected -->
+  <ng-template #noChatSelected>
+    <section class="no-selection-view">
+      <div class="empty-hero">
+        <div class="hero-icon-circle">
+          <span class="material-symbols-rounded">chat_bubble</span>
+        </div>
+        <h3>Selecciona una conversación</h3>
+        <p>Elige un contacto de la lista lateral para ver el diálogo con la IA en tiempo real.</p>
+      </div>
+    </section>
+  </ng-template>
+</div>

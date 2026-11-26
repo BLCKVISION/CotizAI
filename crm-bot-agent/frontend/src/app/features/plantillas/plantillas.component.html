@@ -1,0 +1,179 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Centro de Plantillas</h1>
+      <p class="subtitle">Prompts maestros por industria y plantillas de mensajes reutilizables</p>
+    </div>
+
+    <!-- Toggle views -->
+    <div class="view-toggle">
+      <button class="btn" [class.btn-primary]="viewMode() === 'system'" [class.btn-ghost]="viewMode() !== 'system'" (click)="setViewMode('system')">
+        <span class="material-symbols-rounded">psychology</span>
+        Prompts de Sistema IA
+        <span class="tab-count" *ngIf="systemTemplates().length">{{ systemTemplates().length }}</span>
+      </button>
+      <button class="btn" [class.btn-primary]="viewMode() === 'whatsapp'" [class.btn-ghost]="viewMode() !== 'whatsapp'" (click)="setViewMode('whatsapp')">
+        <span class="material-symbols-rounded">send</span>
+        Plantillas de mensajes
+        <span class="tab-count" *ngIf="waTemplates().length">{{ waTemplates().length }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: PROMPTS DE SISTEMA -->
+  <div *ngIf="viewMode() === 'system'" class="system-layout">
+    <!-- Left: List of Industries -->
+    <div class="empty-state card" *ngIf="loadingSystem()"><p>Cargando plantillas…</p></div>
+    <div class="empty-state card" *ngIf="!loadingSystem() && !systemTemplates().length">
+      <span class="material-symbols-rounded">psychology</span>
+      <h3>Sin plantillas del sistema</h3>
+      <p>No se pudieron cargar las plantillas por industria.</p>
+    </div>
+    <div class="templates-sidebar" *ngIf="systemTemplates().length">
+      <div
+        *ngFor="let t of systemTemplates()"
+        class="template-item card"
+        [class.selected]="selectedTemplate()?.id === t.id"
+        (click)="selectSystemTemplate(t)"
+      >
+        <div class="item-header">
+          <span class="icon">{{ t.icon }}</span>
+          <span class="chip chip-blue">{{ t.badge }}</span>
+        </div>
+        <h4>{{ t.title }}</h4>
+        <p class="agent-sub">Agente: <strong>{{ t.agentName }}</strong></p>
+      </div>
+    </div>
+
+    <!-- Right: Detailed Template Viewer -->
+    <div class="template-detail card" *ngIf="selectedTemplate()">
+      <div class="detail-header">
+        <div>
+          <h2>{{ selectedTemplate().icon }} {{ selectedTemplate().title }}</h2>
+          <p class="subtitle">Rol: {{ selectedTemplate().agentRole }}</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-ghost" (click)="copyPrompt()">
+            <span class="material-symbols-rounded">{{ copied() ? 'done' : 'content_copy' }}</span>
+            {{ copied() ? '¡Copiado!' : 'Copiar Texto' }}
+          </button>
+          <button class="btn btn-primary" [disabled]="applying()" (click)="applyToAi()">
+            <span class="material-symbols-rounded">bolt</span>
+            Aplicar al Agente IA
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-sections">
+        <div class="section-block">
+          <h5>PERSONALIDAD & TONO</h5>
+          <p>{{ selectedTemplate().personality }}</p>
+        </div>
+
+        <div class="section-block">
+          <h5>SALUDO INICIAL</h5>
+          <div class="code-box">{{ selectedTemplate().greeting }}</div>
+        </div>
+
+        <div class="section-block">
+          <h5>FLUJO DE VENTAS & PASOS DE CONVERSIÓN</h5>
+          <pre class="code-box">{{ selectedTemplate().salesFlow }}</pre>
+        </div>
+
+        <div class="section-block">
+          <h5>RESTRICCIONES ESTRICTAS</h5>
+          <div class="warning-box">{{ selectedTemplate().restrictions }}</div>
+        </div>
+
+        <div class="section-block">
+          <h5>PREGUNTAS FRECUENTES (FAQ)</h5>
+          <pre class="code-box">{{ selectedTemplate().faq }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: PLANTILLAS DE WHATSAPP -->
+  <div *ngIf="viewMode() === 'whatsapp'" class="wa-layout">
+    <div class="wa-toolbar">
+      <p class="subtitle">Textos reutilizables: los usas como respuestas rápidas en Conversaciones y como mensaje en las automatizaciones del Funnel.</p>
+      <button class="btn btn-primary" (click)="openCreate()">
+        <span class="material-symbols-rounded">add</span>
+        Nueva plantilla
+      </button>
+    </div>
+
+    <div class="empty-state card" *ngIf="loadingWa()"><p>Cargando plantillas…</p></div>
+    <div class="empty-state card" *ngIf="!loadingWa() && !waTemplates().length">
+      <span class="material-symbols-rounded">description</span>
+      <h3>Aún no tienes plantillas</h3>
+      <p>Crea mensajes como confirmación de cita, seguimiento o datos de pago para reutilizarlos en un clic.</p>
+      <button class="btn btn-primary" (click)="openCreate()">Crear primera plantilla</button>
+    </div>
+
+    <div class="wa-grid" *ngIf="waTemplates().length">
+      <div *ngFor="let wt of waTemplates()" class="wa-card card">
+        <div class="wa-top">
+          <span class="wa-name">{{ wt.name }}</span>
+          <span class="chip" [ngClass]="statusChip(wt.status)">{{ statusLabel(wt.status) }}</span>
+        </div>
+        <div class="wa-category">Categoría: <strong>{{ wt.category }}</strong> | Idioma: <strong>{{ wt.language }}</strong></div>
+        <div class="wa-body"><p class="body-text">{{ bodyOf(wt) }}</p></div>
+        <div class="wa-actions">
+          <button class="btn btn-ghost" (click)="openEdit(wt)"><span class="material-symbols-rounded">edit</span>Editar</button>
+          <button class="btn btn-danger" (click)="remove(wt)"><span class="material-symbols-rounded">delete</span>Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showModal()" (click)="showModal.set(false)">
+    <div class="modal-content card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ form.id ? 'Editar plantilla' : 'Nueva plantilla' }}</h2>
+        <button class="close-btn" (click)="showModal.set(false)" aria-label="Cerrar">×</button>
+      </div>
+      <div class="form-error" *ngIf="formError()">{{ formError() }}</div>
+      <div class="form-group">
+        <label>Nombre (minúsculas y guion bajo)</label>
+        <input type="text" [(ngModel)]="form.name" placeholder="recordatorio_cita" maxlength="120" />
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Categoría</label>
+          <select [(ngModel)]="form.category">
+            <option value="UTILITY">Utilidad</option>
+            <option value="MARKETING">Marketing</option>
+            <option value="AUTHENTICATION">Autenticación</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Idioma</label>
+          <select [(ngModel)]="form.language">
+            <option value="es">Español</option>
+            <option value="en">Inglés</option>
+            <option value="pt">Portugués</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select [(ngModel)]="form.status">
+          <option value="APPROVED">Aprobada</option>
+          <option value="PENDING">Pendiente</option>
+          <option value="REJECTED">Rechazada</option>
+          <option value="DISABLED">Desactivada</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Texto del mensaje</label>
+        <textarea rows="5" [(ngModel)]="form.body" maxlength="1024" placeholder="Hola {{ '{{nombre}}' }}, te recordamos tu cita…"></textarea>
+        <small>{{ form.body.length }}/1024 · Puedes usar {{ '{{nombre}}' }} para el nombre del cliente.</small>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" (click)="showModal.set(false)">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="saving()" (click)="save()">{{ saving() ? 'Guardando…' : 'Guardar plantilla' }}</button>
+      </div>
+    </div>
+  </div>
+</div>

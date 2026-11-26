@@ -1,0 +1,180 @@
+<div class="agenda-page">
+  <div class="page-top-header">
+    <div class="title-group">
+      <h1>Agenda de citas</h1>
+      <p class="subtitle">Gestiona las citas agendadas por ti o por el bot IA</p>
+    </div>
+    <button class="btn btn-emerald" (click)="openCreateModal()">
+      <span class="material-symbols-rounded">add</span>
+      Nueva cita
+    </button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">HOY</div><div class="kpi-value">{{ kpiHoy() }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">ESTA SEMANA</div><div class="kpi-value">{{ kpiSemana() }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">PENDIENTES</div><div class="kpi-value amber">{{ kpiPendientes() }}</div></div>
+    <div class="kpi-card"><div class="kpi-label">CONFIRMADAS</div><div class="kpi-value green">{{ kpiConfirmadas() }}</div></div>
+  </div>
+
+  <div class="agenda-toolbar-row">
+    <div class="nav-date-group">
+      <button class="date-arrow-btn" (click)="shift(-1)" [disabled]="viewMode() === 'lista'" aria-label="Anterior">
+        <span class="material-symbols-rounded">chevron_left</span>
+      </button>
+      <button class="today-btn" (click)="today()">Hoy</button>
+      <button class="date-arrow-btn" (click)="shift(1)" [disabled]="viewMode() === 'lista'" aria-label="Siguiente">
+        <span class="material-symbols-rounded">chevron_right</span>
+      </button>
+      <span class="current-date-title">{{ title() }}</span>
+    </div>
+
+    <div class="controls-right-group">
+      <div class="status-select-box">
+        <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+          <option value="all">Todos los estados</option>
+          <option *ngFor="let s of statuses" [value]="s">{{ statusLabel[s] }}</option>
+        </select>
+      </div>
+      <div class="view-mode-toggle">
+        <button class="mode-toggle-btn" [class.active]="viewMode() === 'lista'" (click)="viewMode.set('lista')"><span class="material-symbols-rounded">table_rows</span>Lista</button>
+        <button class="mode-toggle-btn" [class.active]="viewMode() === 'semana'" (click)="viewMode.set('semana')"><span class="material-symbols-rounded">grid_view</span>Semana</button>
+        <button class="mode-toggle-btn" [class.active]="viewMode() === 'mes'" (click)="viewMode.set('mes')"><span class="material-symbols-rounded">calendar_month</span>Mes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-card agenda-main-card">
+    <div class="agenda-empty-state" *ngIf="loading()"><p>Cargando citas…</p></div>
+    <div class="agenda-empty-state" *ngIf="loadError() && !loading()">
+      <div class="empty-icon-box"><span class="material-symbols-rounded">cloud_off</span></div>
+      <h2>No se pudo cargar la agenda</h2>
+      <button class="btn btn-secondary" (click)="load()">Reintentar</button>
+    </div>
+
+    <ng-container *ngIf="!loading() && !loadError()">
+      <div class="agenda-empty-state" *ngIf="appointments().length === 0">
+        <div class="empty-icon-box"><span class="material-symbols-rounded">calendar_today</span></div>
+        <h2>Sin citas</h2>
+        <p>Las citas agendadas por ti o el bot aparecerán aquí.</p>
+        <button class="btn btn-emerald" (click)="openCreateModal()"><span class="material-symbols-rounded">add</span>Nueva cita</button>
+      </div>
+
+      <!-- LISTA -->
+      <div class="appointments-list" *ngIf="appointments().length > 0 && viewMode() === 'lista'">
+        <ng-container *ngFor="let group of [{ t: 'Próximas', l: upcoming() }, { t: 'Pasadas', l: past() }]">
+          <div class="list-group-title" *ngIf="group.l.length">{{ group.t }} · {{ group.l.length }}</div>
+          <div class="appointment-row" *ngFor="let a of group.l">
+            <div class="apt-date-badge">
+              <span class="material-symbols-rounded">event</span>
+              <div class="apt-time">
+                <strong>{{ a.scheduledAt | date:'mediumDate' }}</strong>
+                <span>{{ a.scheduledAt | date:'shortTime' }}</span>
+              </div>
+            </div>
+            <div class="apt-details">
+              <div class="apt-service">{{ a.service || a.title || 'Cita' }} <span class="ai-tag" *ngIf="a.createdBy === 'ai'"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">smart_toy</span> IA</span></div>
+              <div class="apt-contact"><strong>{{ a.contact?.name || 'Sin cliente' }}</strong><span *ngIf="a.contact?.phone"> · {{ a.contact.phone }}</span></div>
+              <div class="apt-notes" *ngIf="a.notes">{{ a.notes }}</div>
+              <a class="apt-link" *ngIf="a.googleMeetLink" [href]="a.googleMeetLink" target="_blank" rel="noopener noreferrer">Unirse a la videollamada</a>
+            </div>
+            <div class="apt-side">
+              <span class="status-chip" [ngClass]="chip(a.status)">{{ statusLabel[a.status] || a.status }}</span>
+              <div class="apt-actions">
+                <button class="mini-btn" *ngIf="a.status === 'scheduled'" (click)="setStatus(a, 'confirmed')" title="Confirmar"><span class="material-symbols-rounded">check</span></button>
+                <button class="mini-btn" *ngIf="a.status === 'confirmed'" (click)="setStatus(a, 'completed')" title="Marcar completada"><span class="material-symbols-rounded">task_alt</span></button>
+                <button class="mini-btn" *ngIf="a.status === 'confirmed' || a.status === 'scheduled'" (click)="setStatus(a, 'no_show')" title="No asistió"><span class="material-symbols-rounded">person_off</span></button>
+                <button class="mini-btn" *ngIf="a.status !== 'cancelled' && a.status !== 'completed'" (click)="setStatus(a, 'cancelled')" title="Cancelar"><span class="material-symbols-rounded">event_busy</span></button>
+                <button class="mini-btn" (click)="openEdit(a)" title="Editar"><span class="material-symbols-rounded">edit</span></button>
+                <button class="mini-btn danger" (click)="remove(a)" title="Eliminar"><span class="material-symbols-rounded">delete</span></button>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+        <div class="agenda-empty-state" *ngIf="!filtered().length"><p>No hay citas con ese estado.</p></div>
+      </div>
+
+      <!-- SEMANA -->
+      <div class="week-grid" *ngIf="appointments().length > 0 && viewMode() === 'semana'">
+        <div class="week-col" *ngFor="let d of weekDates(); let i = index" [class.is-today]="isToday(d)">
+          <div class="week-head" (click)="openCreateModal(d)" title="Agendar en este día">
+            <span>{{ weekDays[i] }}</span><strong>{{ d | date:'d' }}</strong>
+          </div>
+          <div class="week-event" *ngFor="let a of forDay(d)" [ngClass]="chip(a.status)" (click)="openEdit(a)">
+            <b>{{ a.scheduledAt | date:'shortTime' }}</b>
+            <span>{{ a.contact?.name || a.service || 'Cita' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MES -->
+      <div class="month-grid" *ngIf="appointments().length > 0 && viewMode() === 'mes'">
+        <div class="month-dow" *ngFor="let w of weekDays">{{ w }}</div>
+        <div class="month-cell" *ngFor="let c of monthCells()" [class.other]="c.other" [class.is-today]="isToday(c.d)" (click)="openCreateModal(c.d)">
+          <span class="month-num">{{ c.d | date:'d' }}</span>
+          <div class="month-event" *ngFor="let a of forDay(c.d).slice(0, 3)" [ngClass]="chip(a.status)" (click)="openEdit(a); $event.stopPropagation()">
+            {{ a.scheduledAt | date:'shortTime' }} {{ a.contact?.name || a.service }}
+          </div>
+          <span class="month-more" *ngIf="forDay(c.d).length > 3">+{{ forDay(c.d).length - 3 }} más</span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Modal: crear / editar cita -->
+  <div class="modal-backdrop" *ngIf="showModal()" (click)="showModal.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ form.id ? 'Editar cita' : 'Agendar nueva cita' }}</h3>
+        <button class="close-btn" (click)="showModal.set(false)" aria-label="Cerrar"><span class="material-symbols-rounded">close</span></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-error" *ngIf="formError()">{{ formError() }}</div>
+
+        <div class="form-group">
+          <label>Cliente</label>
+          <select [(ngModel)]="form.contactId">
+            <option value="">+ Cliente nuevo…</option>
+            <option *ngFor="let c of contacts()" [value]="c.id">{{ c.name }}{{ c.phone ? ' · ' + c.phone : '' }}</option>
+          </select>
+        </div>
+        <ng-container *ngIf="!form.contactId">
+          <div class="form-group">
+            <label>Nombre del cliente nuevo</label>
+            <input type="text" placeholder="Ej: Carlos Mendoza" [(ngModel)]="form.contactName" maxlength="120" />
+          </div>
+          <div class="form-group">
+            <label>Teléfono de WhatsApp</label>
+            <input type="text" placeholder="+58 412 1234567" [(ngModel)]="form.contactPhone" maxlength="32" />
+          </div>
+        </ng-container>
+        <div class="form-group">
+          <label>Servicio o especialidad</label>
+          <input type="text" placeholder="Ej: Consulta, limpieza, visita al local" [(ngModel)]="form.service" maxlength="160" />
+        </div>
+        <div class="form-group">
+          <label>Fecha y hora</label>
+          <input type="datetime-local" [(ngModel)]="form.scheduledAt" />
+        </div>
+        <div class="form-group" *ngIf="form.id">
+          <label>Estado</label>
+          <select [(ngModel)]="form.status"><option *ngFor="let s of statuses" [value]="s">{{ statusLabel[s] }}</option></select>
+        </div>
+        <div class="form-group">
+          <label>Enlace de videollamada (opcional)</label>
+          <input type="url" placeholder="https://meet.google.com/…" [(ngModel)]="form.googleMeetLink" />
+        </div>
+        <div class="form-group">
+          <label>Notas</label>
+          <textarea rows="3" placeholder="Requerimientos, motivo de consulta…" [(ngModel)]="form.notes" maxlength="2000"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+        <button class="btn btn-emerald" [disabled]="saving()" (click)="save()">{{ saving() ? 'Guardando…' : (form.id ? 'Guardar cambios' : 'Agendar cita') }}</button>
+      </div>
+    </div>
+  </div>
+</div>

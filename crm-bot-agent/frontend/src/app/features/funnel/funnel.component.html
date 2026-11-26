@@ -1,0 +1,237 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Funnel de ventas</h1>
+      <p class="subtitle">Define cómo el agente conduce a cada cliente y qué automatizaciones se disparan por el camino</p>
+    </div>
+    <div class="header-actions">
+      <ng-container *ngIf="tab() === 'rules'">
+        <button class="btn btn-primary" (click)="openCreateModal()"><span class="material-symbols-rounded">add_circle</span>Nueva regla</button>
+      </ng-container>
+      <ng-container *ngIf="tab() === 'steps'">
+        <button class="btn btn-ghost" (click)="showTplModal.set(true)"><span class="material-symbols-rounded">auto_awesome</span>Plantillas por industria</button>
+        <button class="btn btn-primary" (click)="openCreateStep()"><span class="material-symbols-rounded">add_circle</span>Nuevo paso</button>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="funnel-tabs">
+    <button [class.active]="tab() === 'rules'" (click)="tab.set('rules')">Automatizaciones <span class="count">{{ rules().length }}</span></button>
+    <button [class.active]="tab() === 'steps'" (click)="tab.set('steps')">Pasos del agente <span class="count">{{ steps().length }}</span></button>
+  </div>
+
+  <!-- ═════ AUTOMATIZACIONES ═════ -->
+  <div class="funnel-container" *ngIf="tab() === 'rules'">
+    <div class="empty-state card" *ngIf="rulesLoading()"><p>Cargando reglas…</p></div>
+    <div class="empty-state card" *ngIf="!rulesLoading() && !rules().length">
+      <span class="material-symbols-rounded">bolt</span>
+      <h3>Aún no tienes automatizaciones</h3>
+      <p>Crea reglas como "si un cliente no responde en 24 h, envíale un seguimiento" o "al agendar una cita, pásalo a Negociación".</p>
+      <button class="btn btn-primary" (click)="openCreateModal()">Crear primera regla</button>
+    </div>
+
+    <div class="rules-list">
+      <div *ngFor="let r of rules()" class="rule-card card" [class.paused]="!r.isActive">
+        <div class="rule-header">
+          <div class="rule-title">
+            <span class="trigger-chip chip chip-blue">{{ getTriggerLabel(r.trigger) }}</span>
+            <h3>{{ r.name }}</h3>
+          </div>
+          <div class="rule-switch">
+            <button class="toggle-btn" [class.active]="r.isActive" (click)="toggleRule(r)">
+              <span class="dot"></span>
+              {{ r.isActive ? 'Activa' : 'Pausada' }}
+            </button>
+            <button class="icon-btn" (click)="openEditRule(r)" title="Editar regla"><span class="material-symbols-rounded">edit</span></button>
+            <button class="icon-btn danger" (click)="deleteRule(r)" title="Eliminar regla"><span class="material-symbols-rounded">delete</span></button>
+          </div>
+        </div>
+
+        <div class="rule-flow">
+          <div class="flow-step">
+            <span class="step-label">DISPARADOR</span>
+            <div class="step-box">
+              <span class="material-symbols-rounded">bolt</span>
+              <span>{{ getTriggerLabel(r.trigger) }}<small class="detail" *ngIf="triggerDetail(r)"> · {{ triggerDetail(r) }}</small></span>
+            </div>
+          </div>
+
+          <span class="flow-arrow material-symbols-rounded">arrow_forward</span>
+
+          <div class="flow-step">
+            <span class="step-label">MENSAJE EN WHATSAPP</span>
+            <div class="step-box highlight">
+              <span class="material-symbols-rounded">chat</span>
+              <span *ngIf="r.actions?.sendTemplate">Plantilla: <code>{{ r.actions.sendTemplate }}</code></span>
+              <span *ngIf="!r.actions?.sendTemplate && r.actions?.sendText" class="clip">"{{ r.actions.sendText }}"</span>
+              <span *ngIf="!r.actions?.sendTemplate && !r.actions?.sendText">No envía mensaje</span>
+            </div>
+          </div>
+
+          <span class="flow-arrow material-symbols-rounded">arrow_forward</span>
+
+          <div class="flow-step">
+            <span class="step-label">NUEVA ETAPA CRM</span>
+            <div class="step-box">
+              <span class="material-symbols-rounded">flag</span>
+              <span>{{ r.actions?.moveStage ? stageLabel(r.actions.moveStage) : 'Sin cambio' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-stats">
+          <span><b>{{ r.runs ?? 0 }}</b> ejecuciones</span>
+          <span *ngIf="r.lastRunAt">última: {{ r.lastRunAt | date:'short' }}</span>
+          <span *ngIf="!r.lastRunAt">todavía no se ha ejecutado</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ PASOS DEL AGENTE ═════ -->
+  <div class="funnel-container" *ngIf="tab() === 'steps'">
+    <div class="info-banner card">
+      <span class="material-symbols-rounded">info</span>
+      <div>
+        En cada mensaje el agente lee el <b>prompt del paso actual</b> del cliente, captura los <b>objetivos</b> en orden y solo avanza al siguiente paso cuando se cumplen los <b>criterios de transición</b>.
+      </div>
+    </div>
+
+    <div class="empty-state card" *ngIf="stepsLoading()"><p>Cargando pasos…</p></div>
+    <div class="empty-state card" *ngIf="!stepsLoading() && !steps().length">
+      <span class="material-symbols-rounded">route</span>
+      <h3>Tu funnel está vacío</h3>
+      <p>Aplica una plantilla de tu industria o crea los pasos manualmente. Cada paso guía al agente con instrucciones específicas.</p>
+      <button class="btn btn-primary" (click)="showTplModal.set(true)">Ver plantillas por industria</button>
+    </div>
+
+    <div class="rules-list">
+      <div class="rule-card card step-card" *ngFor="let s of steps(); let i = index">
+        <span class="step-num">{{ i + 1 }}</span>
+        <div class="step-main">
+          <h3>{{ s.name }}</h3>
+          <p>{{ s.prompt || 'Sin instrucciones' }}</p>
+          <small><b>Objetivos:</b> {{ s.objectives || '—' }} · <b>Transición:</b> {{ s.criteria || '—' }}</small>
+        </div>
+        <div class="rule-switch">
+          <button class="icon-btn" [disabled]="i === 0" (click)="swapStep(i, -1)" title="Subir"><span class="material-symbols-rounded">arrow_upward</span></button>
+          <button class="icon-btn" [disabled]="i === steps().length - 1" (click)="swapStep(i, 1)" title="Bajar"><span class="material-symbols-rounded">arrow_downward</span></button>
+          <button class="icon-btn" (click)="openEditStep(s)" title="Editar"><span class="material-symbols-rounded">edit</span></button>
+          <button class="icon-btn danger" (click)="deleteStep(s)" title="Eliminar"><span class="material-symbols-rounded">delete</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: regla -->
+  <div *ngIf="showRuleModal()" class="modal-overlay" (click)="showRuleModal.set(false)">
+    <div class="modal-content card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ rule.id ? 'Editar regla' : 'Crear regla de embudo' }}</h2>
+        <button class="close-btn" (click)="showRuleModal.set(false)" aria-label="Cerrar">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-error" *ngIf="ruleError()">{{ ruleError() }}</div>
+        <div class="form-group">
+          <label>Nombre de la regla</label>
+          <input type="text" [(ngModel)]="rule.name" placeholder="Ej: Reactivación de clientes inactivos" maxlength="120" />
+        </div>
+
+        <div class="form-group">
+          <label>Cuándo se dispara</label>
+          <select [(ngModel)]="rule.trigger">
+            <option value="inactivity_24h">Cliente sin responder durante un tiempo</option>
+            <option value="post_appointment">Se agenda una cita</option>
+            <option value="stage_changed">Un cliente cambia de etapa</option>
+          </select>
+        </div>
+
+        <div class="form-grid-2" *ngIf="rule.trigger === 'inactivity_24h'">
+          <div class="form-group">
+            <label>Horas sin respuesta</label>
+            <input type="number" min="1" max="720" [(ngModel)]="rule.waitHours" />
+          </div>
+          <div class="form-group">
+            <label>Solo clientes en etapa</label>
+            <select [(ngModel)]="rule.stage">
+              <option value="">Cualquiera</option>
+              <option *ngFor="let s of pipelineStages" [value]="s.id">{{ s.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="rule.trigger === 'stage_changed'">
+          <label>Cuando pasa a la etapa</label>
+          <select [(ngModel)]="rule.toStage">
+            <option value="">Cualquiera</option>
+            <option *ngFor="let s of pipelineStages" [value]="s.id">{{ s.label }}</option>
+          </select>
+        </div>
+
+        <h4 class="then">Entonces</h4>
+        <div class="form-group">
+          <label>Enviar una plantilla guardada (opcional)</label>
+          <select [(ngModel)]="rule.sendTemplate">
+            <option value="">— Ninguna —</option>
+            <option *ngFor="let t of templates()" [value]="t.name">{{ t.name }}</option>
+          </select>
+          <small *ngIf="!templates().length">Crea plantillas en la sección Plantillas para usarlas aquí.</small>
+        </div>
+        <div class="form-group" *ngIf="!rule.sendTemplate">
+          <label>…o escribir un mensaje (opcional)</label>
+          <textarea rows="3" [(ngModel)]="rule.sendText" maxlength="1000" placeholder="Hola {{ '{{nombre}}' }}, ¿pudiste ver lo que te enviamos?"></textarea>
+          <small>Usa {{ '{{nombre}}' }} para el nombre del cliente.</small>
+        </div>
+        <div class="form-group">
+          <label>Mover automáticamente a (opcional)</label>
+          <select [(ngModel)]="rule.moveStage">
+            <option value="">No cambiar de etapa</option>
+            <option *ngFor="let s of pipelineStages" [value]="s.id">{{ s.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" (click)="showRuleModal.set(false)">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="ruleSaving()" (click)="saveRule()">{{ ruleSaving() ? 'Guardando…' : 'Guardar regla' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: paso -->
+  <div *ngIf="showStepModal()" class="modal-overlay" (click)="showStepModal.set(false)">
+    <div class="modal-content card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ step.id ? 'Editar paso' : 'Nuevo paso' }}</h2>
+        <button class="close-btn" (click)="showStepModal.set(false)" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-error" *ngIf="stepError()">{{ stepError() }}</div>
+        <div class="form-group"><label>Nombre</label><input type="text" [(ngModel)]="step.name" maxlength="120" placeholder="Ej: Calificación" /></div>
+        <div class="form-group"><label>Prompt del paso</label><textarea rows="4" [(ngModel)]="step.prompt" maxlength="4000" placeholder="Qué debe hacer y preguntar el agente en este paso"></textarea></div>
+        <div class="form-group"><label>Objetivos a capturar</label><input type="text" [(ngModel)]="step.objectives" maxlength="2000" placeholder="nombre; presupuesto; zona…" /></div>
+        <div class="form-group"><label>Criterios de transición</label><input type="text" [(ngModel)]="step.criteria" maxlength="2000" placeholder="Cuándo puede avanzar al siguiente paso" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" (click)="showStepModal.set(false)">Cancelar</button>
+        <button class="btn btn-primary" [disabled]="stepSaving()" (click)="saveStep()">{{ stepSaving() ? 'Guardando…' : 'Guardar paso' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: plantillas por industria -->
+  <div *ngIf="showTplModal()" class="modal-overlay" (click)="showTplModal.set(false)">
+    <div class="modal-content card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Plantillas por industria</h2>
+        <button class="close-btn" (click)="showTplModal.set(false)" aria-label="Cerrar">&times;</button>
+      </div>
+      <p class="tpl-note">Reemplazan los pasos actuales del funnel del agente.</p>
+      <button class="tpl-btn" *ngFor="let t of stepTemplates()" (click)="applyTemplate(t.key, t.name)">
+        <strong>{{ t.name }}</strong><span class="chip chip-blue">{{ t.steps }} pasos</span>
+      </button>
+      <div class="empty-state" *ngIf="!stepTemplates().length"><p>No hay plantillas disponibles.</p></div>
+    </div>
+  </div>
+</div>
