@@ -16,6 +16,10 @@ class Configuracion(BaseSettings):
     limite_login_por_minuto: int = 10
     max_bytes_payload: int = 1_048_576  # 1 MiB para peticiones JSON
 
+    persistencia: str = "memoria"  # memoria (pruebas) | postgres
+    clave_cifrado: SecretStr | None = None  # 32 bytes en base64; sin ella no se admiten documentos
+    directorio_documentos: str = "/datos/documentos"
+
     semilla_clave: SecretStr | None = None  # crea el tenant 'demo' con un usuario por rol
     usuario_demo_correo: str | None = None  # cuenta demo adicional (rol cargador); clave solo por entorno
     usuario_demo_clave: SecretStr | None = None

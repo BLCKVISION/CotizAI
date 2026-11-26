@@ -1,11 +1,11 @@
-import { usePathname, useRouter } from 'expo-router';
+import { type Href, usePathname, useRouter } from 'expo-router';
 import { type ReactNode } from 'react';
-import { Pressable, type PressableStateCallbackType, View } from 'react-native';
+import { Pressable, type PressableStateCallbackType, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
 
-import { Avatar, BotonIcono, Icono, Insignia, Marca, type NombreIcono, Texto } from './componentes';
+import { Avatar, BotonIcono, Chip, Icono, Insignia, Marca, type NombreIcono, Texto } from './componentes';
 import { useDispositivo } from './dispositivo';
 import { soloWeb, vidrio } from './efectos';
 import { useTema } from './tema';
@@ -13,8 +13,17 @@ import { espacio, margenFlotante, radio, tamanoTactil } from './tokens';
 
 const ETIQUETA_ROL = { cargador: 'Cargador', evaluador: 'Evaluador', aprobador: 'Aprobador', auditor: 'Auditor' } as const;
 
-const NAVEGACION: { ruta: '/proyectos'; etiqueta: string; icono: NombreIcono }[] = [
-  { ruta: '/proyectos', etiqueta: 'Proyectos', icono: 'folder' },
+type Item = { ruta: string; etiqueta: string; icono: NombreIcono; soloRol?: 'auditor' };
+const NAVEGACION: { categoria: string; items: Item[] }[] = [
+  { categoria: 'GENERAL', items: [
+    { ruta: '/resumen', etiqueta: 'Resumen', icono: 'home' },
+    { ruta: '/estadisticas', etiqueta: 'Estadísticas', icono: 'bar-chart-2' },
+  ] },
+  { categoria: 'COMPRAS', items: [
+    { ruta: '/proyectos', etiqueta: 'Proyectos', icono: 'folder' },
+    { ruta: '/proveedores', etiqueta: 'Proveedores', icono: 'briefcase' },
+  ] },
+  { categoria: 'CONTROL', items: [{ ruta: '/auditoria', etiqueta: 'Auditoría', icono: 'shield', soloRol: 'auditor' }] },
 ];
 
 /** Ítem de la barra lateral: píldora radio 15; activo = blanco puro elevado, texto negro y punto lima (Relay claro). */
@@ -70,6 +79,10 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
   const { dispositivo } = useDispositivo();
   const { usuario, cerrarSesion } = useSesion();
   const esEscritorio = dispositivo === 'escritorio';
+  const categorias = NAVEGACION.map((c) => ({ ...c, items: c.items.filter((i) => !i.soloRol || i.soloRol === usuario?.rol) })).filter(
+    (c) => c.items.length > 0,
+  );
+  const ir = (destino: string) => router.push(destino as Href);
   const iniciales = (usuario?.correo ?? '??').slice(0, 2);
 
   if (esEscritorio) {
@@ -91,14 +104,15 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
             </View>
             <View style={{ height: 1, backgroundColor: 'rgba(15,23,42,0.06)' }} />
             <View accessibilityRole="menu" style={{ gap: espacio.xs + 2 }}>
-              {NAVEGACION.map((n) => (
-                <ItemDeNavegacion
-                  key={n.ruta}
-                  etiqueta={n.etiqueta}
-                  icono={n.icono}
-                  activo={ruta.startsWith(n.ruta)}
-                  onPress={() => router.push(n.ruta)}
-                />
+              {categorias.map((c) => (
+                <View key={c.categoria} style={{ gap: espacio.xs, marginBottom: espacio.sm }}>
+                  <Texto variante="sobretitulo" suave style={{ paddingHorizontal: espacio.md }}>
+                    {c.categoria}
+                  </Texto>
+                  {c.items.map((n) => (
+                    <ItemDeNavegacion key={n.ruta} etiqueta={n.etiqueta} icono={n.icono} activo={ruta.startsWith(n.ruta)} onPress={() => ir(n.ruta)} />
+                  ))}
+                </View>
               ))}
             </View>
           </View>
@@ -137,7 +151,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           paddingVertical: espacio.sm,
         }}
       >
-        <Pressable accessibilityRole="link" accessibilityLabel="Ir a proyectos" onPress={() => router.push('/proyectos')}>
+        <Pressable accessibilityRole="link" accessibilityLabel="Ir al resumen" onPress={() => ir('/resumen')}>
           <Marca compacta />
         </Pressable>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.xs }}>
@@ -149,6 +163,11 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           <BotonIcono nombre="log-out" etiqueta="Cerrar sesión" onPress={cerrarSesion} />
         </View>
       </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: espacio.sm, paddingHorizontal: espacio.md, paddingTop: espacio.sm }}>
+        {categorias.flatMap((c) => c.items).map((n) => (
+          <Chip key={n.ruta} etiqueta={n.etiqueta} seleccionado={ruta.startsWith(n.ruta)} onPress={() => ir(n.ruta)} />
+        ))}
+      </ScrollView>
       <View style={{ flex: 1 }}>{children}</View>
     </SafeAreaView>
   );

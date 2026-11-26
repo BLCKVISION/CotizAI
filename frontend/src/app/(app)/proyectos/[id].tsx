@@ -4,13 +4,15 @@ import { View } from 'react-native';
 
 import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
-import { Boton, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
+import { Boton, Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
+import { Expediente } from '@/features/gestion/Expediente';
+import { Revision } from '@/features/gestion/Revision';
 import { obtenerProyectoApi, type Proyecto } from '@/features/proyectos/api';
-import { ESTADOS, formatoFecha, formatoMonto, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
 function LineaDeTiempo({ actual }: { actual: Proyecto['estado'] }) {
   const t = useTema();
@@ -91,6 +93,14 @@ export default function DetalleProyecto() {
   const { conSesion } = useSesion();
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pestana, setPestana] = useState<'propuestas' | 'ficha' | 'revision'>('propuestas');
+  const { usuario } = useSesion();
+  const pestanas = [
+    { id: 'propuestas', etiqueta: 'Propuestas' },
+    { id: 'ficha', etiqueta: 'Ficha y avance' },
+    // El rol Cargador no ve notas ni historial (el backend también lo impide).
+    ...(usuario && usuario.rol !== 'cargador' ? [{ id: 'revision', etiqueta: 'Revisión del comité' } as const] : []),
+  ] as const;
 
   useEffect(() => {
     let vigente = true;
@@ -158,6 +168,17 @@ export default function DetalleProyecto() {
         </Texto>
       </View>
 
+      <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
+        {pestanas.map((x) => (
+          <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => setPestana(x.id)} />
+        ))}
+      </View>
+
+      {pestana === 'propuestas' ? <Expediente proyecto={proyecto} /> : null}
+      {pestana === 'revision' ? <Revision proyecto={proyecto} onCambio={setProyecto} /> : null}
+
+      {pestana === 'ficha' ? (
+      <View style={{ gap: espacio.xl }}>
       <Tarjeta>
         <Texto variante="sobretitulo" suave>
           AVANCE DEL PROCESO
@@ -169,7 +190,7 @@ export default function DetalleProyecto() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.lg }}>
           <Dato icono="map-pin" etiqueta="Ubicación" valor={proyecto.ubicacion} />
           <Dato icono="calendar" etiqueta="Creado" valor={formatoFecha(proyecto.creado)} />
-          <Dato icono="dollar-sign" etiqueta="Presupuesto referencial" valor={formatoMonto(proyecto.presupuesto_referencial)} />
+          <Dato icono="dollar-sign" etiqueta="Presupuesto referencial" valor={formatoDinero(proyecto.presupuesto_referencial, proyecto.moneda)} />
         </View>
         <View style={{ height: 1, backgroundColor: t.borde, marginVertical: espacio.sm }} />
         <Texto variante="sobretitulo" suave>
@@ -185,6 +206,8 @@ export default function DetalleProyecto() {
           </>
         ) : null}
       </Tarjeta>
+      </View>
+      ) : null}
     </Pagina>
   );
 }

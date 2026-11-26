@@ -25,6 +25,7 @@ class CrearProyecto:
         requerimiento: str,
         ubicacion: str,
         presupuesto_referencial: Decimal | None,
+        moneda: str = "USD",
     ) -> Proyecto:
         actor.exigir(Permiso.CREAR_PROYECTO)
         proyecto = Proyecto.crear(
@@ -34,6 +35,7 @@ class CrearProyecto:
             requerimiento=requerimiento,
             ubicacion=ubicacion,
             presupuesto_referencial=presupuesto_referencial,
+            moneda=moneda,
             creado_por=actor.id,
             ahora=self._reloj.ahora(),
         )

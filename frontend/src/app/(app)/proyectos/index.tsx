@@ -9,7 +9,7 @@ import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
 import { espacio } from '@/design/tokens';
 import { type EstadoProyecto, listarProyectosApi, type Proyecto } from '@/features/proyectos/api';
-import { ESTADOS, formatoFecha, formatoMonto, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
 type Filtro = 'todos' | EstadoProyecto;
 
@@ -151,7 +151,7 @@ export default function Proyectos() {
                     <Texto variante="pequeno" suave>
                       Presupuesto referencial
                     </Texto>
-                    <Texto variante="etiqueta">{formatoMonto(p.presupuesto_referencial)}</Texto>
+                    <Texto variante="etiqueta">{formatoDinero(p.presupuesto_referencial, p.moneda)}</Texto>
                   </View>
                 </Tarjeta>
               </View>

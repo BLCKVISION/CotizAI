@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from evaluador.adapters.inbound.http.errores_http import registrar_manejadores
 from evaluador.adapters.inbound.http.guards import LimitadorDeVentana
 from evaluador.adapters.inbound.http.interceptores import InterceptorDeSeguridad, InterceptorDeTrazabilidad
-from evaluador.adapters.inbound.http.routers import proyectos, sesiones
+from evaluador.adapters.inbound.http.routers import gestion, proyectos, sesiones
 from evaluador.composition.configuracion import Configuracion
 from evaluador.composition.contenedor import Contenedor, construir_contenedor
 from evaluador.composition.semillas import sembrar_demo
@@ -26,7 +26,7 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
         redoc_url=None,
         openapi_url=None if config.es_produccion else "/api/openapi.json",
     )
-    app.state.contenedor = contenedor or construir_contenedor()
+    app.state.contenedor = contenedor or construir_contenedor(config=config)
     hay_semilla = bool(config.semilla_clave or (config.usuario_demo_correo and config.usuario_demo_clave))
     if hay_semilla and (not config.es_produccion or config.permitir_semilla_en_produccion):
         cuenta = (
@@ -45,6 +45,7 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
     api = APIRouter(prefix="/api/v1")
     api.include_router(sesiones.router)
     api.include_router(proyectos.router)
+    api.include_router(gestion.router)
 
     @api.get("/salud", tags=["sistema"])
     def salud() -> dict[str, str]:

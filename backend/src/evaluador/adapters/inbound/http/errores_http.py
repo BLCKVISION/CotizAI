@@ -22,6 +22,7 @@ _ESTADO: dict[type[e.ErrorDeDominio], int] = {
     e.NoEncontrado: 404,
     e.TransicionInvalida: 409,
     e.DatoInvalido: 422,
+    e.ServicioNoDisponible: 503,
 }
 
 

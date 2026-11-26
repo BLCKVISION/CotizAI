@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
@@ -52,6 +52,7 @@ class CrearProyectoDto(DtoEntrada):
     requerimiento: Annotated[str, Field(min_length=1, max_length=5000)]
     ubicacion: Annotated[str, Field(min_length=1, max_length=200)]
     presupuesto_referencial: Annotated[Decimal | None, Field(default=None, gt=0, max_digits=14, decimal_places=2)]
+    moneda: Literal["USD", "VES"] = "USD"
 
 
 class TransicionDto(DtoEntrada):
@@ -68,13 +69,14 @@ class ProyectoRespuesta(DtoSalida):
     estado: EstadoProyecto
     creado: datetime
     motivo_de_cierre: str | None
+    moneda: str
 
     @classmethod
     def desde_dominio(cls, p: Proyecto) -> ProyectoRespuesta:
         return cls(
             id=p.id, nombre=p.nombre, requerimiento=p.requerimiento, ubicacion=p.ubicacion,
             presupuesto_referencial=p.presupuesto_referencial, estado=p.estado, creado=p.creado,
-            motivo_de_cierre=p.motivo_de_cierre,
+            motivo_de_cierre=p.motivo_de_cierre, moneda=p.moneda,
         )  # fmt: skip
 
 

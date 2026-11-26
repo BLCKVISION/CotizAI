@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, type Href } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -100,7 +100,7 @@ export default function Login() {
   const [errores, setErrores] = useState<Errores>({});
   const [cargando, setCargando] = useState(false);
 
-  if (token) return <Redirect href="/proyectos" />;
+  if (token) return <Redirect href={'/resumen' as Href} />;
 
   const validar = (): Errores => {
     const e: Errores = {};

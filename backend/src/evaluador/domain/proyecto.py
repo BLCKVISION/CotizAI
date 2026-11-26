@@ -51,6 +51,7 @@ class Proyecto:
     creado_por: str
     creado: datetime
     motivo_de_cierre: str | None = None
+    moneda: str = "USD"  # moneda del presupuesto referencial: USD | VES
 
     @staticmethod
     def crear(
@@ -63,6 +64,7 @@ class Proyecto:
         presupuesto_referencial: Decimal | None,
         creado_por: str,
         ahora: datetime,
+        moneda: str = "USD",
     ) -> Proyecto:
         if not nombre.strip():
             raise DatoInvalido("El nombre del proyecto es obligatorio.")
@@ -78,6 +80,7 @@ class Proyecto:
             estado=E.EN_RECEPCION,
             creado_por=creado_por,
             creado=ahora,
+            moneda=moneda,
         )
 
     def transicionar(self, destino: EstadoProyecto, motivo: str | None = None) -> Proyecto:

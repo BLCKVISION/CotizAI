@@ -10,8 +10,11 @@ export type Proyecto = {
   estado: EstadoProyecto;
   creado: string;
   motivo_de_cierre: string | null;
+  moneda: Moneda;
 };
+export type Moneda = 'USD' | 'VES';
 export type NuevoProyecto = {
+  moneda: Moneda;
   nombre: string;
   requerimiento: string;
   ubicacion: string;
@@ -22,3 +25,5 @@ export const listarProyectosApi = (token: string) => peticion<Proyecto[]>('/proy
 export const obtenerProyectoApi = (id: string) => (token: string) => peticion<Proyecto>(`/proyectos/${id}`, { token });
 export const crearProyectoApi = (datos: NuevoProyecto) => (token: string) =>
   peticion<Proyecto>('/proyectos', { metodo: 'POST', cuerpo: datos, token });
+export const transicionarProyectoApi = (id: string, destino: EstadoProyecto, motivo: string | null) => (token: string) =>
+  peticion<Proyecto>(`/proyectos/${id}/transiciones`, { metodo: 'POST', cuerpo: { destino, motivo }, token });

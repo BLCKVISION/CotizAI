@@ -10,6 +10,8 @@ from evaluador.domain.extraccion import ExtraccionPropuesta
 
 EQUIPOS_REQUERIDOS = 11
 CATEGORIAS_REQUERIDAS = ("gabinete", "monitor", "teclado", "raton", "protector")
+# Una línea de equipo completo puede incluir los componentes sin detallarlos: no basta para descartar.
+_EQUIPO_COMPLETO = ("computadora", "computador", "pc", "equipo", "estacion", "kit")
 _SINONIMOS = {"mouse": "raton", "cpu": "gabinete", "torre": "gabinete", "case": "gabinete", "pantalla": "monitor"}
 
 
@@ -54,6 +56,22 @@ def validar_alcance_fijo(e: ExtraccionPropuesta, equipos: int = EQUIPOS_REQUERID
     dudosas = [c for c in faltan if c in con_cantidad_ilegible]
     firmes = [c for c in faltan if c not in con_cantidad_ilegible]
     hallazgos: list[Hallazgo] = []
+    hay_equipo_completo = any(
+        normalizar_categoria(ln.categoria).replace("_", " ").split(" ")[0].rstrip("s") in _EQUIPO_COMPLETO
+        for ln in e.lineas
+    )
+    if firmes and hay_equipo_completo:
+        hallazgos.append(
+            Hallazgo(
+                CodigoHallazgo.LECTURA,
+                Severidad.ADVERTENCIA,
+                False,
+                f"Hay equipos completos; verificar si incluyen {equipos} unidades de: {', '.join(firmes)}.",
+                "línea de equipo completo",
+                Origen.REGLA,
+            )
+        )
+        firmes = []
     if firmes:
         hallazgos.append(
             Hallazgo(

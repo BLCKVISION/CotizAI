@@ -51,3 +51,32 @@ export async function peticion<T>(ruta: string, { metodo = 'GET', cuerpo, token 
     clearTimeout(temporizador);
   }
 }
+
+/** Envío o recepción de archivos en binario (sin JSON en el cuerpo). Plazo amplio para documentos de 10 MB. */
+export async function peticionBinaria(ruta: string, token: string, cuerpo?: Blob): Promise<Response> {
+  const trackId = nuevoTrackId();
+  const control = new AbortController();
+  const temporizador = setTimeout(() => control.abort(), 120_000);
+  try {
+    const r = await fetch(`${API_URL}/api/v1${ruta}`, {
+      method: cuerpo ? 'POST' : 'GET',
+      signal: control.signal,
+      headers: {
+        'X-Track-Id': trackId,
+        Authorization: `Bearer ${token}`,
+        ...(cuerpo ? { 'Content-Type': 'application/octet-stream' } : {}),
+      },
+      body: cuerpo,
+    });
+    if (!r.ok) {
+      const e = ((await r.json().catch(() => undefined)) ?? {}) as { codigo?: string; mensaje?: string };
+      throw new ErrorApi(r.status, e.codigo ?? 'error', e.mensaje ?? 'Ocurrió un error.', r.headers.get('X-Track-Id') ?? trackId);
+    }
+    return r;
+  } catch (e) {
+    if (e instanceof ErrorApi) throw e;
+    throw new ErrorApi(0, 'sin_conexion', 'No se pudo conectar con el servidor. Revise su conexión.', trackId);
+  } finally {
+    clearTimeout(temporizador);
+  }
+}

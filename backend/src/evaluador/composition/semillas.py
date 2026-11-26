@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import uuid
+
 from evaluador.composition.contenedor import Contenedor
 from evaluador.domain.identidad import Rol, Tenant, Usuario
+
+
+def _id_estable(*partes: str) -> str:
+    """Los usuarios se recrean en cada arranque; un id fijo conserva la propiedad de los datos guardados."""
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, "cotizai:" + ":".join(partes)))
 
 
 def sembrar_demo(
@@ -13,19 +20,19 @@ def sembrar_demo(
     codigo_tenant: str = "demo",
 ) -> None:
     """Crea el tenant demo, un usuario por rol (si hay clave) y, opcionalmente, una cuenta extra (correo, clave)."""
-    tenant = Tenant(id=c.ids.nuevo(), codigo=codigo_tenant, nombre="Organización demo")
+    tenant = Tenant(id=_id_estable(codigo_tenant), codigo=codigo_tenant, nombre="Organización demo")
     c.tenants.guardar(tenant)
     if clave_por_rol:
         h = c.hasheador.hashear(clave_por_rol)
         for rol in Rol:
             c.usuarios.guardar(
-                Usuario(id=c.ids.nuevo(), tenant_id=tenant.id, correo=f"{rol}@demo.local", hash_contrasena=h, rol=rol)
+                Usuario(id=_id_estable(codigo_tenant, rol), tenant_id=tenant.id, correo=f"{rol}@demo.local", hash_contrasena=h, rol=rol)
             )
     if cuenta_extra:
         correo, clave = cuenta_extra
         c.usuarios.guardar(
             Usuario(
-                id=c.ids.nuevo(),
+                id=_id_estable(codigo_tenant, correo.strip().lower()),
                 tenant_id=tenant.id,
                 correo=correo.strip().lower(),
                 hash_contrasena=c.hasheador.hashear(clave),

@@ -33,6 +33,8 @@ services:
     build: ../backend
     environment:
       EVALUADOR_ENTORNO: produccion
+      EVALUADOR_PERSISTENCIA: postgres
+      EVALUADOR_CLAVE_CIFRADO: ${EVALUADOR_CLAVE_CIFRADO:-}
       EVALUADOR_CONFIAR_EN_PROXY: "true"
       EVALUADOR_ORIGENES_CORS: '["https://hackathon.exmachina.systems","https://cotiz-ai.exmachina.systems","http://hackathon.exmachina.systems","http://cotiz-ai.exmachina.systems"]'
       EVALUADOR_SEMILLA_CLAVE: ${EVALUADOR_SEMILLA_CLAVE:-}
@@ -49,6 +51,7 @@ services:
     tmpfs: [/tmp]
     volumes:
       - modelos:/modelos           # caché del modelo de embeddings (se descarga una vez)
+      - documentos:/datos          # propuestas cifradas con AES-256-GCM
     ports: ["127.0.0.1:18001:8000"]   # solo loopback: el ingreso es el nginx del host
     networks: [interna]
     depends_on:
@@ -60,3 +63,4 @@ networks:
 volumes:
   pgdata:
   modelos:
+  documentos:

@@ -4,11 +4,11 @@ import { View } from 'react-native';
 
 import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
-import { Boton, CampoDeTexto, Icono, Tarjeta, Texto } from '@/design/componentes';
+import { Boton, CampoDeTexto, Chip, Icono, Tarjeta, Texto } from '@/design/componentes';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
 import { anchoMaximoLectura, espacio } from '@/design/tokens';
-import { crearProyectoApi } from '@/features/proyectos/api';
+import { crearProyectoApi, type Moneda } from '@/features/proyectos/api';
 import { parsearMonto } from '@/features/proyectos/monto';
 
 type Errores = { nombre?: string; requerimiento?: string; ubicacion?: string; presupuesto?: string; general?: string };
@@ -21,6 +21,7 @@ export default function NuevoProyecto() {
   const [requerimiento, setRequerimiento] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [presupuesto, setPresupuesto] = useState('');
+  const [moneda, setMoneda] = useState<Moneda>('USD');
   const [errores, setErrores] = useState<Errores>({});
   const [cargando, setCargando] = useState(false);
 
@@ -44,6 +45,7 @@ export default function NuevoProyecto() {
           nombre: nombre.trim(),
           requerimiento: requerimiento.trim(),
           ubicacion: ubicacion.trim(),
+          moneda,
           presupuesto_referencial: presupuesto.trim() ? parsearMonto(presupuesto) : null,
         }),
       );
@@ -94,6 +96,12 @@ export default function NuevoProyecto() {
               keyboardType="decimal-pad"
               ayuda="Solo como referencia; no descarta propuestas por sí solo."
             />
+            <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
+              <Texto variante="etiqueta">Moneda</Texto>
+              {(['USD', 'VES'] as const).map((m) => (
+                <Chip key={m} etiqueta={m === 'VES' ? 'Bolívares (VES)' : 'Dólares (USD)'} seleccionado={moneda === m} onPress={() => setMoneda(m)} />
+              ))}
+            </View>
             {errores.general ? (
               <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
                 <Icono nombre="alert-triangle" color={t.error.texto} />

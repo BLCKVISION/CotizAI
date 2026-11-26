@@ -13,11 +13,13 @@ from starlette.datastructures import Headers, MutableHeaders
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from evaluador.domain.gestion import MAX_BYTES_DOCUMENTO
 from evaluador.observabilidad import contexto
 from evaluador.observabilidad.censura import censurar, censurar_cabeceras
 
 _log = logging.getLogger("evaluador.http")
 _TRACK_ID_VALIDO = re.compile(r"^[A-Za-z0-9-]{8,64}$")
+_RUTA_DE_CARGA = re.compile(r"^/api/v1/proyectos/[0-9a-fA-F-]{36}/propuestas$")
 _RUTAS_DE_DOCUMENTACION = ("/api/docs", "/api/openapi.json")
 
 
@@ -63,6 +65,9 @@ class InterceptorDeTrazabilidad:
         contexto.iniciar(track_id=track_id, ip=self._ip(scope, cab))
 
         inicio = time.perf_counter()
+        # Solo la carga de documentos admite cuerpos grandes; su contenido nunca se registra.
+        es_carga = scope["method"] == "POST" and bool(_RUTA_DE_CARGA.match(scope["path"]))
+        max_bytes = MAX_BYTES_DOCUMENTO if es_carga else self._max_bytes
         cuerpo = bytearray()
         estado = 500
         excedido = False
@@ -71,7 +76,7 @@ class InterceptorDeTrazabilidad:
             nonlocal excedido
             mensaje = await receive()
             if mensaje["type"] == "http.request":
-                if len(cuerpo) + len(mensaje.get("body", b"")) > self._max_bytes:
+                if len(cuerpo) + len(mensaje.get("body", b"")) > max_bytes:
                     excedido = True
                     return {"type": "http.disconnect"}
                 cuerpo.extend(mensaje.get("body", b""))
@@ -85,7 +90,7 @@ class InterceptorDeTrazabilidad:
             await send(mensaje)
 
         declarado = cab.get("content-length", "")
-        demasiado_grande = declarado.isdigit() and int(declarado) > self._max_bytes
+        demasiado_grande = declarado.isdigit() and int(declarado) > max_bytes
         try:
             if demasiado_grande:
                 excedido = True
@@ -107,7 +112,7 @@ class InterceptorDeTrazabilidad:
                     "estado": estado,
                     "duracion_ms": round((time.perf_counter() - inicio) * 1000, 1),
                     "cabeceras": censurar_cabeceras({k: v for k, v in cab.items() if k in _CABECERAS_A_LOGUEAR}),
-                    "cuerpo": self._cuerpo_censurado(bytes(cuerpo), excedido),
+                    "cuerpo": "<documento>" if es_carga else self._cuerpo_censurado(bytes(cuerpo), excedido),
                 },
             )
 

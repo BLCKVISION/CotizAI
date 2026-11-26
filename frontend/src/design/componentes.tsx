@@ -216,6 +216,7 @@ export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, m
               textAlignVertical: multiline ? 'top' : 'center',
               outlineWidth: 0,
             },
+            soloWeb({ outlineStyle: 'none' }) as TextStyle, // el foco lo marca el borde del contenedor
           ]}
         />
         {esSecreto ? (

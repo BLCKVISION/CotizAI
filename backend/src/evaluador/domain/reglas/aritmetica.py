@@ -58,6 +58,16 @@ def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
         )
 
     total_m = e.totales.total
+    # Sin subtotal declarado, el total se contrasta con la suma de líneas (más impuestos declarados).
+    if not subtotal and total_m and suma_valida and e.lineas:
+        declarado = _d(total_m)
+        impuestos_sueltos = [_d(x) for x in e.totales.impuestos]
+        if declarado is not None and all(i is not None for i in impuestos_sueltos):
+            esperado = suma + sum((i for i in impuestos_sueltos if i is not None), Decimal(0))
+            if esperado != declarado:
+                hallazgos.append(
+                    _hallazgo(f"Líneas e impuestos suman {esperado}, el total declarado es {declarado}.", total_m.literal)
+                )
     total = _d(total_m) if total_m else None
     if total_m and total is not None and sub is not None:
         impuestos = [_d(x) for x in e.totales.impuestos]

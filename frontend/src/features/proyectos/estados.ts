@@ -33,3 +33,9 @@ export const formatoFecha = (iso: string) =>
 
 export const formatoMonto = (valor: string | null) =>
   valor === null ? 'No definido' : Number(valor).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+export const formatoDinero = (valor: string | null, moneda: string) =>
+  valor === null ? 'No definido' : `${moneda === 'VES' ? 'Bs.' : 'USD'} ${formatoMonto(valor)}`;
+
+export const formatoFechaHora = (iso: string) =>
+  new Date(iso).toLocaleString('es-VE', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
