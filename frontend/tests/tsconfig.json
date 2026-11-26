@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "node16", "moduleResolution": "node16", "strict": true,
+    "esModuleInterop": true, "skipLibCheck": true, "types": ["node"], "rootDir": "..",
+    "outDir": "../.test-build", "lib": ["ES2022", "DOM"]
+  },
+  "include": ["*.test.ts", "stubs.d.ts"]
+}
