@@ -32,7 +32,7 @@ python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt && .venv/b
 cd frontend && npm ci && npx expo start        # w = web, a = Android, i = iOS
 ```
 
-Login de desarrollo: solo **correo y contraseña**. Usuarios `<rol>@demo.local` (`cargador`, `evaluador`, `aprobador`, `auditor`) con la clave de `EVALUADOR_SEMILLA_CLAVE`, y una cuenta extra opcional con `EVALUADOR_USUARIO_DEMO_CORREO` / `EVALUADOR_USUARIO_DEMO_CLAVE`.
+Login de desarrollo: solo **correo y contraseña**. Usuarios `<role>@demo.local` (`loader`, `evaluator`, `approver`, `auditor`) con la clave de `EVALUADOR_SEMILLA_CLAVE`, y una cuenta extra opcional con `EVALUADOR_USUARIO_DEMO_CORREO` / `EVALUADOR_USUARIO_DEMO_CLAVE`.
 
 ## Modelos de IA
 

@@ -25,7 +25,7 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 - `ruff` (lint + formato, línea 120) y `mypy --strict` deben pasar. Type hints en toda firma pública.
 - `Decimal` para dinero. **Nunca** `float`. Los montos viajan como texto (literal + valor).
 - Fechas con zona (UTC internamente, ISO 8601 en el borde). El reloj se inyecta (`Reloj`); no llamar `datetime.now()` en dominio.
-- Excepciones de dominio propias (`domain/errores.py`); los adaptadores las traducen. Nunca capturar `Exception` salvo en un borde que registre y traduzca (marcado con `# noqa: BLE001` y comentario del motivo).
+- Excepciones de dominio propias (`domain/errors.py`); los adaptadores las traducen. Nunca capturar `Exception` salvo en un borde que registre y traduzca (marcado con `# noqa: BLE001` y comentario del motivo).
 - Sin `print`; usar `logging`.
 
 ### API HTTP
@@ -50,8 +50,8 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 
 ### IA / RAG
 - La decisión es **código**; el modelo extrae y juzga lo cualitativo con evidencia citada.
-- Salida del modelo validada con Pydantic; error de lectura → una relectura → `pendiente_de_revision` (nunca descarta).
-- Un nodo = una responsabilidad; depende de puertos. Flujo en `grafo.py`.
+- Salida del modelo validada con Pydantic; error de lectura → una relectura → `pending_review` (nunca descarta).
+- Un nodo = una responsabilidad; depende de puertos. Flujo en `graph.py`.
 - El modelo se elige por configuración; nuevas integraciones se **registran** en la fábrica.
 - Consultas vectoriales siempre con `tenant_id`.
 
@@ -95,7 +95,7 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 - **Ramas cortas** por tarea: `feat/…`, `fix/…`, `chore/…`. Integrar a `main` al menos cada 2–3 horas. `main` siempre compila y pasa pruebas.
 - **Commits pequeños** con Conventional Commits: `feat(auth): …`, `fix(rag): …`, `test:`, `docs:`, `refactor:`, `chore:`. Imperativo, ≤ 72 caracteres en el asunto.
 - **Nunca** subir: claves, certificados, `.env`, propuestas reales, contenido descifrado.
-- Cambiar un contrato (`extraccion.py`, DTOs, API) exige avisar a quienes lo consumen **en el mismo PR**.
+- Cambiar un contrato (`extraction.py`, DTOs, API) exige avisar a quienes lo consumen **en el mismo PR**.
 
 ### Definición de «terminado»
 Cumple su criterio · integrado en `main` · con commit · **otra persona lo probó** · pruebas y linters en verde · documentación actualizada si cambió un contrato.

@@ -27,7 +27,7 @@ El **backend y la API se escriben en inglés**; el producto que ve la persona us
 
 **Excepciones** (el nombre lo fija un tercero y no se traduce): las claves de `salida.json` y los nombres de las causas de descarte del enunciado (`ALCANCE`, `COMPAT`, `CAPACIDAD`, `CALIDAD`, `ABUSIVO`, `ARITMETICA`, `MANIPULACION`), que se exponen tal cual en informes y salida.
 
-**Regla para código nuevo:** todo lo que se escriba desde ahora cumple esta tabla. **Migración del código existente:** se hace en una sola pasada coordinada con el equipo (cambia rutas, campos JSON y valores de enums, así que el frontend y los datos guardados deben migrar a la vez), no archivo por archivo.
+**Regla para código nuevo:** todo lo que se escriba desde ahora cumple esta tabla. **Migración del código existente:** realizada en una sola pasada coordinada (backend, API, frontend y fixtures a la vez). El glosario Español → Inglés está en [`glossary-es-en.md`](glossary-es-en.md). Se conservan en español, por ser contratos externos o de operación: el paquete `evaluador` (`python -m evaluador.lote`), los flags `--lote`/`--salida`, las variables `EVALUADOR_*`, los nombres de tablas/columnas SQL, y el vocabulario de categorías de equipos de las propuestas (`gabinete`, `monitor`, `teclado`, `raton`, `protector`).
 
 ## 2. Vista de contexto
 
@@ -49,22 +49,22 @@ flowchart LR
 ```
 backend/src/evaluador/
   domain/            Reglas puras. Sin frameworks (salvo pydantic para el contrato de extracción).
-    identidad.py     Tenant, Usuario, Sesion, Rol, Permiso, política de bloqueo
-    proyecto.py      Proyecto + máquina de estados
-    extraccion.py    Contrato central de extracción (montos como literal + valor)
-    evaluacion.py    Hallazgo, Veredicto, ResultadoEvaluacion
-    reglas/          aritmetica (Decimal) · alcance (lista fija) · manipulacion (patrones)
-    rag.py           Fragmento + fragmentación pura
+    identity.py      Tenant, User, Session, Role, Permission, política de bloqueo
+    project.py       Project + máquina de estados
+    extraction.py    Contrato central de extracción (montos como literal + valor)
+    evaluation.py    Finding, Verdict, EvaluationResult
+    rules/           arithmetic (Decimal) · scope (lista fija) · manipulation (patrones) · compatibility · capacity · quality · abusive
+    rag.py           Chunk + fragmentación pura
   application/
-    ports/           Contratos (typing.Protocol): salida.py (repos, hasher, reloj…) y agente.py (LLM, embeddings, índice, motor)
-    use_cases/       Orquestación: autenticacion, proyectos, rag. Aplican permisos y tenant.
+    ports/           Contratos (typing.Protocol): output.py (repos, hasher, reloj…) y agent.py (LLM, embeddings, índice, motor)
+    use_cases/       Orquestación: authentication, projects, rag, batch, exchange_rates. Aplican permisos y tenant.
   adapters/
-    inbound/http/    FastAPI: dtos, guards, interceptores, routers, errores_http
+    inbound/http/    FastAPI: dtos, guards, interceptors, routers, http_errors
     inbound/cli/     Modo lote: `python -m evaluador.lote --lote ./lote --salida ./salida.json` (paralelo y reintentos configurables)
-    outbound/extraccion/  Lectores: XLSX (fórmulas, valores, comentarios, ocultos), PDF (texto oculto/diminuto), imagen (visión)
-    outbound/        security (Argon2id, tokens) · memory · persistence (pgvector) · ia (modelos, embeddings) · agente (LangGraph)
+    outbound/extraction/  Lectores: XLSX (fórmulas, valores, comentarios, ocultos), PDF (texto oculto/diminuto), imagen (visión)
+    outbound/        security (Argon2id, tokens) · memory · persistence (pgvector) · ai (modelos, embeddings) · agent (LangGraph)
   composition/       Única raíz de composición + configuración por entorno
-  observabilidad/    contexto (trackId…), censura, logs JSON
+  observability/     context (trackId…), redaction, logs JSON
 ```
 
 **Regla de dependencias:** `adapters → application → domain`. El dominio no importa nada de afuera. Los casos de uso dependen de **puertos**, no de implementaciones. Solo `composition/` conoce clases concretas.
@@ -86,9 +86,9 @@ SOLID: **S** un nodo/caso de uso = una responsabilidad · **O** proveedores y re
 
 ## 4. Seguridad e identidad (multi-tenant)
 
-**Login:** `POST /api/v1/sesiones {correo, contrasena}`. Solo correo y contraseña: el usuario no elige ni escribe organización.
+**Login:** `POST /api/v1/sessions {email, password}`. Solo correo y contraseña: el usuario no elige ni escribe organización.
 
-- El **tenant** se **deduce del usuario** a partir de su correo, que es **único en todo el sistema**. Desde ahí **el tenant sale de la sesión en el servidor**, jamás del cliente (un campo `organizacion` en el payload se rechaza con 422).
+- El **tenant** se **deduce del usuario** a partir de su correo, que es **único en todo el sistema**. Desde ahí **el tenant sale de la sesión en el servidor**, jamás del cliente (un campo `organization` en el payload se rechaza con 422).
 - Si el tenant del usuario está inactivo, el login falla con el mismo 401 genérico. Todos los puertos de lectura reciben `tenant_id` y el adaptador **debe** filtrar por él (también el índice vectorial).
 - Un recurso de otro tenant responde **404**, igual que uno inexistente.
 - Contraseñas con **Argon2id** + rehash automático si cambian los parámetros.
@@ -101,32 +101,32 @@ SOLID: **S** un nodo/caso de uso = una responsabilidad · **O** proveedores y re
 
 | Rol | Crear/cargar | Iniciar eval. | Estado | Resultados | Notas | Adjudicar/cerrar | Auditoría |
 |---|---|---|---|---|---|---|---|
-| cargador | ✔ | ✔ | ✔ | – | – | – | – |
-| evaluador | – | ✔ | ✔ | ✔ | ✔ | – | – |
-| aprobador | – | – | ✔ | ✔ | ✔ | ✔ | – |
+| loader | ✔ | ✔ | ✔ | – | – | – | – |
+| evaluator | – | ✔ | ✔ | ✔ | ✔ | – | – |
+| approver | – | – | ✔ | ✔ | ✔ | ✔ | – |
 | auditor | – | – | ✔ | ✔ | – | – | ✔ |
 
 ## 5. Observabilidad y trazabilidad
 
-Un **interceptor ASGI** asigna a cada petición un `trackId` (respeta uno válido del cliente, si no genera UUID) y fija un contexto (`contextvars`): `trackId`, `ip`, `sesionId`, `tenantId`, `usuarioId`. El guard de autenticación enriquece sesión/tenant/usuario. **Todo log** (HTTP, auditoría, motor de IA) sale en JSON con ese contexto; el `trackId` vuelve en la cabecera `X-Track-Id` y en los errores.
+Un **interceptor ASGI** asigna a cada petición un `trackId` (respeta uno válido del cliente, si no genera UUID) y fija un contexto (`contextvars`): `trackId`, `ip`, `sessionId`, `tenantId`, `userId`. El guard de autenticación enriquece sesión/tenant/usuario. **Todo log** (HTTP, auditoría, motor de IA) sale en JSON con ese contexto; el `trackId` vuelve en la cabecera `X-Track-Id` y en los errores.
 
-**Datos sensibles:** el cuerpo de la petición se parsea y se **censura antes de loguear** (`contrasena`, `token`, `authorization`, `cookie`, `secret`, `rif`, `hash`… → `***`; correos → `a***@dominio`; `Bearer xxx` en texto → `Bearer ***`). Los `extra` de cualquier log pasan por la misma censura (defensa en profundidad). Las excepciones se registran por **tipo**, sin mensaje ni traza que pueda arrastrar datos.
+**Datos sensibles:** el cuerpo de la petición se parsea y se **censura antes de loguear** (`password`/`contrasena`, `token`, `authorization`, `cookie`, `secret`, `rif`, `hash`… → `***`; correos → `a***@dominio`; `Bearer xxx` en texto → `Bearer ***`). Los `extra` de cualquier log pasan por la misma censura (defensa en profundidad). Las excepciones se registran por **tipo**, sin mensaje ni traza que pueda arrastrar datos.
 
 La IP solo se toma de `X-Forwarded-For` si `EVALUADOR_CONFIAR_EN_PROXY=true` (Caddy como único ingreso).
 
-## 6. API (prefijo `/api/v1`, recursos en plural y español)
+## 6. API (prefijo `/api/v1`, recursos en plural e inglés)
 
 | Método y ruta | Función | Permiso |
 |---|---|---|
-| `POST /sesiones` | Iniciar sesión | público (con límite) |
-| `DELETE /sesiones/actual` | Cerrar sesión | autenticado |
-| `GET /usuarios/actual` | Usuario de la sesión | autenticado |
-| `GET, POST /proyectos` | Listar / crear | ver_estado / crear_proyecto |
-| `GET /proyectos/{id}` | Detalle | ver_estado |
-| `POST /proyectos/{id}/transiciones` | Cambiar de estado | según destino |
-| `GET /salud` | Liveness | público |
+| `POST /sessions` | Iniciar sesión | público (con límite) |
+| `DELETE /sessions/current` | Cerrar sesión | autenticado |
+| `GET /users/current` | Usuario de la sesión | autenticado |
+| `GET, POST /projects` | Listar / crear | view_state / create_project |
+| `GET /projects/{id}` | Detalle | view_state |
+| `POST /projects/{id}/transitions` | Cambiar de estado | según destino |
+| `GET /health` | Liveness | público |
 
-Convenciones: verbos HTTP semánticos, sin verbos en la ruta, ids UUID validados por patrón, errores `{codigo, mensaje, track_id}`, 401 sin sesión, 403 sin permiso, 404 también para otro tenant, 409 transición inválida, 422 payload inválido. Previstas: `/proyectos/{id}/propuestas`, `/evaluaciones`, `/evaluaciones/{id}/eventos`, `/evaluaciones/{id}/exportar`, `/evaluaciones/{id}/chat`, `/auditoria`, `/tasas`.
+Convenciones: verbos HTTP semánticos, sin verbos en la ruta, ids UUID validados por patrón, errores `{code, message, track_id}` (el texto de `message` sigue en español), 401 sin sesión, 403 sin permiso, 404 también para otro tenant, 409 transición inválida, 422 payload inválido. Previstas: `/projects/{id}/proposals`, `/evaluations`, `/evaluations/{id}/events`, `/evaluations/{id}/export`, `/evaluations/{id}/chat`, `/audit`, `/exchange-rates`.
 
 ## 7. Motor de IA (LangGraph) y RAG
 
