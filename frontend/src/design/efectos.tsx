@@ -1,7 +1,7 @@
 import { Children, type ReactNode, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, View, type ViewStyle } from 'react-native';
 
-import { useTema } from './tema';
+import { paletaClara, useTema } from './tema';
 import { movimiento } from './tokens';
 
 const esWeb = Platform.OS === 'web';
@@ -12,8 +12,23 @@ export const soloWeb = (estilo: Record<string, string | number>): ViewStyle =>
   (esWeb ? estilo : {}) as unknown as ViewStyle;
 
 /** true si el usuario pidió reducir el movimiento: toda animación debe omitirse. */
+/** Read synchronously on web so the very first entrance animation already respects the preference. */
+const prefersReducedMotion = () =>
+  esWeb && typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+
+/** On web, also disables CSS transitions for users who ask for reduced motion. */
+function installReducedMotionCss() {
+  if (!esWeb || typeof document === 'undefined' || document.getElementById('cotizai-reduced-motion')) return;
+  const style = document.createElement('style');
+  style.id = 'cotizai-reduced-motion';
+  style.textContent = '@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}';
+  document.head.appendChild(style);
+}
+
 export function useReducirMovimiento(): boolean {
-  const [reducir, setReducir] = useState(false);
+  const [reducir, setReducir] = useState(prefersReducedMotion);
   useEffect(() => {
     let vivo = true;
     AccessibilityInfo.isReduceMotionEnabled().then((v) => vivo && setReducir(v));
@@ -54,8 +69,15 @@ export function vidrio(opciones: { opacidad?: number; blur?: number; radio: numb
 }
 
 /** Fondo de la aplicación: #EFF1F5 con los dos halos pastel de Relay (durazno arriba-dcha., menta abajo-izq.). */
+/** CSS gradient for the accent panels (web); native falls back to the solid accent colour. */
+export function accentGradient(angle = 135): ViewStyle {
+  const [a, b, c] = paletaClara.gradient;
+  return { backgroundColor: b, ...soloWeb({ backgroundImage: `linear-gradient(${angle}deg, ${a} 0%, ${b} 50%, ${c} 100%)` }) };
+}
+
 export function Fondo({ children }: { children: ReactNode }) {
   const t = useTema();
+  useEffect(installReducedMotionCss, []);
   return (
     <View
       style={[

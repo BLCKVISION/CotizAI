@@ -1,164 +1,144 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { type Href, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
-import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
-import { Boton, Chip, Esqueleto, EstadoVacio, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
-import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
+import { useDatos } from '@/core/useDatos';
+import { Cargando, ErrorConReintento } from '@/design/bloques';
+import { Boton, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
+import { useDispositivo } from '@/design/dispositivo';
+import { Entrada, soloWeb } from '@/design/efectos';
+import { FixedPage } from '@/design/layout';
 import { useTema } from '@/design/tema';
-import { espacio } from '@/design/tokens';
-import { type EstadoProyecto, listarProyectosApi, type Proyecto } from '@/features/proyectos/api';
+import { espacio, radio, texto } from '@/design/tokens';
+import { estadisticasApi } from '@/features/gestion/api';
+import { FolderCard } from '@/features/projects/FolderCard';
+import { type EstadoProyecto, listarProyectosApi } from '@/features/proyectos/api';
 import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
-type Filtro = 'todos' | EstadoProyecto;
+type Filter = 'all' | EstadoProyecto;
+type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
-export default function Proyectos() {
+const loadProjects = async (token: string) => {
+  const [projects, stats] = await Promise.all([listarProyectosApi(token), estadisticasApi(token)]);
+  return { projects, counts: stats.propuestas_por_proyecto };
+};
+
+function PillButton({ icon, label, onPress, expanded }: { icon: NombreIcono; label: string; onPress: () => void; expanded?: boolean }) {
+  const t = useTema();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={expanded === undefined ? undefined : { expanded }}
+      onPress={onPress}
+      style={(e: PressState) => ({
+        minHeight: 46,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: espacio.sm,
+        paddingHorizontal: espacio.lg,
+        borderRadius: radio.pildora,
+        borderWidth: 2,
+        borderColor: e.focused ? t.foco : 'transparent',
+        backgroundColor: e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+        ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '220ms' }),
+      })}
+    >
+      <Icono nombre={icon} tamano="sm" />
+      <Texto variante="etiqueta">
+        {label}
+      </Texto>
+    </Pressable>
+  );
+}
+
+export default function Projects() {
   const t = useTema();
   const router = useRouter();
-  const { usuario, conSesion } = useSesion();
-  const [proyectos, setProyectos] = useState<Proyecto[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<Filtro>('todos');
+  const { usuario } = useSesion();
+  const { ancho, dispositivo } = useDispositivo();
+  const { datos, error, recargar } = useDatos(loadProjects);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [query, setQuery] = useState('');
+  const canCreate = usuario?.rol === 'cargador'; // UX only: the backend is the authority
+  const create = () => router.push('/proyectos/nuevo' as Href);
 
-  const [intento, setIntento] = useState(0);
-
-  // Al volver a esta pantalla (p. ej. tras crear un proyecto) se vuelve a consultar sin vaciar la lista.
-  useFocusEffect(
-    useCallback(() => {
-    let vigente = true;
-    (async () => {
-      try {
-        const datos = await conSesion(listarProyectosApi);
-        if (vigente) {
-          setProyectos(datos);
-          setError(null);
-        }
-      } catch (e) {
-        if (vigente) setError(e instanceof ErrorApi ? `${e.message}${e.trackId ? ` (ref. ${e.trackId})` : ''}` : 'Error inesperado.');
-      }
-    })();
-    return () => {
-      vigente = false;
-    };
-    }, [conSesion, intento]),
+  const q = query.trim().toLowerCase();
+  const visible = (datos?.projects ?? []).filter(
+    (p) => (filter === 'all' || p.estado === filter) && `${p.nombre} ${p.ubicacion}`.toLowerCase().includes(q),
   );
-
-  const reintentar = () => {
-    setError(null);
-    setProyectos(null);
-    setIntento((n) => n + 1);
-  };
-
-  const visibles = useMemo(
-    () => (proyectos ?? []).filter((p) => filtro === 'todos' || p.estado === filtro),
-    [proyectos, filtro],
-  );
-  const cuenta = (e: EstadoProyecto) => (proyectos ?? []).filter((p) => p.estado === e).length;
-  const puedeCrear = usuario?.rol === 'cargador'; // solo UX: la autoridad es el backend
-
-  const botonNuevo = puedeCrear ? (
-    <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={() => router.push('/proyectos/nuevo')} />
-  ) : undefined;
+  const columns = dispositivo === 'movil' ? 1 : ancho < 1024 ? 2 : ancho < 1600 ? 4 : 5;
 
   return (
-    <Pagina>
-      <EncabezadoDePagina
-        sobretitulo="Panel"
-        titulo="Proyectos"
-        descripcion="Procesos de evaluación de su organización y su estado actual."
-        accion={botonNuevo}
-      />
-
-      {proyectos !== null && proyectos.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md }}>
-          <Metrica etiqueta="Total" valor={proyectos.length} icono="layers" />
-          <Metrica etiqueta="En evaluación" valor={cuenta('en_evaluacion')} icono="cpu" />
-          <Metrica etiqueta="En revisión" valor={cuenta('en_revision_del_comite')} icono="users" />
-          <Metrica etiqueta="Adjudicados" valor={cuenta('adjudicado')} icono="award" />
+    <FixedPage>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.md }}>
+        <View style={{ flexShrink: 1 }}>
+          <Texto variante="titulo" accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold' }}>
+            Proyectos
+          </Texto>
+          <Texto suave>Cada carpeta reúne las propuestas de un proceso de compra.</Texto>
         </View>
-      ) : null}
+        {canCreate ? <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={create} /> : null}
+      </View>
 
-      {proyectos !== null && proyectos.length > 0 ? (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm, minHeight: 46, width: 320, maxWidth: '100%', paddingHorizontal: espacio.md, borderRadius: radio.pildora, backgroundColor: 'rgba(255,255,255,0.8)' }}>
+          <Icono nombre="search" tamano="sm" color={t.textoSuave} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Buscar"
+            placeholderTextColor={t.textoSuave}
+            accessibilityLabel="Buscar proyectos"
+            style={[{ ...texto.cuerpo, flex: 1, minWidth: 0, minHeight: 42, color: t.texto }, soloWeb({ outlineStyle: 'none' })]}
+          />
+        </View>
+        <PillButton icon="sliders" label={filter === 'all' ? 'Filtrar' : ESTADOS[filter].etiqueta} expanded={showFilters} onPress={() => setShowFilters((v) => !v)} />
+      </View>
+
+      {showFilters ? (
         <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
-          <Chip etiqueta="Todos" seleccionado={filtro === 'todos'} onPress={() => setFiltro('todos')} />
-          {ORDEN_DE_ESTADOS.map((e) => (
-            <Chip key={e} etiqueta={ESTADOS[e].etiqueta} seleccionado={filtro === e} onPress={() => setFiltro(e)} />
+          <Chip etiqueta="Todos" seleccionado={filter === 'all'} onPress={() => setFilter('all')} />
+          {ORDEN_DE_ESTADOS.map((s) => (
+            <Chip key={s} etiqueta={ESTADOS[s].etiqueta} seleccionado={filter === s} onPress={() => setFilter(s)} />
           ))}
         </View>
       ) : null}
 
-      {error ? (
-        <Tarjeta>
-          <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-            <Icono nombre="alert-triangle" color={t.error.texto} />
-            <Texto color={t.error.texto} style={{ flex: 1 }}>
-              {error}
-            </Texto>
-          </View>
-          <Boton etiqueta="Reintentar" variante="secundario" icono="refresh-cw" onPress={reintentar} />
-        </Tarjeta>
-      ) : proyectos === null ? (
-        <View accessibilityLiveRegion="polite" accessibilityLabel="Cargando proyectos" style={{ gap: espacio.md }}>
-          {[0, 1, 2].map((i) => (
-            <Tarjeta key={i}>
-              <Esqueleto alto={22} ancho="55%" />
-              <Esqueleto alto={14} ancho="35%" />
-              <Esqueleto alto={14} ancho="80%" />
-            </Tarjeta>
-          ))}
-        </View>
-      ) : proyectos.length === 0 ? (
+      {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
+      {!datos ? (
+        error ? null : <Cargando />
+      ) : datos.projects.length === 0 ? (
         <EstadoVacio
           icono="folder-plus"
           titulo="Aún no hay proyectos"
-          descripcion={
-            puedeCrear
-              ? 'Cree el primer proyecto para cargar propuestas y que el agente las evalúe.'
-              : 'Cuando su organización cree proyectos, aparecerán aquí.'
-          }
-          accion={botonNuevo}
+          descripcion={canCreate ? 'Cree el primer proyecto para reunir sus propuestas.' : 'Cuando su organización cree proyectos, aparecerán aquí.'}
+          accion={canCreate ? <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={create} /> : undefined}
         />
-      ) : visibles.length === 0 ? (
-        <EstadoVacio icono="filter" titulo="Sin resultados" descripcion="Ningún proyecto coincide con este filtro." />
+      ) : visible.length === 0 ? (
+        <EstadoVacio icono="filter" titulo="Sin resultados" descripcion="Ningún proyecto coincide con la búsqueda o el filtro." />
       ) : (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md }}>
-          {visibles.map((p) => {
-            const e = infoEstado(p.estado);
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -12, paddingTop: 8 }}>
+          {visible.map((p, i) => {
+            const n = datos.counts[p.id] ?? 0;
             return (
-              <View key={p.id} style={{ flexGrow: 1, flexBasis: 320, maxWidth: '100%' }}>
-                <Tarjeta onPress={() => router.push(`/proyectos/${p.id}`)} etiquetaAccesible={`${p.nombre}, ${e.etiqueta}`}>
-                  <Insignia etiqueta={e.etiqueta} tono={e.tono} icono={e.icono} />
-                  <Texto variante="subtitulo" numberOfLines={2}>
-                    {p.nombre}
-                  </Texto>
-                  <View style={{ gap: espacio.xs }}>
-                    <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-                      <Icono nombre="map-pin" tamano="sm" color={t.textoSuave} />
-                      <Texto variante="pequeno" suave numberOfLines={1} style={{ flex: 1 }}>
-                        {p.ubicacion}
-                      </Texto>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-                      <Icono nombre="calendar" tamano="sm" color={t.textoSuave} />
-                      <Texto variante="pequeno" suave>
-                        {formatoFecha(p.creado)}
-                      </Texto>
-                    </View>
-                  </View>
-                  <View style={{ height: 1, backgroundColor: t.borde, marginVertical: espacio.xs }} />
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Texto variante="pequeno" suave>
-                      Presupuesto referencial
-                    </Texto>
-                    <Texto variante="etiqueta">{formatoDinero(p.presupuesto_referencial, p.moneda)}</Texto>
-                  </View>
-                </Tarjeta>
+              <View key={p.id} style={{ width: `${100 / columns}%`, padding: 12 }}>
+                <Entrada indice={Math.min(i, 8)}>
+                  <FolderCard
+                    title={p.nombre}
+                    count={`${n} ${n === 1 ? 'propuesta' : 'propuestas'}`}
+                    footer={`${infoEstado(p.estado).etiqueta} · ${formatoFecha(p.creado)}`}
+                    preview={`${formatoDinero(p.presupuesto_referencial, p.moneda)} · ${p.requerimiento}`}
+                    onPress={() => router.push(`/proyectos/${p.id}` as Href)}
+                  />
+                </Entrada>
               </View>
             );
           })}
-        </View>
+        </ScrollView>
       )}
-    </Pagina>
+    </FixedPage>
   );
 }

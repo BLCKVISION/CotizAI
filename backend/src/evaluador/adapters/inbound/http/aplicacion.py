@@ -38,6 +38,7 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
             app.state.contenedor,
             config.semilla_clave.get_secret_value() if config.semilla_clave else None,
             cuenta,
+            extra_display_name=config.demo_display_name,
         )
     app.state.produccion = config.es_produccion
     app.state.limitador_login = LimitadorDeVentana(config.limite_login_por_minuto)

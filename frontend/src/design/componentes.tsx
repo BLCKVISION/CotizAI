@@ -12,9 +12,10 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { soloWeb, vidrio } from './efectos';
+import { BrandRow } from './Brand';
+import { accentGradient, soloWeb, vidrio } from './efectos';
 import { useTema } from './tema';
-import { espacio, fuente, icono as tamanoIcono, radio, tamanoTactil, texto } from './tokens';
+import { espacio, icono as tamanoIcono, radio, tamanoTactil, texto } from './tokens';
 
 type EstadoPressable = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
 export type NombreIcono = ComponentProps<typeof Feather>['name'];
@@ -79,7 +80,7 @@ export function Boton({
 }) {
   const t = useTema();
   const inactivo = cargando || deshabilitado;
-  const colorTexto = variante === 'primario' ? t.sobreLima : t.texto;
+  const colorTexto = variante === 'primario' ? t.onAccent : t.texto;
   return (
     <Pressable
       accessibilityRole="button"
@@ -97,12 +98,12 @@ export function Boton({
         justifyContent: 'center',
         alignSelf: anchoCompleto ? 'stretch' : 'flex-start',
         borderWidth: 2, // constante: el foco cambia solo el color y no desplaza el layout
-        borderColor: e.focused ? t.foco : variante === 'secundario' ? 'rgba(15,23,42,0.14)' : variante === 'primario' ? 'rgba(0,0,0,0.12)' : 'transparent',
+        borderColor: e.focused ? t.foco : variante === 'secundario' ? 'rgba(15,23,42,0.14)' : 'transparent',
         backgroundColor:
           variante === 'primario'
             ? e.pressed
-              ? t.limaPresionado
-              : t.lima
+              ? t.accentPressed
+              : t.accent
             : variante === 'secundario'
               ? e.pressed || e.hovered
                 ? '#FFFFFF'
@@ -112,10 +113,12 @@ export function Boton({
                 : 'transparent',
         opacity: inactivo ? 0.55 : 1,
         ...(variante === 'primario' && !inactivo
-          ? { shadowColor: t.lima, shadowOpacity: e.hovered ? 0.65 : 0.45, shadowRadius: e.hovered ? 16 : 10, shadowOffset: { width: 0, height: 2 } }
+          ? { shadowColor: t.accent, shadowOpacity: e.hovered ? 0.35 : 0.22, shadowRadius: e.hovered ? 18 : 12, shadowOffset: { width: 0, height: 6 } }
           : null),
+        ...(variante === 'primario' ? accentGradient(100) : null),
         ...soloWeb({
-          transitionProperty: 'background-color, box-shadow, transform',
+          transitionProperty: 'background-color, box-shadow, transform, filter',
+          ...(e.hovered && variante === 'primario' && !inactivo ? { filter: 'saturate(1.2) brightness(0.98)' } : null),
           transitionDuration: '220ms',
           transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
           ...(e.hovered && !inactivo ? { transform: 'translateY(-1px)' } : null),
@@ -127,7 +130,7 @@ export function Boton({
       ) : (
         <>
           {icono ? <Icono nombre={icono} color={colorTexto} /> : null}
-          <Text style={{ ...texto.etiqueta, fontSize: 16, color: colorTexto }}>{etiqueta}</Text>
+          <Text style={{ ...texto.etiqueta, fontSize: 14, color: colorTexto }}>{etiqueta}</Text>
         </>
       )}
     </Pressable>
@@ -135,12 +138,13 @@ export function Boton({
 }
 
 /** Botón solo de icono: área táctil de 48 y nombre accesible obligatorio. */
-export function BotonIcono({ nombre, etiqueta, onPress }: { nombre: NombreIcono; etiqueta: string; onPress: () => void }) {
+export function BotonIcono({ nombre, etiqueta, onPress, expandido }: { nombre: NombreIcono; etiqueta: string; onPress: () => void; expandido?: boolean }) {
   const t = useTema();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={etiqueta}
+      accessibilityState={expandido === undefined ? undefined : { expanded: expandido }}
       onPress={onPress}
       hitSlop={4}
       style={(e: EstadoPressable): ViewStyle => ({
@@ -160,8 +164,8 @@ export function BotonIcono({ nombre, etiqueta, onPress }: { nombre: NombreIcono;
 }
 
 /* ───────────── Campo de texto ───────────── */
-type CampoProps = TextInputProps & { etiqueta: string; error?: string; ayuda?: string; icono?: NombreIcono };
-export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, multiline, ...props }: CampoProps) {
+type CampoProps = TextInputProps & { etiqueta: string; error?: string; ayuda?: string; icono?: NombreIcono; minLinesHeight?: number };
+export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, multiline, minLinesHeight = 112, ...props }: CampoProps) {
   const t = useTema();
   const [enfocado, setEnfocado] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -212,7 +216,7 @@ export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, m
               color: t.texto,
               paddingVertical: multiline ? espacio.md : espacio.sm,
               paddingRight: esSecreto ? 0 : espacio.md,
-              minHeight: multiline ? 112 : undefined,
+              minHeight: multiline ? minLinesHeight : undefined,
               textAlignVertical: multiline ? 'top' : 'center',
               outlineWidth: 0,
             },
@@ -361,12 +365,12 @@ export function EstadoVacio({
           width: 72,
           height: 72,
           borderRadius: radio.pildora,
-          backgroundColor: t.lima,
+          backgroundColor: t.accent,
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Icono nombre={icono} tamano="xl" color={t.sobreLima} />
+        <Icono nombre={icono} tamano="xl" color={t.onAccent} />
       </View>
       <Texto variante="subtitulo" style={{ textAlign: 'center' }}>
         {titulo}
@@ -386,33 +390,8 @@ export function Esqueleto({ alto = 16, ancho = '100%' }: { alto?: number; ancho?
 }
 
 /* ───────────── Marca ───────────── */
-export function Marca({ compacta = false }: { sobreOscuro?: boolean; compacta?: boolean }) {
-  const t = useTema();
-  const lado = compacta ? 32 : 40;
-  return (
-    <View
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel="CotizAI"
-      style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm + 2 }}
-    >
-      <View
-        style={{
-          width: lado,
-          height: lado,
-          borderRadius: radio.md,
-          backgroundColor: t.primario,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Feather name="check-square" size={compacta ? 18 : 22} color={t.lima} />
-      </View>
-      <Text style={{ fontFamily: fuente.display, fontSize: compacta ? 24 : 28, letterSpacing: -0.9, color: t.texto }}>
-        Cotiz<Text style={{ fontFamily: fuente.extra }}>AI</Text>
-      </Text>
-    </View>
-  );
+export function Marca({ compacta = false }: { compacta?: boolean }) {
+  return <BrandRow size={compacta ? 36 : 48} />;
 }
 
 /* ───────────── Avatar con iniciales ───────────── */

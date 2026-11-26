@@ -7,7 +7,7 @@ import { useSesion } from '@/core/sesion/SesionProvider';
 import { Boton, CampoDeTexto, Chip, Icono, Tarjeta, Texto } from '@/design/componentes';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
-import { anchoMaximoLectura, espacio } from '@/design/tokens';
+import { espacio } from '@/design/tokens';
 import { crearProyectoApi, type Moneda } from '@/features/proyectos/api';
 import { parsearMonto } from '@/features/proyectos/monto';
 
@@ -72,20 +72,12 @@ export default function NuevoProyecto() {
         descripcion="Defina qué se va a adquirir. Después podrá cargar las propuestas a evaluar."
         accion={<Boton etiqueta="Volver" variante="fantasma" icono="arrow-left" onPress={() => router.back()} />}
       />
-      <View style={{ maxWidth: anchoMaximoLectura, width: '100%' }}>
+      <View style={{ width: '100%' }}>
         <Tarjeta>
           <View style={{ gap: espacio.md }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.lg, alignItems: 'flex-start' }}>
+            <View style={{ flexGrow: 1, flexBasis: 360, gap: espacio.md }}>
             <CampoDeTexto etiqueta="Nombre del proyecto" icono="type" value={nombre} onChangeText={setNombre} error={errores.nombre} maxLength={120} />
-            <CampoDeTexto
-              etiqueta="Requerimiento"
-              icono="file-text"
-              value={requerimiento}
-              onChangeText={setRequerimiento}
-              error={errores.requerimiento}
-              ayuda="Equipos, cantidades y condiciones (instalación, garantía, soporte)."
-              multiline
-              maxLength={5000}
-            />
             <CampoDeTexto etiqueta="Ubicación" icono="map-pin" value={ubicacion} onChangeText={setUbicacion} error={errores.ubicacion} maxLength={200} />
             <CampoDeTexto
               etiqueta="Presupuesto referencial (opcional)"
@@ -101,6 +93,21 @@ export default function NuevoProyecto() {
               {(['USD', 'VES'] as const).map((m) => (
                 <Chip key={m} etiqueta={m === 'VES' ? 'Bolívares (VES)' : 'Dólares (USD)'} seleccionado={moneda === m} onPress={() => setMoneda(m)} />
               ))}
+            </View>
+            </View>
+            <View style={{ flexGrow: 1.3, flexBasis: 420, gap: espacio.md }}>
+            <CampoDeTexto
+              etiqueta="Requerimiento"
+              icono="file-text"
+              value={requerimiento}
+              onChangeText={setRequerimiento}
+              error={errores.requerimiento}
+              ayuda="Equipos, cantidades y condiciones (instalación, garantía, soporte)."
+              multiline
+              minLinesHeight={236}
+              maxLength={5000}
+            />
+            </View>
             </View>
             {errores.general ? (
               <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>

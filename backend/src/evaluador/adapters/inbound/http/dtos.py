@@ -24,7 +24,7 @@ class DtoSalida(BaseModel):
 
 # ---------- Sesiones ----------
 class IniciarSesionDto(DtoEntrada):
-    correo: Annotated[str, Field(min_length=3, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
+    correo: Annotated[str, Field(min_length=3, max_length=254, pattern=r"^([^@\s]+@[^@\s]+\.[^@\s]+|[A-Za-z0-9._-]{3,64})$")]  # email or plain username
     contrasena: Annotated[SecretStr, Field(min_length=1, max_length=128)]
 
 
@@ -33,10 +33,11 @@ class UsuarioRespuesta(DtoSalida):
     correo: str
     rol: Rol
     organizacion_id: str
+    display_name: str = ""
 
     @classmethod
     def desde_dominio(cls, u: Usuario) -> UsuarioRespuesta:
-        return cls(id=u.id, correo=u.correo, rol=u.rol, organizacion_id=u.tenant_id)
+        return cls(id=u.id, correo=u.correo, rol=u.rol, organizacion_id=u.tenant_id, display_name=u.display_name)
 
 
 class SesionRespuesta(DtoSalida):

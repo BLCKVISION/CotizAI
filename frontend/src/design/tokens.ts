@@ -3,7 +3,7 @@ export const espacio = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48, xxxl: 64
 export const radio = { sm: 8, md: 12, nav: 15, lg: 18, xl: 24, panel: 28, pildora: 999 } as const;
 export const tamanoTactil = 48; // >= 44pt iOS / 48dp Android
 export const icono = { sm: 16, md: 20, lg: 24, xl: 32 } as const;
-export const anchoMaximoContenido = 1120;
+export const anchoMaximoContenido = 1760;
 export const anchoMaximoLectura = 640;
 export const margenFlotante = 14; // separación del sidebar y paneles flotantes respecto al borde
 
@@ -30,13 +30,13 @@ export const fuente = {
 } as const;
 
 export const texto = {
-  hero: { fontFamily: fuente.display, fontSize: 44, lineHeight: 50, letterSpacing: -1.4 },
-  titulo: { fontFamily: fuente.display, fontSize: 34, lineHeight: 40, letterSpacing: -1.1 },
-  subtitulo: { fontFamily: fuente.media, fontSize: 20, lineHeight: 28, letterSpacing: -0.3 },
-  cuerpo: { fontFamily: fuente.regular, fontSize: 16, lineHeight: 24 },
-  cuerpoMedio: { fontFamily: fuente.media, fontSize: 16, lineHeight: 24 },
-  etiqueta: { fontFamily: fuente.negrita, fontSize: 14, lineHeight: 20 },
-  pequeno: { fontFamily: fuente.regular, fontSize: 14, lineHeight: 20 },
-  sobretitulo: { fontFamily: fuente.negrita, fontSize: 12, lineHeight: 16, letterSpacing: 1.2 },
-  metrica: { fontFamily: fuente.display, fontSize: 48, lineHeight: 52, letterSpacing: -1.6 },
+  hero: { fontFamily: fuente.display, fontSize: 40, lineHeight: 46, letterSpacing: -1.4 },
+  titulo: { fontFamily: fuente.display, fontSize: 31, lineHeight: 37, letterSpacing: -1.1 },
+  subtitulo: { fontFamily: fuente.media, fontSize: 18, lineHeight: 25, letterSpacing: -0.3 },
+  cuerpo: { fontFamily: fuente.regular, fontSize: 15, lineHeight: 22 },
+  cuerpoMedio: { fontFamily: fuente.media, fontSize: 15, lineHeight: 22 },
+  etiqueta: { fontFamily: fuente.negrita, fontSize: 13, lineHeight: 18 },
+  pequeno: { fontFamily: fuente.regular, fontSize: 13, lineHeight: 18 },
+  sobretitulo: { fontFamily: fuente.negrita, fontSize: 11, lineHeight: 15, letterSpacing: 1.1 },
+  metrica: { fontFamily: fuente.display, fontSize: 42, lineHeight: 46, letterSpacing: -1.6 },
 } as const;

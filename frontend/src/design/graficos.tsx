@@ -5,14 +5,17 @@
 import { useState } from 'react';
 import { Pressable, type PressableStateCallbackType, View } from 'react-native';
 
-import { Chip, Tarjeta, Texto } from './componentes';
-import { TituloDeSeccion } from './bloques';
+import { CollapsibleCard } from './Collapsible';
+import { Chip, Texto } from './componentes';
+import { soloWeb } from './efectos';
 import { useTema } from './tema';
 import { espacio, radio } from './tokens';
 
 export type Dato = { etiqueta: string; valor: number };
 type Estado = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
-const TONO = '#2563EB';
+const TONO = '#1D4ED8';
+/** Bars end in the deep blue at the data end: left→right for bars, bottom→top for columns. */
+const fill = (angle: number) => soloWeb({ backgroundImage: angle === 90 ? 'linear-gradient(90deg, #7CCBF9 0%, #1D4ED8 100%)' : 'linear-gradient(180deg, #1D4ED8 0%, #7CCBF9 100%)' });
 
 export function TarjetaDeGrafico({
   titulo,
@@ -33,16 +36,16 @@ export function TarjetaDeGrafico({
   const total = datos.reduce((s, d) => s + d.valor, 0);
   const maximo = Math.max(1, ...datos.map((d) => d.valor));
   const sel = activo === null ? null : datos[activo];
-  const detalle = sel ? `${sel.etiqueta}: ${sel.valor} ${unidad} (${Math.round((sel.valor / Math.max(1, total)) * 100)} %)` : `${total} ${unidad} en total`;
+  const detalle = sel ? `${sel.etiqueta}: ${sel.valor} ${unidad} (${Math.round((sel.valor / Math.max(1, total)) * 100)} %)` : `${total} ${total === 1 ? unidad.replace(/s$/, '') : unidad} en total`;
   const eventos = (i: number) => ({ onHoverIn: () => setActivo(i), onHoverOut: () => setActivo(null), onPress: () => setActivo(i) });
 
   return (
-    <Tarjeta style={{ flex: 1 }}>
-      <TituloDeSeccion
-        titulo={titulo}
-        detalle={total > 0 ? detalle : undefined}
-        accion={total > 0 ? <Chip etiqueta={tabla ? 'Ver gráfico' : 'Ver tabla'} seleccionado={false} onPress={() => setTabla((v) => !v)} /> : undefined}
-      />
+    <CollapsibleCard title={titulo} detail={total > 0 ? detalle : vacio}>
+      {total > 0 ? (
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+          <Chip etiqueta={tabla ? 'Ver gráfico' : 'Ver tabla'} seleccionado={false} onPress={() => setTabla((v) => !v)} />
+        </View>
+      ) : null}
       {total === 0 ? (
         <Texto suave style={{ paddingVertical: espacio.lg }}>
           {vacio}
@@ -70,7 +73,7 @@ export function TarjetaDeGrafico({
                 <Texto variante="etiqueta">{d.valor}</Texto>
               </View>
               <View style={{ height: 10 }}>
-                <View style={{ height: 10, width: `${(d.valor / maximo) * 100}%`, backgroundColor: TONO, borderTopRightRadius: 4, borderBottomRightRadius: 4 }} />
+                <View style={{ height: 10, width: `${(d.valor / maximo) * 100}%`, backgroundColor: TONO, borderTopRightRadius: 5, borderBottomRightRadius: 5, ...fill(90) }} />
               </View>
             </Pressable>
           ))}
@@ -81,7 +84,7 @@ export function TarjetaDeGrafico({
             <Pressable key={d.etiqueta} accessibilityLabel={`${d.etiqueta}: ${d.valor} ${unidad}`} {...eventos(i)}
               style={{ flex: 1, height: '100%', justifyContent: 'flex-end', alignItems: 'center', gap: espacio.xs, backgroundColor: activo === i ? t.superficieAlta : 'transparent', borderRadius: radio.sm }}>
               <Texto variante="etiqueta">{d.valor}</Texto>
-              <View style={{ width: '100%', maxWidth: 44, height: (d.valor / maximo) * 120, backgroundColor: TONO, borderTopLeftRadius: 4, borderTopRightRadius: 4 }} />
+              <View style={{ width: '100%', maxWidth: 44, height: (d.valor / maximo) * 120, backgroundColor: TONO, borderTopLeftRadius: 8, borderTopRightRadius: 8, ...fill(180) }} />
               <View style={{ alignSelf: 'stretch', height: 1, backgroundColor: t.borde }} />
               <Texto variante="pequeno" suave numberOfLines={1}>
                 {d.etiqueta}
@@ -90,6 +93,6 @@ export function TarjetaDeGrafico({
           ))}
         </View>
       )}
-    </Tarjeta>
+    </CollapsibleCard>
   );
 }

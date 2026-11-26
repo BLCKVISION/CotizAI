@@ -1,11 +1,11 @@
 /**
- * Paleta «Relay claro» para CotizAI (solo tema claro).
+ * CotizAI light palette: neutral greys, glass surfaces and a blue accent.
  * Todo par texto/fondo cumple >= 4.5:1; bordes de control >= 3:1.
- * El lima solo lleva texto negro encima.
+ * The accent always carries deep navy text.
  */
 export const paletaClara = {
   esquema: 'claro' as const,
-  fondo: '#EFF1F5',
+  fondo: '#E9EBEF',
   superficie: '#FFFFFF',
   superficieAlta: '#F1F5F9',
   texto: '#0B1220',
@@ -15,11 +15,17 @@ export const paletaClara = {
   primario: '#0F172A',
   primarioPresionado: '#000000',
   sobrePrimario: '#FFFFFF',
-  foco: '#2563EB',
-  lima: '#D4F938',
-  limaPresionado: '#C5EE25',
-  sobreLima: '#0B1220',
-  halos: { durazno: 'rgba(254,215,170,0.38)', menta: 'rgba(187,247,208,0.30)' },
+  foco: '#0369A1',
+  // Sky-blue to aqua accent. These are light tones: text on them is always deep navy (>= 7:1).
+  accent: '#93DDF9',
+  accentPressed: '#7DD3FC',
+  onAccent: '#06283D',
+  /** Darker step of the same hue for thin marks, borders and checks on white (>= 3:1). */
+  accentStrong: '#0E8FA8',
+  gradient: ['#A9DEFD', '#93E4F4', '#A4F4DD'] as const,
+  /** Chart columns: a single blue, deep (top) to sky (bottom). Every column also shows its value as text. */
+  chart: ['#1D4ED8', '#7CCBF9'] as const,
+  halos: { durazno: 'rgba(167,243,208,0.28)', menta: 'rgba(125,211,252,0.34)' },
   exito: { texto: '#166534', fondo: '#DCFCE7' },
   aviso: { texto: '#92400E', fondo: '#FEF3C7' },
   info: { texto: '#1E40AF', fondo: '#DBEAFE' },

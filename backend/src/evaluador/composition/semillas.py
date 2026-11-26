@@ -18,6 +18,7 @@ def sembrar_demo(
     clave_por_rol: str | None,
     cuenta_extra: tuple[str, str] | None = None,
     codigo_tenant: str = "demo",
+    extra_display_name: str = "",
 ) -> None:
     """Crea el tenant demo, un usuario por rol (si hay clave) y, opcionalmente, una cuenta extra (correo, clave)."""
     tenant = Tenant(id=_id_estable(codigo_tenant), codigo=codigo_tenant, nombre="Organización demo")
@@ -37,5 +38,6 @@ def sembrar_demo(
                 correo=correo.strip().lower(),
                 hash_contrasena=c.hasheador.hashear(clave),
                 rol=Rol.CARGADOR,
+                display_name=extra_display_name.strip(),
             )
         )

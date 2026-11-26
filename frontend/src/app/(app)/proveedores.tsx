@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, Columna, ErrorConReintento, Rejilla, TituloDeSeccion } from '@/design/bloques';
+import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, CampoDeTexto, EstadoVacio, Tarjeta, Texto } from '@/design/componentes';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
@@ -73,12 +74,10 @@ export default function Proveedores() {
           <Rejilla>
             {visibles.map((p) => (
               <Columna key={p.id} minimo={320}>
-                <Tarjeta style={{ flex: 1 }}>
-                  <Texto variante="subtitulo">{p.nombre}</Texto>
-                  <Texto variante="etiqueta">{p.rif}</Texto>
-                  <Texto variante="pequeno" suave>{p.ubicacion}</Texto>
-                  <Texto variante="pequeno" suave>{p.contacto}</Texto>
-                </Tarjeta>
+                <CollapsibleCard title={p.nombre} detail={p.rif}>
+                  <Texto variante="pequeno">Ubicación: {p.ubicacion}</Texto>
+                  <Texto variante="pequeno">Contacto: {p.contacto}</Texto>
+                </CollapsibleCard>
               </Columna>
             ))}
           </Rejilla>

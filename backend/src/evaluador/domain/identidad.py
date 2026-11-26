@@ -70,6 +70,7 @@ class Usuario:
     activo: bool = True
     intentos_fallidos: int = 0
     bloqueado_hasta: datetime | None = None
+    display_name: str = ""  # how the UI greets the person; empty falls back to the user name
 
     def esta_bloqueado(self, ahora: datetime) -> bool:
         return self.bloqueado_hasta is not None and ahora < self.bloqueado_hasta

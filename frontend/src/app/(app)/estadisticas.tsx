@@ -1,8 +1,9 @@
 import { View } from 'react-native';
 
 import { useDatos } from '@/core/useDatos';
-import { Aviso, Cargando, Columna, ErrorConReintento, Rejilla, TituloDeSeccion } from '@/design/bloques';
-import { Tarjeta, Texto } from '@/design/componentes';
+import { Aviso, Cargando, Columna, ErrorConReintento, Rejilla } from '@/design/bloques';
+import { CollapsibleCard } from '@/design/Collapsible';
+import { Texto } from '@/design/componentes';
 import { TarjetaDeGrafico } from '@/design/graficos';
 import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
@@ -21,24 +22,15 @@ export default function EstadisticasPantalla() {
       ) : (
         <View style={{ gap: espacio.xl }}>
           <Rejilla>
-            <Metrica etiqueta="Proyectos" valor={e.total_proyectos} icono="folder" />
+            <Metrica destacada etiqueta="Proyectos" valor={e.total_proyectos} icono="folder" />
             <Metrica etiqueta="Propuestas" valor={e.total_propuestas} icono="file-text" />
             <Metrica etiqueta="Proveedores" valor={e.total_proveedores} icono="briefcase" />
           </Rejilla>
-          <Tarjeta>
-            <TituloDeSeccion titulo="Presupuesto referencial registrado" detalle="Cada moneda se suma por separado; aún no hay conversión con la tasa BCV." />
-            {Object.keys(e.presupuestos).length === 0 ? (
-              <Texto suave>Ningún proyecto tiene presupuesto referencial.</Texto>
-            ) : (
-              <Rejilla>
-                {Object.entries(e.presupuestos).map(([moneda, total]) => (
-                  <Columna key={moneda} minimo={240}>
-                    <Texto variante="titulo">{formatoDinero(total, moneda)}</Texto>
-                  </Columna>
-                ))}
-              </Rejilla>
-            )}
-          </Tarjeta>
+          <CollapsibleCard title="Presupuesto referencial registrado" detail={Object.keys(e.presupuestos).length === 0 ? 'Sin presupuestos registrados' : Object.entries(e.presupuestos).map(([m, v]) => formatoDinero(v, m)).join(' · ')}>
+            <Texto variante="pequeno" suave>
+              Cada moneda se suma por separado; aún no hay conversión con la tasa BCV.
+            </Texto>
+          </CollapsibleCard>
           <Rejilla>
             <Columna>
               <TarjetaDeGrafico titulo="Proyectos por estado" unidad="proyectos" datos={porEstado(e)} />

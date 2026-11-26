@@ -1,3 +1,5 @@
+**Code language:** all new code is in English; user-facing text stays in Spanish. See [../AGENTS.md](../AGENTS.md).
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data

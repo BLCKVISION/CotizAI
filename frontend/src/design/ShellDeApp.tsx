@@ -1,22 +1,36 @@
 import { type Href, usePathname, useRouter } from 'expo-router';
-import { type ReactNode } from 'react';
-import { Pressable, type PressableStateCallbackType, ScrollView, View } from 'react-native';
+import { type ReactNode, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
+import { Tour } from '@/features/onboarding/Tour';
 
-import { Avatar, BotonIcono, Chip, Icono, Insignia, Marca, type NombreIcono, Texto } from './componentes';
+import { BrandRow, Isotype } from './Brand';
+import { BotonIcono, Chip, Insignia, Texto } from './componentes';
 import { useDispositivo } from './dispositivo';
 import { soloWeb, vidrio } from './efectos';
+import { LineIcon, type LineIconName } from './LineIcon';
+import { SearchOverlay } from './SearchOverlay';
 import { useTema } from './tema';
-import { espacio, margenFlotante, radio, tamanoTactil } from './tokens';
+import { UserBubble } from './UserBubble';
+import { espacio, margenFlotante, radio } from './tokens';
+
+const SIDEBAR_KEY = 'cotizai.sidebar.expanded';
+const readExpanded = () => {
+  try {
+    return typeof window !== 'undefined' && window.localStorage?.getItem(SIDEBAR_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 const ETIQUETA_ROL = { cargador: 'Cargador', evaluador: 'Evaluador', aprobador: 'Aprobador', auditor: 'Auditor' } as const;
 
-type Item = { ruta: string; etiqueta: string; icono: NombreIcono; soloRol?: 'auditor' };
+type Item = { ruta: string; etiqueta: string; icono: LineIconName; soloRol?: 'auditor' };
 const NAVEGACION: { categoria: string; items: Item[] }[] = [
   { categoria: 'GENERAL', items: [
-    { ruta: '/resumen', etiqueta: 'Resumen', icono: 'home' },
+    { ruta: '/home', etiqueta: 'Home', icono: 'home' },
     { ruta: '/estadisticas', etiqueta: 'Estadísticas', icono: 'bar-chart-2' },
   ] },
   { categoria: 'COMPRAS', items: [
@@ -26,49 +40,45 @@ const NAVEGACION: { categoria: string; items: Item[] }[] = [
   { categoria: 'CONTROL', items: [{ ruta: '/auditoria', etiqueta: 'Auditoría', icono: 'shield', soloRol: 'auditor' }] },
 ];
 
-/** Ítem de la barra lateral: píldora radio 15; activo = blanco puro elevado, texto negro y punto lima (Relay claro). */
-function ItemDeNavegacion({ etiqueta, icono, activo, peligro = false, onPress }: { etiqueta: string; icono: NombreIcono; activo: boolean; peligro?: boolean; onPress: () => void }) {
+const RAIL_COLLAPSED = 72;
+const RAIL_EXPANDED = 216;
+const CIRCLE = 44;
+const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+type RailState = { pressed: boolean; hovered?: boolean; focused?: boolean };
+
+/** Rail item: a circle with the icon (dark when active). When expanded the pill grows and the label fades in. */
+function RailItem({ label, icon, active = false, expanded, onPress, expandable, danger = false }: { label: string; icon: LineIconName; active?: boolean; expanded: boolean; onPress: () => void; expandable?: boolean; danger?: boolean }) {
   const t = useTema();
   return (
     <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={etiqueta}
-      accessibilityState={{ selected: activo }}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={expandable ? { expanded } : { selected: active }}
       onPress={onPress}
-      style={(e: { pressed: boolean; hovered?: boolean; focused?: boolean }) => ({
-        minHeight: tamanoTactil,
+      {...({ title: expanded ? undefined : label } as object)}
+      style={(e: RailState) => ({
+        height: CIRCLE,
+        width: expanded ? RAIL_EXPANDED - 24 : CIRCLE,
+        marginLeft: (RAIL_COLLAPSED - CIRCLE) / 2,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: espacio.sm + 2,
-        paddingHorizontal: espacio.md,
-        borderRadius: radio.nav,
+        borderRadius: radio.pildora,
+        overflow: 'hidden',
         borderWidth: 2,
-        borderColor: e.focused ? t.foco : activo ? 'rgba(15,23,42,0.08)' : 'transparent',
-        backgroundColor: activo ? '#FFFFFF' : e.hovered || e.pressed ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.40)',
-        ...(activo
-          ? { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 }
-          : null),
-        ...soloWeb({
-          transitionProperty: 'transform, box-shadow, background-color',
-          transitionDuration: '220ms',
-          transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-          ...(activo ? { transform: 'translateY(-1px)', boxShadow: '0 8px 24px -2px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04)' } : null),
-        }),
+        borderColor: e.focused ? t.foco : 'transparent',
+        backgroundColor: active ? t.primario : e.hovered || e.pressed ? '#FFFFFF' : 'rgba(255,255,255,0.62)',
+        ...soloWeb({ transitionProperty: 'width, background-color', transitionDuration: '320ms', transitionTimingFunction: easing }),
       })}
     >
-      {({ hovered }: PressableStateCallbackType & { hovered?: boolean }) => (
-        <>
-          <Icono nombre={icono} color={peligro && hovered ? t.error.texto : activo || hovered ? t.texto : t.textoSuave} />
-          <Texto
-            variante={activo ? 'etiqueta' : 'cuerpoMedio'}
-            color={peligro && hovered ? t.error.texto : activo || hovered ? t.texto : t.textoSuave}
-            style={{ flex: 1, fontSize: 15 }}
-          >
-            {etiqueta}
-          </Texto>
-          {activo ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.lima, borderWidth: 1, borderColor: 'rgba(0,0,0,0.25)' }} /> : null}
-        </>
-      )}
+      <View style={{ width: CIRCLE - 4, alignItems: 'center' }}>
+        <LineIcon name={icon} color={danger ? t.error.texto : active ? '#FFFFFF' : t.texto} />
+      </View>
+      <View style={{ width: RAIL_EXPANDED - 24 - CIRCLE, opacity: expanded ? 1 : 0, ...soloWeb({ transitionProperty: 'opacity', transitionDuration: expanded ? '320ms' : '140ms' }) }}>
+        <Texto variante="etiqueta" numberOfLines={1} color={danger ? t.error.texto : active ? '#FFFFFF' : t.texto}>
+          {label}
+        </Texto>
+      </View>
     </Pressable>
   );
 }
@@ -78,61 +88,73 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
   const ruta = usePathname();
   const { dispositivo } = useDispositivo();
   const { usuario, cerrarSesion } = useSesion();
+  const t = useTema();
   const esEscritorio = dispositivo === 'escritorio';
   const categorias = NAVEGACION.map((c) => ({ ...c, items: c.items.filter((i) => !i.soloRol || i.soloRol === usuario?.rol) })).filter(
     (c) => c.items.length > 0,
   );
   const ir = (destino: string) => router.push(destino as Href);
-  const iniciales = (usuario?.correo ?? '??').slice(0, 2);
+  const [expanded, setExpanded] = useState(readExpanded);
+  const [searching, setSearching] = useState(false);
+  const toggleSidebar = () =>
+    setExpanded((v) => {
+      try {
+        window.localStorage.setItem(SIDEBAR_KEY, v ? '0' : '1'); // UI preference only, never data
+      } catch {
+        /* storage blocked: the choice simply is not remembered */
+      }
+      return !v;
+    });
 
   if (esEscritorio) {
+    const items = categorias.flatMap((c) => c.items);
     return (
-      <View style={{ flex: 1, flexDirection: 'row', padding: margenFlotante, gap: margenFlotante + 6 }}>
-        {/* Sidebar flotante: radio 28, blanco .82 con blur 32 */}
-        <View
-          style={{
-            ...vidrio({ opacidad: 0.82, blur: 32, radio: radio.panel }),
-            width: 264,
-            padding: espacio.md,
-            paddingTop: espacio.lg,
-            justifyContent: 'space-between',
-          }}
-        >
-          <View style={{ gap: espacio.lg }}>
-            <View style={{ paddingHorizontal: espacio.sm }}>
-              <Marca />
-            </View>
-            <View style={{ height: 1, backgroundColor: 'rgba(15,23,42,0.06)' }} />
-            <View accessibilityRole="menu" style={{ gap: espacio.xs + 2 }}>
-              {categorias.map((c) => (
-                <View key={c.categoria} style={{ gap: espacio.xs, marginBottom: espacio.sm }}>
-                  <Texto variante="sobretitulo" suave style={{ paddingHorizontal: espacio.md }}>
-                    {c.categoria}
-                  </Texto>
-                  {c.items.map((n) => (
-                    <ItemDeNavegacion key={n.ruta} etiqueta={n.etiqueta} icono={n.icono} activo={ruta.startsWith(n.ruta)} onPress={() => ir(n.ruta)} />
-                  ))}
-                </View>
-              ))}
-            </View>
-          </View>
-          <View style={{ gap: espacio.md }}>
-            <View style={{ height: 1, backgroundColor: 'rgba(15,23,42,0.06)' }} />
-            <View style={{ flexDirection: 'row', gap: espacio.sm + 2, alignItems: 'center', paddingHorizontal: espacio.sm }}>
-              <Avatar texto={iniciales} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Texto variante="pequeno" numberOfLines={1}>
-                  {usuario?.correo}
-                </Texto>
-                <Texto variante="pequeno" suave>
-                  {usuario ? ETIQUETA_ROL[usuario.rol] : ''}
-                </Texto>
-              </View>
-            </View>
-            <ItemDeNavegacion etiqueta="Cerrar sesión" icono="log-out" activo={false} peligro onPress={cerrarSesion} />
+      <View style={{ flex: 1 }}>
+        {/* Top bar: only the isotype, search and the account bubble. */}
+        <View style={{ height: 76, flexDirection: 'row', alignItems: 'center', paddingLeft: margenFlotante, paddingRight: espacio.lg, zIndex: 30 }}>
+          <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => ir('/home')} style={{ width: RAIL_COLLAPSED, alignItems: 'center' }}>
+            <Isotype size={48} />
+          </Pressable>
+          <View style={{ flex: 1 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Buscar proyectos"
+              onPress={() => setSearching(true)}
+              style={(e: RailState) => ({ width: CIRCLE, height: CIRCLE, borderRadius: radio.pildora, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: e.hovered || e.pressed ? '#FFFFFF' : 'rgba(255,255,255,0.62)' })}
+            >
+              <LineIcon name="search" />
+            </Pressable>
+            <UserBubble name={usuario?.display_name || usuario?.correo || '??'} role={usuario ? ETIQUETA_ROL[usuario.rol] : ''} onSignOut={cerrarSesion} />
           </View>
         </View>
-        <View style={{ flex: 1 }}>{children}</View>
+
+        <View style={{ flex: 1, flexDirection: 'row', paddingLeft: margenFlotante, minHeight: 0, zIndex: 1 }}>
+          {/* Menu and sections stay grouped in the vertical middle; sign-out sits at the bottom. */}
+          <View
+            style={{
+              width: expanded ? RAIL_EXPANDED : RAIL_COLLAPSED,
+              overflow: 'hidden',
+              ...soloWeb({ transitionProperty: 'width', transitionDuration: '320ms', transitionTimingFunction: easing }),
+            }}
+          >
+            {/* The negative top margin offsets the top bar so the group is centred on the whole screen. */}
+            <View style={{ flex: 1, justifyContent: 'center', marginTop: -76, paddingTop: 0, gap: espacio.sm }}>
+              <RailItem label={expanded ? 'Contraer menú' : 'Expandir menú'} icon="menu" expandable expanded={expanded} onPress={toggleSidebar} />
+              <View accessibilityRole="menu" style={{ gap: espacio.sm }}>
+                {items.map((n) => (
+                  <RailItem key={n.ruta} label={n.etiqueta} icon={n.icono} expanded={expanded} active={ruta.startsWith(n.ruta)} onPress={() => ir(n.ruta)} />
+                ))}
+              </View>
+            </View>
+            <View style={{ paddingBottom: espacio.lg }}>
+              <RailItem label="Cerrar sesión" icon="log-out" danger expanded={expanded} onPress={cerrarSesion} />
+            </View>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
+        </View>
+        <SearchOverlay visible={searching} onClose={() => setSearching(false)} />
+        <Tour />
       </View>
     );
   }
@@ -151,8 +173,8 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           paddingVertical: espacio.sm,
         }}
       >
-        <Pressable accessibilityRole="link" accessibilityLabel="Ir al resumen" onPress={() => ir('/resumen')}>
-          <Marca compacta />
+        <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => ir('/home')}>
+          <BrandRow size={36} />
         </Pressable>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.xs }}>
           {usuario ? (
@@ -169,6 +191,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
         ))}
       </ScrollView>
       <View style={{ flex: 1 }}>{children}</View>
+      <Tour />
     </SafeAreaView>
   );
 }

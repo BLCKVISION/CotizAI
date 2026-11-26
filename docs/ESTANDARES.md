@@ -10,14 +10,14 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 4. **Inmutabilidad por defecto.** Devolver copias nuevas; no mutar argumentos.
 5. **Fallar de forma explícita.** Sin `except: pass`, sin valores por defecto que oculten errores.
 6. **Seguridad por defecto:** mínimo privilegio, sin secretos en el repositorio, entradas externas = no confiables.
-7. **Idioma:** dominio y UI en **español**; infraestructura/librería en inglés cuando el estándar lo dicta. Un mismo concepto, un mismo nombre en todo el sistema.
+7. **Idioma (obligatorio):** todo **código nuevo en inglés** (nombres, archivos, comentarios, docstrings, pruebas, rutas, campos, variables de entorno y códigos de error). El **texto que lee el usuario** y la documentación siguen en **español**. El código existente en español se migra solo en cambios dedicados; los nombres que fija el enunciado (p. ej. las claves de `salida.json`) no se traducen. Un mismo concepto, un mismo nombre en todo el sistema. Regla completa: [`AGENTS.md`](../AGENTS.md).
 
 ## 2. Backend (Python 3.12)
 
 ### Arquitectura
 - Capas: `domain` → `application` (puertos + casos de uso) → `adapters` → `composition`. **Prohibido** importar `adapters` o `fastapi`/`sqlalchemy` desde `domain` o `application`.
 - Cada dependencia externa (BD, modelo, reloj, ids, archivos) es un **puerto** (`typing.Protocol`) con adaptador en `adapters/outbound`.
-- Casos de uso: una clase = una acción, dependencias por constructor, método `ejecutar`. **Autorización y tenant se aplican en el caso de uso**, no solo en HTTP.
+- Casos de uso: una clase = una acción, dependencias por constructor, método `execute` (el código existente usa `ejecutar`). **Autorización y tenant se aplican en el caso de uso**, no solo en HTTP.
 - Solo `composition/` instancia adaptadores concretos. Sin singletons globales ni service locator.
 - Entidades `@dataclass(frozen=True, slots=True)`; cambios devuelven una nueva instancia.
 

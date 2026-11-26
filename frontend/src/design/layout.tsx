@@ -1,23 +1,24 @@
 import { type ReactNode } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 
 import { Icono, type NombreIcono, Texto } from './componentes';
 import { useDispositivo } from './dispositivo';
-import { Escalonado, useContador, vidrio } from './efectos';
+import { accentGradient, Escalonado, useContador, vidrio } from './efectos';
 import { useTema } from './tema';
 import { anchoMaximoContenido, espacio, radio } from './tokens';
 
 /** Contenedor de página: gutters adaptativos, ancho máximo, scroll y entrada escalonada de sus bloques. */
 export function Pagina({ children }: { children: ReactNode }) {
   const { dispositivo } = useDispositivo();
-  const gutter = dispositivo === 'movil' ? espacio.md : espacio.xl;
+  const { height } = useWindowDimensions();
+  const gutter = dispositivo === 'movil' ? espacio.md : height < 860 ? espacio.lg : espacio.xl;
   return (
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingBottom: espacio.xxxl }}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={{ width: '100%', maxWidth: anchoMaximoContenido, paddingHorizontal: gutter, paddingTop: espacio.xl, gap: espacio.xl }}>
+      <View style={{ width: '100%', maxWidth: anchoMaximoContenido, paddingHorizontal: gutter, paddingTop: espacio.sm, gap: espacio.lg }}>
         <Escalonado>{children}</Escalonado>
       </View>
     </ScrollView>
@@ -59,7 +60,7 @@ export function EncabezadoDePagina({
             <Texto variante="etiqueta">{sobretitulo}</Texto>
           </View>
         ) : null}
-        <Texto variante={dispositivo === 'movil' ? 'subtitulo' : 'titulo'} accessibilityRole="header" style={{ color: t.texto }}>
+        <Texto variante={dispositivo === 'movil' ? 'subtitulo' : 'titulo'} accessibilityRole="header" style={{ color: t.texto, fontFamily: 'Urbanist_600SemiBold' }}>
           {titulo}
         </Texto>
         {descripcion ? (
@@ -74,7 +75,7 @@ export function EncabezadoDePagina({
 }
 
 /** Tarjeta de métrica: cifra display ligera que cuenta hasta su valor, etiqueta e icono en disco blanco. */
-export function Metrica({ etiqueta, valor, icono }: { etiqueta: string; valor: number; icono: NombreIcono }) {
+export function Metrica({ etiqueta, valor, icono, destacada = false }: { etiqueta: string; valor: number; icono: NombreIcono; destacada?: boolean }) {
   const t = useTema();
   const mostrado = useContador(valor);
   return (
@@ -83,6 +84,7 @@ export function Metrica({ etiqueta, valor, icono }: { etiqueta: string; valor: n
       accessibilityLabel={`${etiqueta}: ${valor}`}
       style={{
         ...vidrio({ radio: radio.xl }),
+        ...(destacada ? accentGradient(120) : null),
         flexGrow: 1,
         flexBasis: 170,
         padding: espacio.lg,
@@ -90,7 +92,7 @@ export function Metrica({ etiqueta, valor, icono }: { etiqueta: string; valor: n
       }}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Texto variante="etiqueta" suave>
+        <Texto variante="etiqueta" suave={!destacada} color={destacada ? t.onAccent : undefined}>
           {etiqueta}
         </Texto>
         <View
@@ -108,7 +110,25 @@ export function Metrica({ etiqueta, valor, icono }: { etiqueta: string; valor: n
           <Icono nombre={icono} color={t.texto} />
         </View>
       </View>
-      <Texto variante="metrica">{mostrado}</Texto>
+      <Texto variante="metrica" color={destacada ? t.onAccent : undefined}>{mostrado}</Texto>
+    </View>
+  );
+}
+
+/**
+ * Viewport-height page (desktop/tablet): no outer scroll, children share the height and long content
+ * scrolls inside its own panel. On phones it falls back to a normal scrolling page.
+ */
+export function FixedPage({ children }: { children: ReactNode }) {
+  const { dispositivo } = useDispositivo();
+  const { height } = useWindowDimensions();
+  const compact = height < 860;
+  if (dispositivo === 'movil') return <Pagina>{children}</Pagina>;
+  return (
+    <View style={{ flex: 1, alignItems: 'center', overflow: 'hidden' }}>
+      <View style={{ flex: 1, width: '100%', maxWidth: anchoMaximoContenido, paddingHorizontal: compact ? espacio.lg : espacio.xl, paddingTop: espacio.sm, paddingBottom: compact ? 20 : espacio.xl, gap: compact ? 20 : espacio.xl, minHeight: 0 }}>
+        {children}
+      </View>
     </View>
   );
 }

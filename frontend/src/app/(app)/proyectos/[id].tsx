@@ -4,6 +4,7 @@ import { View } from 'react-native';
 
 import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
+import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
@@ -178,15 +179,12 @@ export default function DetalleProyecto() {
       {pestana === 'revision' ? <Revision proyecto={proyecto} onCambio={setProyecto} /> : null}
 
       {pestana === 'ficha' ? (
-      <View style={{ gap: espacio.xl }}>
-      <Tarjeta>
-        <Texto variante="sobretitulo" suave>
-          AVANCE DEL PROCESO
-        </Texto>
+      <View style={{ gap: espacio.md }}>
+      <CollapsibleCard title="Avance del proceso" detail={e.etiqueta} defaultOpen>
         <LineaDeTiempo actual={proyecto.estado} />
-      </Tarjeta>
+      </CollapsibleCard>
 
-      <Tarjeta>
+      <CollapsibleCard title="Datos y requerimiento" detail={proyecto.ubicacion}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.lg }}>
           <Dato icono="map-pin" etiqueta="Ubicación" valor={proyecto.ubicacion} />
           <Dato icono="calendar" etiqueta="Creado" valor={formatoFecha(proyecto.creado)} />
@@ -205,7 +203,7 @@ export default function DetalleProyecto() {
             <Texto>{proyecto.motivo_de_cierre}</Texto>
           </>
         ) : null}
-      </Tarjeta>
+      </CollapsibleCard>
       </View>
       ) : null}
     </Pagina>

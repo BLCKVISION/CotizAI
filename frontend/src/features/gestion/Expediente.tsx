@@ -4,8 +4,9 @@ import { Platform, View } from 'react-native';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
-import { Aviso, Cargando, ErrorConReintento, Fila, TituloDeSeccion } from '@/design/bloques';
-import { Boton, BotonIcono, Icono, type NombreIcono, Tarjeta, Texto } from '@/design/componentes';
+import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
+import { CollapsibleCard } from '@/design/Collapsible';
+import { Boton, BotonIcono, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import type { Proyecto } from '@/features/proyectos/api';
@@ -124,18 +125,20 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
 
   const n = datos?.length ?? 0;
   return (
-    <View style={{ gap: espacio.md }}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'flex-start' }}>
+      <View style={{ flexGrow: 1, flexBasis: 360, gap: espacio.md }}>
       {editable && Platform.OS === 'web' ? <ZonaDeCarga onArchivos={subir} ocupado={progreso !== null} /> : null}
       {editable && Platform.OS !== 'web' ? <Aviso tono="info" texto="La carga de archivos está disponible en la versión web." /> : null}
       {!editable && proyecto.estado === 'en_recepcion' ? <Aviso tono="info" texto="Solo el rol Cargador puede agregar o quitar propuestas." /> : null}
       {progreso ? <Aviso tono="info" texto={progreso} /> : null}
       {fallos.map((f) => <Aviso key={f} texto={f} />)}
+      </View>
+      <View style={{ flexGrow: 1.3, flexBasis: 420, gap: espacio.md }}>
       {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
       {!datos ? (
         error ? null : <Cargando />
       ) : (
-        <Tarjeta>
-          <TituloDeSeccion titulo={`Propuestas (${n} de ${MAXIMO})`} detalle={n < MINIMO ? `Faltan ${MINIMO - n} para el mínimo de ${MINIMO}.` : 'El expediente alcanzó el mínimo requerido.'} />
+        <CollapsibleCard title={`Propuestas (${n} de ${MAXIMO})`} detail={n < MINIMO ? `Faltan ${MINIMO - n} para el mínimo de ${MINIMO}.` : 'El expediente alcanzó el mínimo requerido.'} defaultOpen={n > 0 && n <= 3}>
           <View style={{ height: 10, borderRadius: radio.pildora, backgroundColor: t.superficieAlta, overflow: 'hidden' }}>
             <View style={{ height: 10, width: `${Math.min(100, (n / MINIMO) * 100)}%`, backgroundColor: t.primario }} />
           </View>
@@ -149,13 +152,14 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
                 </View>
               } />
           ))}
-        </Tarjeta>
+        </CollapsibleCard>
       )}
-      <Tarjeta>
-        <TituloDeSeccion titulo="Evaluación del agente" detalle="Lectura de documentos, precios en internet, costo real y ranking." />
+      <CollapsibleCard title="Evaluación del agente" detail="Aún no disponible: falta conectar el motor">
+        <Texto variante="pequeno" suave>Lectura de documentos, precios en internet, costo real y ranking.</Texto>
         <Aviso tono="aviso" texto="Todavía no disponible: falta conectar el servicio de IA y construir el motor de evaluación. No se muestran resultados simulados." />
         <Boton etiqueta="Evaluar Propuestas de Servicios" icono="cpu" onPress={() => undefined} deshabilitado />
-      </Tarjeta>
+      </CollapsibleCard>
+      </View>
     </View>
   );
 }

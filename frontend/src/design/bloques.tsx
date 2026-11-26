@@ -82,5 +82,5 @@ export function Columna({ children, minimo = 360 }: { children: ReactNode; minim
   return <View style={{ flexGrow: 1, flexBasis: minimo, maxWidth: '100%', minWidth: 0 }}>{children}</View>;
 }
 export function Rejilla({ children }: { children: ReactNode }) {
-  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'stretch' }}>{children}</View>;
+  return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'flex-start' }}>{children}</View>;
 }

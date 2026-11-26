@@ -5,5 +5,5 @@ import { useSesion } from '@/core/sesion/SesionProvider';
 export default function Inicio() {
   const { listo, token } = useSesion();
   if (!listo) return null;
-  return <Redirect href={token ? ('/resumen' as Href) : '/login'} />;
+  return <Redirect href={token ? ('/home' as Href) : '/login'} />;
 }

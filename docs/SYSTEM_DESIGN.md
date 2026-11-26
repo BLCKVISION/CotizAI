@@ -98,7 +98,9 @@ Un **interceptor ASGI** asigna a cada petición un `trackId` (respeta uno válid
 
 La IP solo se toma de `X-Forwarded-For` si `EVALUADOR_CONFIAR_EN_PROXY=true` (Caddy como único ingreso).
 
-## 6. API (prefijo `/api/v1`, recursos en plural y español)
+## 6. API (prefijo `/api/v1`, recursos en plural)
+
+> Las rutas actuales están en español. Las rutas y campos **nuevos** van en inglés (ver [`AGENTS.md`](../AGENTS.md)).
 
 | Método y ruta | Función | Permiso |
 |---|---|---|
