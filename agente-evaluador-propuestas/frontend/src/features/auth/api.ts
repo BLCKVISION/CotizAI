@@ -1,11 +1,11 @@
-import { peticion } from '@/core/api/cliente';
+import { request } from '@/core/api/client';
 
-export type Rol = 'cargador' | 'evaluador' | 'aprobador' | 'auditor';
-export type Usuario = { id: string; correo: string; rol: Rol; organizacion_id: string };
-export type SesionRespuesta = { token_acceso: string; tipo_token: string; expira: string; usuario: Usuario };
+export type Role = 'loader' | 'evaluator' | 'approver' | 'auditor';
+export type User = { id: string; email: string; role: Role; organization_id: string };
+export type SessionResponse = { access_token: string; token_type: string; expires: string; user: User };
 
-export const iniciarSesionApi = (correo: string, contrasena: string) =>
-  peticion<SesionRespuesta>('/sesiones', { metodo: 'POST', cuerpo: { correo, contrasena } });
+export const startSessionApi = (email: string, password: string) =>
+  request<SessionResponse>('/sessions', { method: 'POST', body: { email, password } });
 
-export const cerrarSesionApi = (token: string) => peticion<void>('/sesiones/actual', { metodo: 'DELETE', token });
-export const usuarioActualApi = (token: string) => peticion<Usuario>('/usuarios/actual', { token });
+export const closeSessionApi = (token: string) => request<void>('/sessions/current', { method: 'DELETE', token });
+export const currentUserApi = (token: string) => request<User>('/users/current', { token });

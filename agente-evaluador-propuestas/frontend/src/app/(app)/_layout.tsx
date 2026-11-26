@@ -1,16 +1,16 @@
 import { Redirect, Slot } from 'expo-router';
 
-import { useSesion } from '@/core/sesion/SesionProvider';
-import { ShellDeApp } from '@/design/ShellDeApp';
+import { useSession } from '@/core/session/SessionProvider';
+import { AppShell } from '@/design/AppShell';
 
 /** Guard de rutas: sin sesión → login. La autoridad real de permisos sigue siendo el backend. */
-export default function LayoutAutenticado() {
-  const { listo, token } = useSesion();
-  if (!listo) return null;
+export default function AuthenticatedLayout() {
+  const { ready, token } = useSession();
+  if (!ready) return null;
   if (!token) return <Redirect href="/login" />;
   return (
-    <ShellDeApp>
+    <AppShell>
       <Slot />
-    </ShellDeApp>
+    </AppShell>
   );
 }

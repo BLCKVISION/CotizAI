@@ -10,66 +10,66 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 
-from evaluador.application.use_cases.autenticacion import SesionAutenticada
-from evaluador.domain.errores import SesionInvalida
-from evaluador.domain.identidad import Permiso
-from evaluador.observabilidad import contexto
+from evaluador.application.use_cases.authentication import AuthenticatedSession
+from evaluador.domain.errors import InvalidSession
+from evaluador.domain.identity import Permission
+from evaluador.observability import context
 
 
-def token_de_cabecera(request: Request) -> str:
-    esquema, _, valor = request.headers.get("authorization", "").partition(" ")
-    if esquema.lower() != "bearer" or not valor.strip():
-        raise SesionInvalida("Sesión inválida o expirada.")
-    return valor.strip()
+def header_token(request: Request) -> str:
+    schema, _, value = request.headers.get("authorization", "").partition(" ")
+    if schema.lower() != "bearer" or not value.strip():
+        raise InvalidSession("Sesión inválida o expirada.")
+    return value.strip()
 
 
-async def sesion_actual(request: Request, token: Annotated[str, Depends(token_de_cabecera)]) -> SesionAutenticada:
+async def current_session(request: Request, token: Annotated[str, Depends(header_token)]) -> AuthenticatedSession:
     """Guard de autenticación: resuelve el token y enriquece el contexto de trazabilidad.
 
     Es async a propósito: un guard síncrono corre en un hilo con una copia del contexto y sus cambios se perderían
     para el log de acceso y la auditoría. La consulta (síncrona) va al pool de hilos.
     """
-    sesion = await run_in_threadpool(request.app.state.contenedor.autenticar_token.ejecutar, token)
-    contexto.enriquecer(sesion_id=sesion.sesion_id, tenant_id=sesion.tenant_id, usuario_id=sesion.usuario.id)
-    return sesion
+    session = await run_in_threadpool(request.app.state.container.authenticate_token.execute, token)
+    context.enrich(session_id=session.session_id, tenant_id=session.tenant_id, user_id=session.user.id)
+    return session
 
 
-def exigir(permiso: Permiso):
+def require(permission: Permission):
     """Guard de autorización por permiso. Los casos de uso lo vuelven a comprobar (defensa en profundidad)."""
 
-    def _guard(sesion: Annotated[SesionAutenticada, Depends(sesion_actual)]) -> SesionAutenticada:
-        sesion.usuario.exigir(permiso)
-        return sesion
+    def _guard(session: Annotated[AuthenticatedSession, Depends(current_session)]) -> AuthenticatedSession:
+        session.user.require(permission)
+        return session
 
     return _guard
 
 
-class LimitadorDeVentana:
+class WindowLimiter:
     """Límite por clave (ip) en ventana deslizante de 60 s. Suficiente para un solo proceso."""
 
-    _MAX_CLAVES = 10_000
+    _MAX_KEYS = 10_000
 
-    def __init__(self, maximo_por_minuto: int) -> None:
-        self._maximo = maximo_por_minuto
-        self._eventos: dict[str, deque[float]] = defaultdict(deque)
+    def __init__(self, max_per_minute: int) -> None:
+        self._maximum = max_per_minute
+        self._events: dict[str, deque[float]] = defaultdict(deque)
         self._lock = Lock()  # las dependencias síncronas corren en varios hilos
 
-    def verificar(self, clave: str) -> None:
-        ahora = monotonic()
+    def verify(self, key: str) -> None:
+        now = monotonic()
         with self._lock:
-            if len(self._eventos) >= self._MAX_CLAVES and clave not in self._eventos:
-                self._purgar(ahora)
-            cola = self._eventos[clave]
-            while cola and ahora - cola[0] > 60:
-                cola.popleft()
-            if len(cola) >= self._maximo:
+            if len(self._events) >= self._MAX_KEYS and key not in self._events:
+                self._purge(now)
+            queue = self._events[key]
+            while queue and now - queue[0] > 60:
+                queue.popleft()
+            if len(queue) >= self._maximum:
                 raise HTTPException(status_code=429, detail="Demasiados intentos.", headers={"Retry-After": "60"})
-            cola.append(ahora)
+            queue.append(now)
 
-    def _purgar(self, ahora: float) -> None:
-        for k in [k for k, c in self._eventos.items() if not c or ahora - c[-1] > 60]:
-            del self._eventos[k]
+    def _purge(self, now: float) -> None:
+        for k in [k for k, c in self._events.items() if not c or now - c[-1] > 60]:
+            del self._events[k]
 
 
-def limitar_login(request: Request) -> None:
-    request.app.state.limitador_login.verificar(contexto.obtener().ip)
+def limit_login(request: Request) -> None:
+    request.app.state.login_limiter.verify(context.get().ip)

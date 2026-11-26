@@ -2,39 +2,37 @@
 
 from __future__ import annotations
 
-from evaluador.application.ports.agente import Embebedor, IndiceVectorial
-from evaluador.application.ports.salida import GeneradorDeIds
-from evaluador.domain.identidad import Permiso, Usuario
-from evaluador.domain.rag import Fragmento, ResultadoBusqueda, fragmentar
+from evaluador.application.ports.agent import Embedder, VectorIndex
+from evaluador.application.ports.output import IdGenerator
+from evaluador.domain.identity import Permission, User
+from evaluador.domain.rag import Chunk, SearchResult, chunk
 
 
-class IndexarDocumento:
-    def __init__(self, embebedor: Embebedor, indice: IndiceVectorial, ids: GeneradorDeIds) -> None:
-        self._embebedor, self._indice, self._ids = embebedor, indice, ids
+class IndexDocument:
+    def __init__(self, embedder: Embedder, index: VectorIndex, ids: IdGenerator) -> None:
+        self._embedder, self._index, self._ids = embedder, index, ids
 
-    def ejecutar(self, actor: Usuario, *, propuesta_id: str, texto: str) -> int:
-        actor.exigir(Permiso.CARGAR_DOCUMENTOS)
-        piezas = fragmentar(texto)
+    def execute(self, actor: User, *, proposal_id: str, text: str) -> int:
+        actor.require(Permission.LOAD_DOCUMENTS)
+        parts = chunk(text)
         # Primero se calculan los vectores: si el modelo falla, no se pierde lo indexado antes.
-        vectores = self._embebedor.embeber_documentos(piezas) if piezas else []
-        fragmentos = [Fragmento(self._ids.nuevo(), actor.tenant_id, propuesta_id, i, p) for i, p in enumerate(piezas)]
-        self._indice.eliminar_propuesta(tenant_id=actor.tenant_id, propuesta_id=propuesta_id)  # idempotente
-        if fragmentos:
-            self._indice.indexar(fragmentos, vectores)
-        return len(fragmentos)
+        vectors = self._embedder.embed_documents(parts) if parts else []
+        chunks = [Chunk(self._ids.new(), actor.tenant_id, proposal_id, i, p) for i, p in enumerate(parts)]
+        self._index.delete_proposal(tenant_id=actor.tenant_id, proposal_id=proposal_id)  # idempotente
+        if chunks:
+            self._index.index(chunks, vectors)
+        return len(chunks)
 
 
-class ConsultarDocumentos:
-    def __init__(self, embebedor: Embebedor, indice: IndiceVectorial) -> None:
-        self._embebedor, self._indice = embebedor, indice
+class QueryDocuments:
+    def __init__(self, embedder: Embedder, index: VectorIndex) -> None:
+        self._embedder, self._index = embedder, index
 
-    def ejecutar(
-        self, actor: Usuario, *, consulta: str, propuesta_id: str | None = None, k: int = 5
-    ) -> list[ResultadoBusqueda]:
-        actor.exigir(Permiso.VER_RESULTADOS)
-        return self._indice.buscar(
+    def execute(self, actor: User, *, query: str, proposal_id: str | None = None, k: int = 5) -> list[SearchResult]:
+        actor.require(Permission.VIEW_RESULTS)
+        return self._index.search(
             tenant_id=actor.tenant_id,
-            vector=self._embebedor.embeber_consulta(consulta),
+            vector=self._embedder.embed_query(query),
             k=max(1, min(k, 20)),
-            propuesta_id=propuesta_id,
+            proposal_id=proposal_id,
         )

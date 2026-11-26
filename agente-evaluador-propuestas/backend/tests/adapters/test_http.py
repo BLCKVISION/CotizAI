@@ -1,96 +1,92 @@
 import json
 import logging
 
-from tests.conftest import CLAVE, cabecera, login
+from tests.conftest import KEY, header, login
 
-NUEVO = {"nombre": "Laboratorio 11 PCs", "requerimiento": "Dotar laboratorio", "ubicacion": "Caracas"}
+NEW = {"name": "Laboratorio 11 PCs", "requirement": "Dotar laboratorio", "location": "Caracas"}
 
 
-def test_login_correcto_devuelve_token_y_track_id(cliente):
-    r = login(cliente)
+def test_successful_login_returns_token_and_track_id(client):
+    r = login(client)
     assert r.status_code == 201
-    assert r.json()["usuario"]["rol"] == "cargador"
+    assert r.json()["user"]["role"] == "loader"
     assert r.headers["x-track-id"]
 
 
-def test_login_errores_son_indistinguibles(cliente):
-    casos = [
-        login(cliente, clave="mala"),
-        login(cliente, rol="inexistente"),
-        cliente.post("/api/v1/sesiones", json={"correo": "nadie@otro.test", "contrasena": CLAVE}),
+def test_login_errors_are_indistinguishable(client):
+    cases = [
+        login(client, key="mala"),
+        login(client, role="nonexistent"),
+        client.post("/api/v1/sessions", json={"email": "nadie@otro.test", "password": KEY}),
     ]
-    assert {c.status_code for c in casos} == {401}
-    assert len({c.json()["mensaje"] for c in casos}) == 1
+    assert {c.status_code for c in cases} == {401}
+    assert len({c.json()["message"] for c in cases}) == 1
 
 
-def test_bloqueo_tras_intentos_fallidos(cliente):
+def test_lockout_after_failed_attempts(client):
     for _ in range(5):
-        login(cliente, clave="mala")
-    assert login(cliente).status_code == 401  # ya bloqueado, aun con la clave correcta
+        login(client, key="mala")
+    assert login(client).status_code == 401  # ya bloqueado, aun con la clave correcta
 
 
-def test_payload_con_campos_extra_o_invalidos_se_rechaza_sin_eco(cliente):
-    r = cliente.post("/api/v1/sesiones", json={"correo": "x", "contrasena": "Secreta-9", "rol": "admin"})
+def test_payload_with_extra_or_invalid_fields_is_rejected_without_echo(client):
+    r = client.post("/api/v1/sessions", json={"email": "x", "password": "Secreta-9", "role": "admin"})
     assert r.status_code == 422
     assert "Secreta-9" not in r.text
 
 
-def test_sin_token_401_y_rol_sin_permiso_403(cliente):
-    assert cliente.get("/api/v1/proyectos").status_code == 401
-    r = cliente.post("/api/v1/proyectos", json=NUEVO, headers=cabecera(cliente, rol="auditor"))
+def test_no_token_401_and_role_without_permission_403(client):
+    assert client.get("/api/v1/projects").status_code == 401
+    r = client.post("/api/v1/projects", json=NEW, headers=header(client, role="auditor"))
     assert r.status_code == 403
 
 
-def test_aislamiento_entre_tenants(cliente):
-    creado = cliente.post("/api/v1/proyectos", json=NUEVO, headers=cabecera(cliente, "alfa")).json()
-    otro = cabecera(cliente, "beta", "evaluador")
-    assert cliente.get("/api/v1/proyectos", headers=otro).json() == []
-    assert cliente.get(f"/api/v1/proyectos/{creado['id']}", headers=otro).status_code == 404
+def test_isolation_between_tenants(client):
+    created = client.post("/api/v1/projects", json=NEW, headers=header(client, "alfa")).json()
+    other = header(client, "beta", "evaluator")
+    assert client.get("/api/v1/projects", headers=other).json() == []
+    assert client.get(f"/api/v1/projects/{created['id']}", headers=other).status_code == 404
 
 
-def test_cerrar_sesion_invalida_el_token(cliente):
-    h = cabecera(cliente)
-    assert cliente.delete("/api/v1/sesiones/actual", headers=h).status_code == 204
-    assert cliente.get("/api/v1/usuarios/actual", headers=h).status_code == 401
+def test_close_session_invalidates_the_token(client):
+    h = header(client)
+    assert client.delete("/api/v1/sessions/current", headers=h).status_code == 204
+    assert client.get("/api/v1/users/current", headers=h).status_code == 401
 
 
-def test_flujo_de_estados_y_permisos(cliente):
-    p = cliente.post("/api/v1/proyectos", json=NUEVO, headers=cabecera(cliente)).json()
-    url = f"/api/v1/proyectos/{p['id']}/transiciones"
-    assert cliente.post(url, json={"destino": "cerrado", "motivo": "x"}, headers=cabecera(cliente)).status_code == 403
-    assert (
-        cliente.post(url, json={"destino": "adjudicado"}, headers=cabecera(cliente, rol="aprobador")).status_code == 409
-    )
+def test_state_flow_and_permissions(client):
+    p = client.post("/api/v1/projects", json=NEW, headers=header(client)).json()
+    url = f"/api/v1/projects/{p['id']}/transitions"
+    assert client.post(url, json={"target": "closed", "reason": "x"}, headers=header(client)).status_code == 403
+    assert client.post(url, json={"target": "awarded"}, headers=header(client, role="approver")).status_code == 409
 
 
-def test_logs_traen_contexto_y_censuran_el_payload(cliente, caplog):
+def test_logs_carry_context_and_redact_the_payload(client, caplog):
     caplog.set_level(logging.INFO)
-    cliente.post("/api/v1/sesiones", json={"correo": "cargador@alfa.test", "contrasena": CLAVE})
-    texto = "\n".join(r.getMessage() + json.dumps(getattr(r, "cuerpo", "")) for r in caplog.records)
-    assert CLAVE not in texto
-    assert "c***@alfa.test" in texto
-    ev = next(r for r in caplog.records if r.getMessage() == "http_solicitud")
-    assert ev.cuerpo["contrasena"] == "***" and ev.estado == 201
+    client.post("/api/v1/sessions", json={"email": "loader@alfa.test", "password": KEY})
+    text = "\n".join(r.getMessage() + json.dumps(getattr(r, "body", "")) for r in caplog.records)
+    assert KEY not in text
+    assert "l***@alfa.test" in text
+    ev = next(r for r in caplog.records if r.getMessage() == "http_request")
+    assert ev.body["password"] == "***" and ev.status == 201
 
 
-def test_login_sin_organizacion_y_tenant_deducido_del_correo(cliente):
-    a = login(cliente, "alfa").json()["usuario"]
-    b = login(cliente, "beta").json()["usuario"]
-    assert a["organizacion_id"] == "t-alfa" and b["organizacion_id"] == "t-beta"
+def test_login_without_organization_and_tenant_derived_from_email(client):
+    a = login(client, "alfa").json()["user"]
+    b = login(client, "beta").json()["user"]
+    assert a["organization_id"] == "t-alfa" and b["organization_id"] == "t-beta"
 
 
-def test_login_rechaza_el_campo_organizacion(cliente):
-    r = cliente.post(
-        "/api/v1/sesiones", json={"organizacion": "alfa", "correo": "cargador@alfa.test", "contrasena": CLAVE}
-    )
+def test_login_rejects_the_organization_field(client):
+    r = client.post("/api/v1/sessions", json={"organization": "alfa", "email": "loader@alfa.test", "password": KEY})
     assert r.status_code == 422
 
 
-def test_correo_duplicado_entre_tenants_no_se_permite(contenedor):
+def test_duplicate_email_across_tenants_is_not_allowed(container):
     import dataclasses
 
     import pytest
 
-    u = contenedor.usuarios.por_correo("cargador@alfa.test")
+    u = container.users.by_email("loader@alfa.test")
     with pytest.raises(ValueError):
-        contenedor.usuarios.guardar(dataclasses.replace(u, id="otro-id", tenant_id="t-beta"))
+        container.users.save(dataclasses.replace(u, id="otro-id", tenant_id="t-beta"))

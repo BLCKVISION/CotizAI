@@ -1,0 +1,78 @@
+{
+  "note": "Datos ficticios. Resultado esperado declarado a mano.",
+  "delta": 3,
+  "ranking": [
+    "P02_Beta",
+    "P01_Alfa",
+    "P03_Gamma",
+    "P10_Kappa",
+    "P04_Delta",
+    "P05_Epsilon",
+    "P06_Zeta",
+    "P07_Eta",
+    "P08_Theta",
+    "P09_Iota"
+  ],
+  "proposals": {
+    "P01_Alfa": {
+      "verdict": "valid",
+      "codes": [],
+      "score": "75.75",
+      "real_cost": "11000"
+    },
+    "P02_Beta": {
+      "verdict": "valid",
+      "codes": [],
+      "score": "74.65",
+      "real_cost": "9570"
+    },
+    "P03_Gamma": {
+      "verdict": "valid",
+      "codes": [],
+      "score": "60.00",
+      "real_cost": "8250"
+    },
+    "P04_Delta": {
+      "verdict": "discarded",
+      "codes": [
+        "COMPAT"
+      ]
+    },
+    "P05_Epsilon": {
+      "verdict": "discarded",
+      "codes": [
+        "ARITMETICA"
+      ]
+    },
+    "P06_Zeta": {
+      "verdict": "discarded",
+      "codes": [
+        "MANIPULACION"
+      ]
+    },
+    "P07_Eta": {
+      "verdict": "discarded",
+      "codes": [
+        "CALIDAD"
+      ]
+    },
+    "P08_Theta": {
+      "verdict": "discarded",
+      "codes": [
+        "ABUSIVO"
+      ]
+    },
+    "P09_Iota": {
+      "verdict": "discarded",
+      "codes": [
+        "CAPACIDAD"
+      ]
+    },
+    "P10_Kappa": {
+      "verdict": "pending_review",
+      "codes": [
+        "LECTURA"
+      ]
+    }
+  }
+}

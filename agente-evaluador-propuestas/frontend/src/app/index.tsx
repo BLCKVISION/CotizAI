@@ -1,9 +1,9 @@
 import { Redirect } from 'expo-router';
 
-import { useSesion } from '@/core/sesion/SesionProvider';
+import { useSession } from '@/core/session/SessionProvider';
 
-export default function Inicio() {
-  const { listo, token } = useSesion();
-  if (!listo) return null;
+export default function Home() {
+  const { ready, token } = useSession();
+  if (!ready) return null;
   return <Redirect href={token ? '/proyectos' : '/login'} />;
 }

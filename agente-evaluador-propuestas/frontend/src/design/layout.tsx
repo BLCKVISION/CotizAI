@@ -1,103 +1,103 @@
 import { type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { Icono, type NombreIcono, Texto } from './componentes';
-import { useDispositivo } from './dispositivo';
-import { Escalonado, useContador, vidrio } from './efectos';
-import { useTema } from './tema';
-import { anchoMaximoContenido, espacio, radio } from './tokens';
+import { Icon, type IconName, AppText } from './components';
+import { useDevice } from './device';
+import { Staggered, useCounter, glass } from './effects';
+import { useTheme } from './theme';
+import { maxContentWidth, spacing, radius } from './tokens';
 
 /** Contenedor de página: gutters adaptativos, ancho máximo, scroll y entrada escalonada de sus bloques. */
-export function Pagina({ children }: { children: ReactNode }) {
-  const { dispositivo } = useDispositivo();
-  const gutter = dispositivo === 'movil' ? espacio.md : espacio.xl;
+export function Page({ children }: { children: ReactNode }) {
+  const { device } = useDevice();
+  const gutter = device === 'mobile' ? spacing.md : spacing.xl;
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingBottom: espacio.xxxl }}
+      contentContainerStyle={{ flexGrow: 1, alignItems: 'center', paddingBottom: spacing.xxxl }}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={{ width: '100%', maxWidth: anchoMaximoContenido, paddingHorizontal: gutter, paddingTop: espacio.xl, gap: espacio.xl }}>
-        <Escalonado>{children}</Escalonado>
+      <View style={{ width: '100%', maxWidth: maxContentWidth, paddingHorizontal: gutter, paddingTop: spacing.xl, gap: spacing.xl }}>
+        <Staggered>{children}</Staggered>
       </View>
     </ScrollView>
   );
 }
 
 /** Encabezado estilo Relay: migas «CotizAI / Sección», título display ligero y subtítulo suave. */
-export function EncabezadoDePagina({
-  sobretitulo,
-  titulo,
-  descripcion,
-  accion,
+export function PageHeader({
+  eyebrow,
+  title,
+  description,
+  action,
 }: {
-  sobretitulo?: string;
-  titulo: string;
-  descripcion?: string;
-  accion?: ReactNode;
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  action?: ReactNode;
 }) {
-  const { dispositivo } = useDispositivo();
-  const t = useTema();
+  const { device } = useDevice();
+  const t = useTheme();
   return (
     <View
       style={{
-        flexDirection: dispositivo === 'movil' ? 'column' : 'row',
-        alignItems: dispositivo === 'movil' ? 'stretch' : 'flex-end',
+        flexDirection: device === 'mobile' ? 'column' : 'row',
+        alignItems: device === 'mobile' ? 'stretch' : 'flex-end',
         justifyContent: 'space-between',
-        gap: espacio.md,
+        gap: spacing.md,
       }}
     >
-      <View style={{ gap: espacio.sm, flexShrink: 1 }}>
-        {sobretitulo ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
-            <Texto variante="pequeno" suave>
+      <View style={{ gap: spacing.sm, flexShrink: 1 }}>
+        {eyebrow ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <AppText variant="small" soft>
               CotizAI
-            </Texto>
-            <Texto variante="pequeno" suave>
+            </AppText>
+            <AppText variant="small" soft>
               /
-            </Texto>
-            <Texto variante="etiqueta">{sobretitulo}</Texto>
+            </AppText>
+            <AppText variant="label">{eyebrow}</AppText>
           </View>
         ) : null}
-        <Texto variante={dispositivo === 'movil' ? 'subtitulo' : 'titulo'} accessibilityRole="header" style={{ color: t.texto }}>
-          {titulo}
-        </Texto>
-        {descripcion ? (
-          <Texto suave style={{ maxWidth: 640 }}>
-            {descripcion}
-          </Texto>
+        <AppText variant={device === 'mobile' ? 'subtitle' : 'title'} accessibilityRole="header" style={{ color: t.text }}>
+          {title}
+        </AppText>
+        {description ? (
+          <AppText soft style={{ maxWidth: 640 }}>
+            {description}
+          </AppText>
         ) : null}
       </View>
-      {accion}
+      {action}
     </View>
   );
 }
 
 /** Tarjeta de métrica: cifra display ligera que cuenta hasta su valor, etiqueta e icono en disco blanco. */
-export function Metrica({ etiqueta, valor, icono }: { etiqueta: string; valor: number; icono: NombreIcono }) {
-  const t = useTema();
-  const mostrado = useContador(valor);
+export function Metric({ label, value, icon }: { label: string; value: number; icon: IconName }) {
+  const t = useTheme();
+  const shown = useCounter(value);
   return (
     <View
       accessible
-      accessibilityLabel={`${etiqueta}: ${valor}`}
+      accessibilityLabel={`${label}: ${value}`}
       style={{
-        ...vidrio({ radio: radio.xl }),
+        ...glass({ radius: radius.xl }),
         flexGrow: 1,
         flexBasis: 170,
-        padding: espacio.lg,
-        gap: espacio.sm,
+        padding: spacing.lg,
+        gap: spacing.sm,
       }}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Texto variante="etiqueta" suave>
-          {etiqueta}
-        </Texto>
+        <AppText variant="label" soft>
+          {label}
+        </AppText>
         <View
           style={{
             width: 36,
             height: 36,
-            borderRadius: radio.pildora,
+            borderRadius: radius.pill,
             backgroundColor: '#FFFFFF',
             borderWidth: 1,
             borderColor: 'rgba(15,23,42,0.08)',
@@ -105,10 +105,10 @@ export function Metrica({ etiqueta, valor, icono }: { etiqueta: string; valor: n
             justifyContent: 'center',
           }}
         >
-          <Icono nombre={icono} color={t.texto} />
+          <Icon name={icon} color={t.text} />
         </View>
       </View>
-      <Texto variante="metrica">{mostrado}</Texto>
+      <AppText variant="metric">{shown}</AppText>
     </View>
   );
 }

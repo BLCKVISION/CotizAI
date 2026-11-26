@@ -2,65 +2,65 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { ErrorApi } from '@/core/api/cliente';
-import { useSesion } from '@/core/sesion/SesionProvider';
-import { Boton, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
-import { useDispositivo } from '@/design/dispositivo';
-import { EncabezadoDePagina, Pagina } from '@/design/layout';
-import { useTema } from '@/design/tema';
-import { espacio, radio } from '@/design/tokens';
-import { obtenerProyectoApi, type Proyecto } from '@/features/proyectos/api';
-import { ESTADOS, formatoFecha, formatoMonto, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+import { ErrorApi } from '@/core/api/client';
+import { useSession } from '@/core/session/SessionProvider';
+import { Button, Skeleton, Icon, Badge, Card, AppText } from '@/design/components';
+import { useDevice } from '@/design/device';
+import { PageHeader, Page } from '@/design/layout';
+import { useTheme } from '@/design/theme';
+import { spacing, radius } from '@/design/tokens';
+import { getProjectApi, type Project } from '@/features/projects/api';
+import { STATES, formatDate, formatAmount, stateInfo, STATE_ORDER } from '@/features/projects/states';
 
-function LineaDeTiempo({ actual }: { actual: Proyecto['estado'] }) {
-  const t = useTema();
-  const { dispositivo } = useDispositivo();
-  const indiceActual = ORDEN_DE_ESTADOS.indexOf(actual);
-  const horizontal = dispositivo !== 'movil';
+function Timeline({ current }: { current: Project['state'] }) {
+  const t = useTheme();
+  const { device } = useDevice();
+  const currentIndex = STATE_ORDER.indexOf(current);
+  const horizontal = device !== 'mobile';
   return (
     <View
       accessibilityRole="list"
-      style={{ flexDirection: horizontal ? 'row' : 'column', gap: horizontal ? espacio.sm : espacio.md }}
+      style={{ flexDirection: horizontal ? 'row' : 'column', gap: horizontal ? spacing.sm : spacing.md }}
     >
-      {ORDEN_DE_ESTADOS.map((e, i) => {
-        const hecho = i < indiceActual;
-        const activo = i === indiceActual;
-        const info = ESTADOS[e];
+      {STATE_ORDER.map((e, i) => {
+        const done = i < currentIndex;
+        const active = i === currentIndex;
+        const info = STATES[e];
         return (
           <View
             key={e}
             accessible
             accessibilityRole="text"
-            accessibilityLabel={`Paso ${i + 1} de ${ORDEN_DE_ESTADOS.length}: ${info.etiqueta}, ${hecho ? 'completado' : activo ? 'actual' : 'pendiente'}`}
-            style={{ flex: horizontal ? 1 : undefined, flexDirection: horizontal ? 'column' : 'row', gap: espacio.sm, alignItems: horizontal ? 'flex-start' : 'center' }}
+            accessibilityLabel={`Paso ${i + 1} de ${STATE_ORDER.length}: ${info.label}, ${done ? 'completado' : active ? 'actual' : 'pendiente'}`}
+            style={{ flex: horizontal ? 1 : undefined, flexDirection: horizontal ? 'column' : 'row', gap: spacing.sm, alignItems: horizontal ? 'flex-start' : 'center' }}
           >
             {horizontal ? (
-              <View style={{ height: 4, alignSelf: 'stretch', borderRadius: 2, backgroundColor: hecho || activo ? t.primario : t.borde }} />
+              <View style={{ height: 4, alignSelf: 'stretch', borderRadius: 2, backgroundColor: done || active ? t.primary : t.border }} />
             ) : null}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               <View
                 style={{
                   width: 28,
                   height: 28,
-                  borderRadius: radio.pildora,
+                  borderRadius: radius.pill,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: hecho ? t.primario : activo ? t.superficie : t.superficieAlta,
+                  backgroundColor: done ? t.primary : active ? t.surface : t.highSurface,
                   borderWidth: 2,
-                  borderColor: hecho || activo ? t.primario : t.borde,
+                  borderColor: done || active ? t.primary : t.border,
                 }}
               >
-                {hecho ? (
-                  <Icono nombre="check" tamano="sm" color={t.sobrePrimario} />
+                {done ? (
+                  <Icon name="check" size="sm" color={t.onPrimary} />
                 ) : (
-                  <Texto variante="etiqueta" color={activo ? t.foco : t.textoSuave}>
+                  <AppText variant="label" color={active ? t.focus : t.softText}>
                     {i + 1}
-                  </Texto>
+                  </AppText>
                 )}
               </View>
-              <Texto variante={activo ? 'etiqueta' : 'pequeno'} suave={!activo && !hecho} style={{ flexShrink: 1 }}>
-                {info.etiqueta}
-              </Texto>
+              <AppText variant={active ? 'label' : 'small'} soft={!active && !done} style={{ flexShrink: 1 }}>
+                {info.label}
+              </AppText>
             </View>
           </View>
         );
@@ -69,42 +69,42 @@ function LineaDeTiempo({ actual }: { actual: Proyecto['estado'] }) {
   );
 }
 
-function Dato({ icono, etiqueta, valor }: { icono: Parameters<typeof Icono>[0]['nombre']; etiqueta: string; valor: string }) {
-  const t = useTema();
+function Data({ icon, label, value }: { icon: Parameters<typeof Icon>[0]['name']; label: string; value: string }) {
+  const t = useTheme();
   return (
-    <View style={{ flexGrow: 1, flexBasis: 220, gap: espacio.xs }}>
-      <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-        <Icono nombre={icono} tamano="sm" color={t.textoSuave} />
-        <Texto variante="sobretitulo" suave>
-          {etiqueta.toUpperCase()}
-        </Texto>
+    <View style={{ flexGrow: 1, flexBasis: 220, gap: spacing.xs }}>
+      <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+        <Icon name={icon} size="sm" color={t.softText} />
+        <AppText variant="eyebrow" soft>
+          {label.toUpperCase()}
+        </AppText>
       </View>
-      <Texto variante="cuerpoMedio">{valor}</Texto>
+      <AppText variant="bodyMedium">{value}</AppText>
     </View>
   );
 }
 
-export default function DetalleProyecto() {
-  const t = useTema();
+export default function ProjectDetail() {
+  const t = useTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { conSesion } = useSesion();
-  const [proyecto, setProyecto] = useState<Proyecto | null>(null);
+  const { withSession } = useSession();
+  const [project, setProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let vigente = true;
-    setProyecto(null);
+    let current = true;
+    setProject(null);
     setError(null);
     (async () => {
       try {
-        const datos = await conSesion(obtenerProyectoApi(String(id)));
-        if (vigente) setProyecto(datos);
+        const data = await withSession(getProjectApi(String(id)));
+        if (current) setProject(data);
       } catch (e) {
-        if (!vigente) return;
+        if (!current) return;
         setError(
           e instanceof ErrorApi
-            ? e.estado === 404
+            ? e.status === 404
               ? 'No se encontró el proyecto.'
               : `${e.message}${e.trackId ? ` (ref. ${e.trackId})` : ''}`
             : 'Error inesperado.',
@@ -112,79 +112,89 @@ export default function DetalleProyecto() {
       }
     })();
     return () => {
-      vigente = false;
+      current = false;
     };
-  }, [conSesion, id]);
+  }, [withSession, id]);
 
-  const volver = <Boton etiqueta="Proyectos" variante="fantasma" icono="arrow-left" onPress={() => router.replace('/proyectos')} />;
+  const back = <Button label="Proyectos" variant="ghost" icon="arrow-left" onPress={() => router.replace('/proyectos')} />;
 
   if (error) {
     return (
-      <Pagina>
-        <EncabezadoDePagina titulo="Proyecto" accion={volver} />
-        <Tarjeta>
-          <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-            <Icono nombre="alert-triangle" color={t.error.texto} />
-            <Texto color={t.error.texto} style={{ flex: 1 }}>
+      <Page>
+        <PageHeader title="Proyecto" action={back} />
+        <Card>
+          <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+            <Icon name="alert-triangle" color={t.error.text} />
+            <AppText color={t.error.text} style={{ flex: 1 }}>
               {error}
-            </Texto>
+            </AppText>
           </View>
-        </Tarjeta>
-      </Pagina>
+        </Card>
+      </Page>
     );
   }
 
-  if (!proyecto) {
+  if (!project) {
     return (
-      <Pagina>
-        <EncabezadoDePagina titulo="Cargando…" accion={volver} />
-        <Tarjeta>
-          <Esqueleto alto={22} ancho="50%" />
-          <Esqueleto alto={14} ancho="80%" />
-          <Esqueleto alto={14} ancho="65%" />
-        </Tarjeta>
-      </Pagina>
+      <Page>
+        <PageHeader title="Cargando…" action={back} />
+        <Card>
+          <Skeleton height={22} width="50%" />
+          <Skeleton height={14} width="80%" />
+          <Skeleton height={14} width="65%" />
+        </Card>
+      </Page>
     );
   }
 
-  const e = infoEstado(proyecto.estado);
+  const e = stateInfo(project.state);
   return (
-    <Pagina>
-      <EncabezadoDePagina sobretitulo="Proyecto" titulo={proyecto.nombre} accion={volver} />
-      <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Insignia etiqueta={e.etiqueta} tono={e.tono} icono={e.icono} />
-        <Texto variante="pequeno" suave>
-          {e.descripcion}
-        </Texto>
+    <Page>
+      <PageHeader eyebrow="Proyecto" title={project.name} action={back} />
+      <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Badge label={e.label} tone={e.tone} icon={e.icon} />
+        <AppText variant="small" soft>
+          {e.description}
+        </AppText>
       </View>
 
-      <Tarjeta>
-        <Texto variante="sobretitulo" suave>
-          AVANCE DEL PROCESO
-        </Texto>
-        <LineaDeTiempo actual={proyecto.estado} />
-      </Tarjeta>
+      <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+        {project.state !== 'receiving' && project.state !== 'evaluating' ? (
+          // Supuesto: la evaluación comparte id con el proyecto hasta que la API exponga la relación explícita.
+          <Button label="Ver resultados" icon="bar-chart-2" onPress={() => router.push(`/resultados/${project.id}`)} />
+        ) : null}
+        {__DEV__ ? (
+          <Button label="Ver ejemplo de resultados" variant="secondary" icon="eye" onPress={() => router.push('/resultados/demo')} />
+        ) : null}
+      </View>
 
-      <Tarjeta>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.lg }}>
-          <Dato icono="map-pin" etiqueta="Ubicación" valor={proyecto.ubicacion} />
-          <Dato icono="calendar" etiqueta="Creado" valor={formatoFecha(proyecto.creado)} />
-          <Dato icono="dollar-sign" etiqueta="Presupuesto referencial" valor={formatoMonto(proyecto.presupuesto_referencial)} />
+      <Card>
+        <AppText variant="eyebrow" soft>
+          AVANCE DEL PROCESO
+        </AppText>
+        <Timeline current={project.state} />
+      </Card>
+
+      <Card>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg }}>
+          <Data icon="map-pin" label="Ubicación" value={project.location} />
+          <Data icon="calendar" label="Creado" value={formatDate(project.created)} />
+          <Data icon="dollar-sign" label="Presupuesto referencial" value={formatAmount(project.reference_budget)} />
         </View>
-        <View style={{ height: 1, backgroundColor: t.borde, marginVertical: espacio.sm }} />
-        <Texto variante="sobretitulo" suave>
+        <View style={{ height: 1, backgroundColor: t.border, marginVertical: spacing.sm }} />
+        <AppText variant="eyebrow" soft>
           REQUERIMIENTO
-        </Texto>
-        <Texto style={{ maxWidth: 720 }}>{proyecto.requerimiento}</Texto>
-        {proyecto.motivo_de_cierre ? (
+        </AppText>
+        <AppText style={{ maxWidth: 720 }}>{project.requirement}</AppText>
+        {project.closing_reason ? (
           <>
-            <Texto variante="sobretitulo" suave>
+            <AppText variant="eyebrow" soft>
               MOTIVO DE CIERRE
-            </Texto>
-            <Texto>{proyecto.motivo_de_cierre}</Texto>
+            </AppText>
+            <AppText>{project.closing_reason}</AppText>
           </>
         ) : null}
-      </Tarjeta>
-    </Pagina>
+      </Card>
+    </Page>
   );
 }

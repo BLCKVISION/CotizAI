@@ -1,0 +1,162 @@
+{
+  "extraction": {
+    "supplier": "Beta Sistemas C.A.",
+    "currency": "USD",
+    "lines": [
+      {
+        "description": "Gabinete con CPU Ryzen 5",
+        "category": "gabinete",
+        "quantity": {
+          "literal": "11",
+          "value": "11"
+        },
+        "unit_price": {
+          "literal": "520",
+          "value": "520"
+        },
+        "line_total": {
+          "literal": "5720",
+          "value": "5720"
+        },
+        "specs": {
+          "cpu_socket": "AM4",
+          "board_socket": "AM4",
+          "ram_type": "DDR4-3200",
+          "board_ram_type": "DDR4",
+          "cpu_tdp_w": "65 W",
+          "psu_power_w": "500 W",
+          "condition": "nuevo",
+          "release_year": "2022"
+        },
+        "evidence": {
+          "page_or_cell": "p.1",
+          "text": "Gabinete con CPU Ryzen 5 x11"
+        }
+      },
+      {
+        "description": "Monitor 24 pulgadas",
+        "category": "monitor",
+        "quantity": {
+          "literal": "11",
+          "value": "11"
+        },
+        "unit_price": {
+          "literal": "140",
+          "value": "140"
+        },
+        "line_total": {
+          "literal": "1540",
+          "value": "1540"
+        },
+        "specs": {},
+        "evidence": {
+          "page_or_cell": "p.1",
+          "text": "Monitor 24 pulgadas x11"
+        }
+      },
+      {
+        "description": "Teclado USB",
+        "category": "teclado",
+        "quantity": {
+          "literal": "11",
+          "value": "11"
+        },
+        "unit_price": {
+          "literal": "20",
+          "value": "20"
+        },
+        "line_total": {
+          "literal": "220",
+          "value": "220"
+        },
+        "specs": {},
+        "evidence": {
+          "page_or_cell": "p.1",
+          "text": "Teclado USB x11"
+        }
+      },
+      {
+        "description": "Ratón óptico",
+        "category": "raton",
+        "quantity": {
+          "literal": "11",
+          "value": "11"
+        },
+        "unit_price": {
+          "literal": "10",
+          "value": "10"
+        },
+        "line_total": {
+          "literal": "110",
+          "value": "110"
+        },
+        "specs": {},
+        "evidence": {
+          "page_or_cell": "p.1",
+          "text": "Ratón óptico x11"
+        }
+      },
+      {
+        "description": "UPS 600 W",
+        "category": "protector",
+        "quantity": {
+          "literal": "11",
+          "value": "11"
+        },
+        "unit_price": {
+          "literal": "180",
+          "value": "180"
+        },
+        "line_total": {
+          "literal": "1980",
+          "value": "1980"
+        },
+        "specs": {
+          "ups_power_w": "600 W",
+          "ups_power_va": "1000 VA"
+        },
+        "evidence": {
+          "page_or_cell": "p.1",
+          "text": "UPS 600 W x11"
+        }
+      }
+    ],
+    "totales": {
+      "subtotal": {
+        "literal": "9570",
+        "value": "9570"
+      },
+      "taxes": [],
+      "total": {
+        "literal": "9570",
+        "value": "9570"
+      }
+    },
+    "conditions": {
+      "warranty": "Garantía de 3 años en el país",
+      "support": "Soporte local 8x5"
+    },
+    "literal_notes": [],
+    "manipulation_suspicions": []
+  },
+  "rubric": {
+    "performance": {
+      "score": 83,
+      "evidence": [
+        "ficha técnica"
+      ]
+    },
+    "protection_and_peripherals": {
+      "score": 70,
+      "evidence": [
+        "UPS 600 W"
+      ]
+    },
+    "warranty_and_support": {
+      "score": 60,
+      "evidence": [
+        "3 años"
+      ]
+    }
+  }
+}

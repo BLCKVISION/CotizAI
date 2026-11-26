@@ -2,163 +2,163 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
-import { ErrorApi } from '@/core/api/cliente';
-import { useSesion } from '@/core/sesion/SesionProvider';
-import { Boton, Chip, Esqueleto, EstadoVacio, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
-import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
-import { useTema } from '@/design/tema';
-import { espacio } from '@/design/tokens';
-import { type EstadoProyecto, listarProyectosApi, type Proyecto } from '@/features/proyectos/api';
-import { ESTADOS, formatoFecha, formatoMonto, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+import { ErrorApi } from '@/core/api/client';
+import { useSession } from '@/core/session/SessionProvider';
+import { Button, Chip, Skeleton, EmptyState, Icon, Badge, Card, AppText } from '@/design/components';
+import { PageHeader, Metric, Page } from '@/design/layout';
+import { useTheme } from '@/design/theme';
+import { spacing } from '@/design/tokens';
+import { type ProjectState, listProjectsApi, type Project } from '@/features/projects/api';
+import { STATES, formatDate, formatAmount, stateInfo, STATE_ORDER } from '@/features/projects/states';
 
-type Filtro = 'todos' | EstadoProyecto;
+type Filter = 'all' | ProjectState;
 
-export default function Proyectos() {
-  const t = useTema();
+export default function Projects() {
+  const t = useTheme();
   const router = useRouter();
-  const { usuario, conSesion } = useSesion();
-  const [proyectos, setProyectos] = useState<Proyecto[] | null>(null);
+  const { user, withSession } = useSession();
+  const [projects, setProjects] = useState<Project[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<Filtro>('todos');
+  const [filter, setFilter] = useState<Filter>('all');
 
-  const [intento, setIntento] = useState(0);
+  const [attempt, setAttempt] = useState(0);
 
   // Al volver a esta pantalla (p. ej. tras crear un proyecto) se vuelve a consultar sin vaciar la lista.
   useFocusEffect(
     useCallback(() => {
-    let vigente = true;
+    let current = true;
     (async () => {
       try {
-        const datos = await conSesion(listarProyectosApi);
-        if (vigente) {
-          setProyectos(datos);
+        const data = await withSession(listProjectsApi);
+        if (current) {
+          setProjects(data);
           setError(null);
         }
       } catch (e) {
-        if (vigente) setError(e instanceof ErrorApi ? `${e.message}${e.trackId ? ` (ref. ${e.trackId})` : ''}` : 'Error inesperado.');
+        if (current) setError(e instanceof ErrorApi ? `${e.message}${e.trackId ? ` (ref. ${e.trackId})` : ''}` : 'Error inesperado.');
       }
     })();
     return () => {
-      vigente = false;
+      current = false;
     };
-    }, [conSesion, intento]),
+    }, [withSession, attempt]),
   );
 
-  const reintentar = () => {
+  const retry = () => {
     setError(null);
-    setProyectos(null);
-    setIntento((n) => n + 1);
+    setProjects(null);
+    setAttempt((n) => n + 1);
   };
 
-  const visibles = useMemo(
-    () => (proyectos ?? []).filter((p) => filtro === 'todos' || p.estado === filtro),
-    [proyectos, filtro],
+  const visible = useMemo(
+    () => (projects ?? []).filter((p) => filter === 'all' || p.state === filter),
+    [projects, filter],
   );
-  const cuenta = (e: EstadoProyecto) => (proyectos ?? []).filter((p) => p.estado === e).length;
-  const puedeCrear = usuario?.rol === 'cargador'; // solo UX: la autoridad es el backend
+  const count = (e: ProjectState) => (projects ?? []).filter((p) => p.state === e).length;
+  const canCreate = user?.role === 'loader'; // solo UX: la autoridad es el backend
 
-  const botonNuevo = puedeCrear ? (
-    <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={() => router.push('/proyectos/nuevo')} />
+  const newButton = canCreate ? (
+    <Button label="Nuevo proyecto" icon="plus" onPress={() => router.push('/proyectos/nuevo')} />
   ) : undefined;
 
   return (
-    <Pagina>
-      <EncabezadoDePagina
-        sobretitulo="Panel"
-        titulo="Proyectos"
-        descripcion="Procesos de evaluación de su organización y su estado actual."
-        accion={botonNuevo}
+    <Page>
+      <PageHeader
+        eyebrow="Panel"
+        title="Proyectos"
+        description="Procesos de evaluación de su organización y su estado actual."
+        action={newButton}
       />
 
-      {proyectos !== null && proyectos.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md }}>
-          <Metrica etiqueta="Total" valor={proyectos.length} icono="layers" />
-          <Metrica etiqueta="En evaluación" valor={cuenta('en_evaluacion')} icono="cpu" />
-          <Metrica etiqueta="En revisión" valor={cuenta('en_revision_del_comite')} icono="users" />
-          <Metrica etiqueta="Adjudicados" valor={cuenta('adjudicado')} icono="award" />
+      {projects !== null && projects.length > 0 ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+          <Metric label="Total" value={projects.length} icon="layers" />
+          <Metric label="En evaluación" value={count('evaluating')} icon="cpu" />
+          <Metric label="En revisión" value={count('committee_review')} icon="users" />
+          <Metric label="Adjudicados" value={count('awarded')} icon="award" />
         </View>
       ) : null}
 
-      {proyectos !== null && proyectos.length > 0 ? (
-        <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
-          <Chip etiqueta="Todos" seleccionado={filtro === 'todos'} onPress={() => setFiltro('todos')} />
-          {ORDEN_DE_ESTADOS.map((e) => (
-            <Chip key={e} etiqueta={ESTADOS[e].etiqueta} seleccionado={filtro === e} onPress={() => setFiltro(e)} />
+      {projects !== null && projects.length > 0 ? (
+        <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+          <Chip label="Todos" selected={filter === 'all'} onPress={() => setFilter('all')} />
+          {STATE_ORDER.map((e) => (
+            <Chip key={e} label={STATES[e].label} selected={filter === e} onPress={() => setFilter(e)} />
           ))}
         </View>
       ) : null}
 
       {error ? (
-        <Tarjeta>
-          <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-            <Icono nombre="alert-triangle" color={t.error.texto} />
-            <Texto color={t.error.texto} style={{ flex: 1 }}>
+        <Card>
+          <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+            <Icon name="alert-triangle" color={t.error.text} />
+            <AppText color={t.error.text} style={{ flex: 1 }}>
               {error}
-            </Texto>
+            </AppText>
           </View>
-          <Boton etiqueta="Reintentar" variante="secundario" icono="refresh-cw" onPress={reintentar} />
-        </Tarjeta>
-      ) : proyectos === null ? (
-        <View accessibilityLiveRegion="polite" accessibilityLabel="Cargando proyectos" style={{ gap: espacio.md }}>
+          <Button label="Reintentar" variant="secondary" icon="refresh-cw" onPress={retry} />
+        </Card>
+      ) : projects === null ? (
+        <View accessibilityLiveRegion="polite" accessibilityLabel="Cargando proyectos" style={{ gap: spacing.md }}>
           {[0, 1, 2].map((i) => (
-            <Tarjeta key={i}>
-              <Esqueleto alto={22} ancho="55%" />
-              <Esqueleto alto={14} ancho="35%" />
-              <Esqueleto alto={14} ancho="80%" />
-            </Tarjeta>
+            <Card key={i}>
+              <Skeleton height={22} width="55%" />
+              <Skeleton height={14} width="35%" />
+              <Skeleton height={14} width="80%" />
+            </Card>
           ))}
         </View>
-      ) : proyectos.length === 0 ? (
-        <EstadoVacio
-          icono="folder-plus"
-          titulo="Aún no hay proyectos"
-          descripcion={
-            puedeCrear
+      ) : projects.length === 0 ? (
+        <EmptyState
+          icon="folder-plus"
+          title="Aún no hay proyectos"
+          description={
+            canCreate
               ? 'Cree el primer proyecto para cargar propuestas y que el agente las evalúe.'
               : 'Cuando su organización cree proyectos, aparecerán aquí.'
           }
-          accion={botonNuevo}
+          action={newButton}
         />
-      ) : visibles.length === 0 ? (
-        <EstadoVacio icono="filter" titulo="Sin resultados" descripcion="Ningún proyecto coincide con este filtro." />
+      ) : visible.length === 0 ? (
+        <EmptyState icon="filter" title="Sin resultados" description="Ningún proyecto coincide con este filtro." />
       ) : (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md }}>
-          {visibles.map((p) => {
-            const e = infoEstado(p.estado);
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+          {visible.map((p) => {
+            const e = stateInfo(p.state);
             return (
               <View key={p.id} style={{ flexGrow: 1, flexBasis: 320, maxWidth: '100%' }}>
-                <Tarjeta onPress={() => router.push(`/proyectos/${p.id}`)} etiquetaAccesible={`${p.nombre}, ${e.etiqueta}`}>
-                  <Insignia etiqueta={e.etiqueta} tono={e.tono} icono={e.icono} />
-                  <Texto variante="subtitulo" numberOfLines={2}>
-                    {p.nombre}
-                  </Texto>
-                  <View style={{ gap: espacio.xs }}>
-                    <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-                      <Icono nombre="map-pin" tamano="sm" color={t.textoSuave} />
-                      <Texto variante="pequeno" suave numberOfLines={1} style={{ flex: 1 }}>
-                        {p.ubicacion}
-                      </Texto>
+                <Card onPress={() => router.push(`/proyectos/${p.id}`)} accessibleLabel={`${p.name}, ${e.label}`}>
+                  <Badge label={e.label} tone={e.tone} icon={e.icon} />
+                  <AppText variant="subtitle" numberOfLines={2}>
+                    {p.name}
+                  </AppText>
+                  <View style={{ gap: spacing.xs }}>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+                      <Icon name="map-pin" size="sm" color={t.softText} />
+                      <AppText variant="small" soft numberOfLines={1} style={{ flex: 1 }}>
+                        {p.location}
+                      </AppText>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-                      <Icono nombre="calendar" tamano="sm" color={t.textoSuave} />
-                      <Texto variante="pequeno" suave>
-                        {formatoFecha(p.creado)}
-                      </Texto>
+                    <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+                      <Icon name="calendar" size="sm" color={t.softText} />
+                      <AppText variant="small" soft>
+                        {formatDate(p.created)}
+                      </AppText>
                     </View>
                   </View>
-                  <View style={{ height: 1, backgroundColor: t.borde, marginVertical: espacio.xs }} />
+                  <View style={{ height: 1, backgroundColor: t.border, marginVertical: spacing.xs }} />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Texto variante="pequeno" suave>
+                    <AppText variant="small" soft>
                       Presupuesto referencial
-                    </Texto>
-                    <Texto variante="etiqueta">{formatoMonto(p.presupuesto_referencial)}</Texto>
+                    </AppText>
+                    <AppText variant="label">{formatAmount(p.reference_budget)}</AppText>
                   </View>
-                </Tarjeta>
+                </Card>
               </View>
             );
           })}
         </View>
       )}
-    </Pagina>
+    </Page>
   );
 }

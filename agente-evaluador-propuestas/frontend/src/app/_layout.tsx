@@ -9,30 +9,30 @@ import {
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { SesionProvider } from '@/core/sesion/SesionProvider';
-import { Fondo } from '@/design/efectos';
+import { SessionProvider } from '@/core/session/SessionProvider';
+import { Background } from '@/design/effects';
 
-function Raiz() {
+function Root() {
   return (
-    <Fondo>
+    <Background>
       <StatusBar style="dark" />
       <Slot />
-    </Fondo>
+    </Background>
   );
 }
 
-export default function LayoutRaiz() {
-  const [listas, errorDeFuentes] = useFonts({
+export default function RootLayout() {
+  const [lists, fontError] = useFonts({
     Urbanist_300Light,
     Urbanist_400Regular,
     Urbanist_500Medium,
     Urbanist_600SemiBold,
     Urbanist_700Bold,
   });
-  if (!listas && !errorDeFuentes) return null; // si fallan las fuentes se usa la del sistema en vez de dejar la pantalla en blanco
+  if (!lists && !fontError) return null; // si fallan las fuentes se usa la del sistema en vez de dejar la pantalla en blanco
   return (
-    <SesionProvider>
-      <Raiz />
-    </SesionProvider>
+    <SessionProvider>
+      <Root />
+    </SessionProvider>
   );
 }

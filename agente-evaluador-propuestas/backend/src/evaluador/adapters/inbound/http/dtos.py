@@ -8,77 +8,77 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
-from evaluador.domain.identidad import Rol, Usuario
-from evaluador.domain.proyecto import EstadoProyecto, Proyecto
+from evaluador.domain.identity import Role, User
+from evaluador.domain.project import Project, ProjectState
 
-ID_PATRON = r"^[0-9a-fA-F-]{36}$"
+ID_PATTERN = r"^[0-9a-fA-F-]{36}$"
 
 
-class DtoEntrada(BaseModel):
+class InputDto(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, frozen=True)
 
 
-class DtoSalida(BaseModel):
+class OutputDto(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
 # ---------- Sesiones ----------
-class IniciarSesionDto(DtoEntrada):
-    correo: Annotated[str, Field(min_length=3, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
-    contrasena: Annotated[SecretStr, Field(min_length=1, max_length=128)]
+class StartSessionDto(InputDto):
+    email: Annotated[str, Field(min_length=3, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
+    password: Annotated[SecretStr, Field(min_length=1, max_length=128)]
 
 
-class UsuarioRespuesta(DtoSalida):
+class UserResponse(OutputDto):
     id: str
-    correo: str
-    rol: Rol
-    organizacion_id: str
+    email: str
+    role: Role
+    organization_id: str
 
     @classmethod
-    def desde_dominio(cls, u: Usuario) -> UsuarioRespuesta:
-        return cls(id=u.id, correo=u.correo, rol=u.rol, organizacion_id=u.tenant_id)
+    def from_domain(cls, u: User) -> UserResponse:
+        return cls(id=u.id, email=u.email, role=u.role, organization_id=u.tenant_id)
 
 
-class SesionRespuesta(DtoSalida):
-    token_acceso: str
-    tipo_token: str = "Bearer"  # noqa: S105 - nombre del esquema HTTP, no un secreto
-    expira: datetime
-    usuario: UsuarioRespuesta
+class SessionResponse(OutputDto):
+    access_token: str
+    token_type: str = "Bearer"  # noqa: S105 - nombre del esquema HTTP, no un secreto
+    expires: datetime
+    user: UserResponse
 
 
 # ---------- Proyectos ----------
-class CrearProyectoDto(DtoEntrada):
-    nombre: Annotated[str, Field(min_length=3, max_length=120)]
-    requerimiento: Annotated[str, Field(min_length=1, max_length=5000)]
-    ubicacion: Annotated[str, Field(min_length=1, max_length=200)]
-    presupuesto_referencial: Annotated[Decimal | None, Field(default=None, gt=0, max_digits=14, decimal_places=2)]
+class CreateProjectDto(InputDto):
+    name: Annotated[str, Field(min_length=3, max_length=120)]
+    requirement: Annotated[str, Field(min_length=1, max_length=5000)]
+    location: Annotated[str, Field(min_length=1, max_length=200)]
+    reference_budget: Annotated[Decimal | None, Field(default=None, gt=0, max_digits=14, decimal_places=2)]
 
 
-class TransicionDto(DtoEntrada):
-    destino: EstadoProyecto
-    motivo: Annotated[str | None, Field(default=None, max_length=500)]
+class TransitionDto(InputDto):
+    target: ProjectState
+    reason: Annotated[str | None, Field(default=None, max_length=500)]
 
 
-class ProyectoRespuesta(DtoSalida):
+class ProjectResponse(OutputDto):
     id: str
-    nombre: str
-    requerimiento: str
-    ubicacion: str
-    presupuesto_referencial: Decimal | None
-    estado: EstadoProyecto
-    creado: datetime
-    motivo_de_cierre: str | None
+    name: str
+    requirement: str
+    location: str
+    reference_budget: Decimal | None
+    state: ProjectState
+    created: datetime
+    closing_reason: str | None
 
     @classmethod
-    def desde_dominio(cls, p: Proyecto) -> ProyectoRespuesta:
+    def from_domain(cls, p: Project) -> ProjectResponse:
         return cls(
-            id=p.id, nombre=p.nombre, requerimiento=p.requerimiento, ubicacion=p.ubicacion,
-            presupuesto_referencial=p.presupuesto_referencial, estado=p.estado, creado=p.creado,
-            motivo_de_cierre=p.motivo_de_cierre,
+            id=p.id, name=p.name, requirement=p.requirement, location=p.location,
+            reference_budget=p.reference_budget, state=p.state, created=p.created,
+            closing_reason=p.closing_reason,
         )  # fmt: skip
 
 
-class ErrorRespuesta(DtoSalida):
-    codigo: str
-    mensaje: str
+class ErrorResponse(OutputDto):
+    code: str
+    message: str
     track_id: str

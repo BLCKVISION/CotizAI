@@ -2,113 +2,113 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { ErrorApi } from '@/core/api/cliente';
-import { useSesion } from '@/core/sesion/SesionProvider';
-import { Boton, CampoDeTexto, Icono, Tarjeta, Texto } from '@/design/componentes';
-import { EncabezadoDePagina, Pagina } from '@/design/layout';
-import { useTema } from '@/design/tema';
-import { anchoMaximoLectura, espacio } from '@/design/tokens';
-import { crearProyectoApi } from '@/features/proyectos/api';
-import { parsearMonto } from '@/features/proyectos/monto';
+import { ErrorApi } from '@/core/api/client';
+import { useSession } from '@/core/session/SessionProvider';
+import { Button, TextField, Icon, Card, AppText } from '@/design/components';
+import { PageHeader, Page } from '@/design/layout';
+import { useTheme } from '@/design/theme';
+import { maxReadingWidth, spacing } from '@/design/tokens';
+import { createProjectApi } from '@/features/projects/api';
+import { parseAmount } from '@/features/projects/amount';
 
-type Errores = { nombre?: string; requerimiento?: string; ubicacion?: string; presupuesto?: string; general?: string };
+type Errors = { name?: string; requirement?: string; location?: string; budget?: string; general?: string };
 
-export default function NuevoProyecto() {
-  const t = useTema();
+export default function NewProject() {
+  const t = useTheme();
   const router = useRouter();
-  const { conSesion } = useSesion();
-  const [nombre, setNombre] = useState('');
-  const [requerimiento, setRequerimiento] = useState('');
-  const [ubicacion, setUbicacion] = useState('');
-  const [presupuesto, setPresupuesto] = useState('');
-  const [errores, setErrores] = useState<Errores>({});
-  const [cargando, setCargando] = useState(false);
+  const { withSession } = useSession();
+  const [name, setName] = useState('');
+  const [requirement, setRequirement] = useState('');
+  const [location, setLocation] = useState('');
+  const [budget, setBudget] = useState('');
+  const [errors, setErrors] = useState<Errors>({});
+  const [loading, setLoading] = useState(false);
 
-  const validar = (): Errores => {
-    const e: Errores = {};
-    if (nombre.trim().length < 3) e.nombre = 'Escriba al menos 3 caracteres.';
-    if (!requerimiento.trim()) e.requerimiento = 'Describa lo que se requiere adquirir.';
-    if (!ubicacion.trim()) e.ubicacion = 'Indique la ubicación.';
-    if (presupuesto.trim() && !((parsearMonto(presupuesto) ?? 0) > 0)) e.presupuesto = 'Ingrese un monto mayor que cero.';
+  const validate = (): Errors => {
+    const e: Errors = {};
+    if (name.trim().length < 3) e.name = 'Escriba al menos 3 caracteres.';
+    if (!requirement.trim()) e.requirement = 'Describa lo que se requiere adquirir.';
+    if (!location.trim()) e.location = 'Indique la ubicación.';
+    if (budget.trim() && !((parseAmount(budget) ?? 0) > 0)) e.budget = 'Ingrese un monto mayor que cero.';
     return e;
   };
 
-  const guardar = async () => {
-    const e = validar();
-    setErrores(e);
+  const save = async () => {
+    const e = validate();
+    setErrors(e);
     if (Object.keys(e).length > 0) return;
-    setCargando(true);
+    setLoading(true);
     try {
-      const p = await conSesion(
-        crearProyectoApi({
-          nombre: nombre.trim(),
-          requerimiento: requerimiento.trim(),
-          ubicacion: ubicacion.trim(),
-          presupuesto_referencial: presupuesto.trim() ? parsearMonto(presupuesto) : null,
+      const p = await withSession(
+        createProjectApi({
+          name: name.trim(),
+          requirement: requirement.trim(),
+          location: location.trim(),
+          reference_budget: budget.trim() ? parseAmount(budget) : null,
         }),
       );
       router.replace(`/proyectos/${p.id}`);
     } catch (err) {
-      setErrores({
+      setErrors({
         general:
           err instanceof ErrorApi
-            ? err.estado === 403
+            ? err.status === 403
               ? 'Su rol no puede crear proyectos.'
               : `${err.message}${err.trackId ? ` (ref. ${err.trackId})` : ''}`
             : 'Error inesperado.',
       });
     } finally {
-      setCargando(false);
+      setLoading(false);
     }
   };
 
   return (
-    <Pagina>
-      <EncabezadoDePagina
-        sobretitulo="Nuevo"
-        titulo="Nuevo proyecto"
-        descripcion="Defina qué se va a adquirir. Después podrá cargar las propuestas a evaluar."
-        accion={<Boton etiqueta="Volver" variante="fantasma" icono="arrow-left" onPress={() => router.back()} />}
+    <Page>
+      <PageHeader
+        eyebrow="Nuevo"
+        title="Nuevo proyecto"
+        description="Defina qué se va a adquirir. Después podrá cargar las propuestas a evaluar."
+        action={<Button label="Volver" variant="ghost" icon="arrow-left" onPress={() => router.back()} />}
       />
-      <View style={{ maxWidth: anchoMaximoLectura, width: '100%' }}>
-        <Tarjeta>
-          <View style={{ gap: espacio.md }}>
-            <CampoDeTexto etiqueta="Nombre del proyecto" icono="type" value={nombre} onChangeText={setNombre} error={errores.nombre} maxLength={120} />
-            <CampoDeTexto
-              etiqueta="Requerimiento"
-              icono="file-text"
-              value={requerimiento}
-              onChangeText={setRequerimiento}
-              error={errores.requerimiento}
-              ayuda="Equipos, cantidades y condiciones (instalación, garantía, soporte)."
+      <View style={{ maxWidth: maxReadingWidth, width: '100%' }}>
+        <Card>
+          <View style={{ gap: spacing.md }}>
+            <TextField label="Nombre del proyecto" icon="type" value={name} onChangeText={setName} error={errors.name} maxLength={120} />
+            <TextField
+              label="Requerimiento"
+              icon="file-text"
+              value={requirement}
+              onChangeText={setRequirement}
+              error={errors.requirement}
+              help="Equipos, cantidades y condiciones (instalación, garantía, soporte)."
               multiline
               maxLength={5000}
             />
-            <CampoDeTexto etiqueta="Ubicación" icono="map-pin" value={ubicacion} onChangeText={setUbicacion} error={errores.ubicacion} maxLength={200} />
-            <CampoDeTexto
-              etiqueta="Presupuesto referencial (opcional)"
-              icono="dollar-sign"
-              value={presupuesto}
-              onChangeText={setPresupuesto}
-              error={errores.presupuesto}
+            <TextField label="Ubicación" icon="map-pin" value={location} onChangeText={setLocation} error={errors.location} maxLength={200} />
+            <TextField
+              label="Presupuesto referencial (opcional)"
+              icon="dollar-sign"
+              value={budget}
+              onChangeText={setBudget}
+              error={errors.budget}
               keyboardType="decimal-pad"
-              ayuda="Solo como referencia; no descarta propuestas por sí solo."
+              help="Solo como referencia; no descarta propuestas por sí solo."
             />
-            {errores.general ? (
-              <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-                <Icono nombre="alert-triangle" color={t.error.texto} />
-                <Texto variante="pequeno" color={t.error.texto} style={{ flex: 1 }}>
-                  {errores.general}
-                </Texto>
+            {errors.general ? (
+              <View accessibilityRole="alert" style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+                <Icon name="alert-triangle" color={t.error.text} />
+                <AppText variant="small" color={t.error.text} style={{ flex: 1 }}>
+                  {errors.general}
+                </AppText>
               </View>
             ) : null}
-            <View style={{ flexDirection: 'row', gap: espacio.sm, flexWrap: 'wrap' }}>
-              <Boton etiqueta="Crear proyecto" icono="check" onPress={guardar} cargando={cargando} />
-              <Boton etiqueta="Cancelar" variante="secundario" onPress={() => router.back()} deshabilitado={cargando} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' }}>
+              <Button label="Crear proyecto" icon="check" onPress={save} loading={loading} />
+              <Button label="Cancelar" variant="secondary" onPress={() => router.back()} disabled={loading} />
             </View>
           </View>
-        </Tarjeta>
+        </Card>
       </View>
-    </Pagina>
+    </Page>
   );
 }

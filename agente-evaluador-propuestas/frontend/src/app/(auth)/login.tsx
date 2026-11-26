@@ -3,32 +3,32 @@ import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ErrorApi } from '@/core/api/cliente';
-import { useSesion } from '@/core/sesion/SesionProvider';
-import { Boton, CampoDeTexto, Icono, Marca, type NombreIcono, Texto } from '@/design/componentes';
-import { useDispositivo } from '@/design/dispositivo';
-import { Escalonado, vidrio } from '@/design/efectos';
-import { useTema } from '@/design/tema';
-import { espacio, margenFlotante, radio } from '@/design/tokens';
+import { ErrorApi } from '@/core/api/client';
+import { useSession } from '@/core/session/SessionProvider';
+import { Button, TextField, Icon, Brand, type IconName, AppText } from '@/design/components';
+import { useDevice } from '@/design/device';
+import { Staggered, glass } from '@/design/effects';
+import { useTheme } from '@/design/theme';
+import { spacing, floatMargin, radius } from '@/design/tokens';
 
-type Errores = { correo?: string; contrasena?: string; general?: string };
+type Errors = { email?: string; password?: string; general?: string };
 
-const PUNTOS: { icono: NombreIcono; titulo: string; detalle: string }[] = [
-  { icono: 'search', titulo: 'Evidencia citada', detalle: 'Cada hallazgo señala dónde aparece en la propuesta.' },
-  { icono: 'divide-square', titulo: 'Aritmética exacta', detalle: 'Los montos los calcula el código, no el modelo.' },
-  { icono: 'users', titulo: 'Decide el comité', detalle: 'La IA propone; las personas adjudican.' },
+const POINTS: { icon: IconName; title: string; detail: string }[] = [
+  { icon: 'search', title: 'Evidencia citada', detail: 'Cada hallazgo señala dónde aparece en la propuesta.' },
+  { icon: 'divide-square', title: 'Aritmética exacta', detail: 'Los montos los calcula el código, no el modelo.' },
+  { icon: 'users', title: 'Decide el comité', detail: 'La IA propone; las personas adjudican.' },
 ];
 
 /** Panel de marca: tarjeta flotante de cristal blanco sobre los halos pastel; cada punto entra escalonado. */
-function PanelDeMarca() {
-  const t = useTema();
+function BrandPanel() {
+  const t = useTheme();
   return (
-    <View style={{ flex: 1, padding: margenFlotante }}>
+    <View style={{ flex: 1, padding: floatMargin }}>
       <View
         style={{
-          ...vidrio({ opacidad: 0.7, blur: 32, radio: radio.panel }),
+          ...glass({ opacity: 0.7, blur: 32, radius: radius.panel }),
           flex: 1,
-          padding: espacio.xxl,
+          padding: spacing.xxl,
           justifyContent: 'space-between',
           overflow: 'hidden',
         }}
@@ -44,115 +44,115 @@ function PanelDeMarca() {
         />
         <View
           pointerEvents="none"
-          style={{ position: 'absolute', right: 120, top: 90, width: 14, height: 14, borderRadius: 7, backgroundColor: t.lima, borderWidth: 1, borderColor: 'rgba(0,0,0,0.2)' }}
+          style={{ position: 'absolute', right: 120, top: 90, width: 14, height: 14, borderRadius: 7, backgroundColor: t.lime, borderWidth: 1, borderColor: 'rgba(0,0,0,0.2)' }}
         />
-        <Marca />
-        <View style={{ gap: espacio.xl, maxWidth: 520 }}>
-          <View style={{ gap: espacio.md }}>
-            <Texto variante="sobretitulo" suave>
+        <Brand />
+        <View style={{ gap: spacing.xl, maxWidth: 520 }}>
+          <View style={{ gap: spacing.md }}>
+            <AppText variant="eyebrow" soft>
               HACKATÓN VENEZUELA INNOVA 2026
-            </Texto>
-            <Texto variante="hero">Decisiones de compra claras, explicadas y auditables.</Texto>
+            </AppText>
+            <AppText variant="hero">Decisiones de compra claras, explicadas y auditables.</AppText>
           </View>
-          <View style={{ gap: espacio.md }}>
-            <Escalonado>
-              {PUNTOS.map((p) => (
+          <View style={{ gap: spacing.md }}>
+            <Staggered>
+              {POINTS.map((p) => (
                 <View
-                  key={p.titulo}
+                  key={p.title}
                   style={{
-                    ...vidrio({ opacidad: 0.8, blur: 12, radio: radio.lg }),
+                    ...glass({ opacity: 0.8, blur: 12, radius: radius.lg }),
                     flexDirection: 'row',
-                    gap: espacio.md,
+                    gap: spacing.md,
                     alignItems: 'center',
-                    padding: espacio.md,
+                    padding: spacing.md,
                   }}
                 >
                   <View
-                    style={{ width: 40, height: 40, borderRadius: radio.pildora, backgroundColor: t.lima, alignItems: 'center', justifyContent: 'center' }}
+                    style={{ width: 40, height: 40, borderRadius: radius.pill, backgroundColor: t.lime, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Icono nombre={p.icono} color={t.sobreLima} />
+                    <Icon name={p.icon} color={t.onLime} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Texto variante="etiqueta">{p.titulo}</Texto>
-                    <Texto variante="pequeno" suave>
-                      {p.detalle}
-                    </Texto>
+                    <AppText variant="label">{p.title}</AppText>
+                    <AppText variant="small" soft>
+                      {p.detail}
+                    </AppText>
                   </View>
                 </View>
               ))}
-            </Escalonado>
+            </Staggered>
           </View>
         </View>
-        <Texto variante="pequeno" suave>
+        <AppText variant="small" soft>
           Evaluación de propuestas para dotación de laboratorios
-        </Texto>
+        </AppText>
       </View>
     </View>
   );
 }
 
 export default function Login() {
-  const t = useTema();
-  const { dispositivo } = useDispositivo();
-  const { token, iniciarSesion } = useSesion();
-  const [correo, setCorreo] = useState('');
-  const [contrasena, setContrasena] = useState('');
-  const [errores, setErrores] = useState<Errores>({});
-  const [cargando, setCargando] = useState(false);
+  const t = useTheme();
+  const { device } = useDevice();
+  const { token, startSession } = useSession();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<Errors>({});
+  const [loading, setLoading] = useState(false);
 
   if (token) return <Redirect href="/proyectos" />;
 
-  const validar = (): Errores => {
-    const e: Errores = {};
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo.trim())) e.correo = 'Ingrese un correo válido.';
-    if (!contrasena) e.contrasena = 'Ingrese su contraseña.';
+  const validate = (): Errors => {
+    const e: Errors = {};
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) e.email = 'Ingrese un correo válido.';
+    if (!password) e.password = 'Ingrese su contraseña.';
     return e;
   };
 
-  const enviar = async () => {
-    const e = validar();
-    setErrores(e);
+  const submit = async () => {
+    const e = validate();
+    setErrors(e);
     if (Object.keys(e).length > 0) return;
-    setCargando(true);
+    setLoading(true);
     try {
-      await iniciarSesion(correo, contrasena);
-      setContrasena(''); // no conservar la contraseña en la UI tras iniciar sesión
+      await startSession(email, password);
+      setPassword(''); // no conservar la contraseña en la UI tras iniciar sesión
     } catch (err) {
       if (err instanceof ErrorApi) {
-        if (err.estado === 401) setContrasena(''); // con fallos de red o 429 se conserva para reintentar
+        if (err.status === 401) setPassword(''); // con fallos de red o 429 se conserva para reintentar
         const ref = err.trackId ? ` (ref. ${err.trackId})` : '';
-        setErrores({
+        setErrors({
           general:
-            err.estado === 401
+            err.status === 401
               ? `Credenciales inválidas o cuenta temporalmente bloqueada.${ref}`
-              : err.estado === 429
+              : err.status === 429
                 ? `Demasiados intentos. Espere un minuto.${ref}`
                 : `${err.message}${ref}`,
         });
       } else {
-        setErrores({ general: 'Error inesperado.' });
+        setErrors({ general: 'Error inesperado.' });
       }
     } finally {
-      setCargando(false);
+      setLoading(false);
     }
   };
 
-  const formulario = (
-    <View style={{ width: '100%', maxWidth: 440, gap: espacio.xl }}>
-      {dispositivo !== 'escritorio' ? <Marca /> : null}
-      <View style={{ gap: espacio.xs }}>
-        <Texto variante="titulo" accessibilityRole="header">
+  const form = (
+    <View style={{ width: '100%', maxWidth: 440, gap: spacing.xl }}>
+      {device !== 'desktop' ? <Brand /> : null}
+      <View style={{ gap: spacing.xs }}>
+        <AppText variant="title" accessibilityRole="header">
           Bienvenido
-        </Texto>
-        <Texto suave>Ingrese con su correo y contraseña.</Texto>
+        </AppText>
+        <AppText soft>Ingrese con su correo y contraseña.</AppText>
       </View>
-      <View style={{ gap: espacio.md }}>
-        <CampoDeTexto
-          etiqueta="Correo electrónico"
-          icono="mail"
-          value={correo}
-          onChangeText={setCorreo}
-          error={errores.correo}
+      <View style={{ gap: spacing.md }}>
+        <TextField
+          label="Correo electrónico"
+          icon="mail"
+          value={email}
+          onChangeText={setEmail}
+          error={errors.email}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -160,54 +160,54 @@ export default function Login() {
           textContentType="username"
           returnKeyType="next"
         />
-        <CampoDeTexto
-          etiqueta="Contraseña"
-          icono="lock"
-          value={contrasena}
-          onChangeText={setContrasena}
-          error={errores.contrasena}
+        <TextField
+          label="Contraseña"
+          icon="lock"
+          value={password}
+          onChangeText={setPassword}
+          error={errors.password}
           secureTextEntry
           autoCapitalize="none"
           autoComplete="current-password"
           textContentType="password"
           returnKeyType="go"
-          onSubmitEditing={enviar}
+          onSubmitEditing={submit}
         />
-        {errores.general ? (
+        {errors.general ? (
           <View
             accessibilityLiveRegion="assertive"
             accessibilityRole="alert"
-            style={{ flexDirection: 'row', gap: espacio.sm, padding: espacio.md, borderRadius: radio.md, backgroundColor: t.error.fondo }}
+            style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.md, backgroundColor: t.error.background }}
           >
-            <Icono nombre="alert-triangle" color={t.error.texto} />
-            <Texto variante="pequeno" color={t.error.texto} style={{ flex: 1 }}>
-              {errores.general}
-            </Texto>
+            <Icon name="alert-triangle" color={t.error.text} />
+            <AppText variant="small" color={t.error.text} style={{ flex: 1 }}>
+              {errors.general}
+            </AppText>
           </View>
         ) : null}
-        <Boton etiqueta="Iniciar sesión" icono="log-in" onPress={enviar} cargando={cargando} anchoCompleto />
+        <Button label="Iniciar sesión" icon="log-in" onPress={submit} loading={loading} fullWidth />
       </View>
-      <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center' }}>
-        <Icono nombre="shield" tamano="sm" color={t.textoSuave} />
-        <Texto variante="pequeno" suave style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+        <Icon name="shield" size="sm" color={t.softText} />
+        <AppText variant="small" soft style={{ flex: 1 }}>
           Conexión protegida. Su sesión expira por inactividad.
-        </Texto>
+        </AppText>
       </View>
     </View>
   );
 
-  if (dispositivo === 'escritorio') {
+  if (device === 'desktop') {
     return (
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <View style={{ flex: 1.05 }}>
-          <PanelDeMarca />
+          <BrandPanel />
         </View>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: espacio.xxl }}
+          contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl }}
           keyboardShouldPersistTaps="handled"
         >
-          {formulario}
+          {form}
         </ScrollView>
       </View>
     );
@@ -216,10 +216,10 @@ export default function Login() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: espacio.lg }}
+        contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}
         keyboardShouldPersistTaps="handled"
       >
-        {formulario}
+        {form}
       </ScrollView>
     </SafeAreaView>
   );

@@ -8,19 +8,19 @@ import uuid
 from datetime import UTC, datetime
 
 
-class TokensSeguros:
-    def nuevo(self) -> str:
+class SecureTokens:
+    def new(self) -> str:
         return secrets.token_urlsafe(32)
 
-    def huella(self, token: str) -> str:
+    def fingerprint(self, token: str) -> str:
         return hashlib.sha256(token.encode()).hexdigest()
 
 
 class IdsUuid:
-    def nuevo(self) -> str:
+    def new(self) -> str:
         return str(uuid.uuid4())
 
 
-class RelojSistema:
-    def ahora(self) -> datetime:
+class SystemClock:
+    def now(self) -> datetime:
         return datetime.now(UTC)
