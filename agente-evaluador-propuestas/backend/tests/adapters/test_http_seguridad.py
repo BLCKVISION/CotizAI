@@ -107,15 +107,30 @@ def test_error_500_lleva_track_id_y_cabeceras_de_seguridad(contenedor):
     assert "content-security-policy" in r.headers
 
 
-def test_el_contexto_de_sesion_llega_al_log_de_acceso(cliente, capsys):
-    import json
+def test_el_contexto_de_sesion_llega_al_log_de_acceso(cliente):
+    import logging
 
-    h = cabecera(cliente)
-    capsys.readouterr()
-    cliente.get("/api/v1/proyectos", headers=h)
-    lineas = [json.loads(x) for x in capsys.readouterr().err.splitlines() if x.startswith("{")]
-    ev = next(x for x in lineas if x["mensaje"] == "http_solicitud")
-    assert "-" not in (ev["sesionId"], ev["tenantId"], ev["usuarioId"])
+    from evaluador.observabilidad import contexto
+
+    vistos = []
+
+    class Espia(logging.Handler):
+        def emit(self, record):  # el contexto se lee en el momento de emitir, igual que el formateador JSON
+            if record.getMessage() == "http_solicitud":
+                vistos.append(contexto.obtener())
+
+    log = logging.getLogger("evaluador.http")
+    h = Espia(logging.INFO)
+    log.addHandler(h)
+    nivel = log.level
+    log.setLevel(logging.INFO)
+    try:
+        cliente.get("/api/v1/proyectos", headers=cabecera(cliente))
+    finally:
+        log.removeHandler(h)
+        log.setLevel(nivel)
+    ctx = vistos[-1]
+    assert "-" not in (ctx.sesion_id, ctx.tenant_id, ctx.usuario_id)
 
 
 def test_sesion_de_tenant_desactivado_deja_de_ser_valida(cliente, contenedor):

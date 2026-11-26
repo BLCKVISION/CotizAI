@@ -15,8 +15,12 @@ from evaluador.domain.evaluacion import (
     Veredicto,
 )
 from evaluador.domain.extraccion import ExtraccionPropuesta, JuicioDeAlcance
+from evaluador.domain.reglas.abusivo import validar_abuso
 from evaluador.domain.reglas.alcance import validar_alcance_fijo
 from evaluador.domain.reglas.aritmetica import validar_aritmetica
+from evaluador.domain.reglas.calidad import validar_calidad
+from evaluador.domain.reglas.capacidad import validar_capacidad
+from evaluador.domain.reglas.compatibilidad import validar_compatibilidad
 from evaluador.domain.reglas.manipulacion import detectar_manipulacion
 
 from .estado import EstadoEvaluacion
@@ -77,6 +81,14 @@ class NodosEvaluacion:
 
     def aritmetica(self, s: EstadoEvaluacion) -> dict:
         return {"hallazgos": validar_aritmetica(s["extraccion"])}
+
+    def reglas_tecnicas(self, s: EstadoEvaluacion) -> dict:
+        """COMPAT, CAPACIDAD, CALIDAD y ABUSIVO: reglas deterministas sobre la extracción (sin modelo)."""
+        e = s["extraccion"]
+        # Sin precios de mercado todavía (búsqueda web pendiente): ABUSIVO solo juzga flete y cláusulas.
+        return {
+            "hallazgos": [*validar_compatibilidad(e), *validar_capacidad(e), *validar_calidad(e), *validar_abuso(e)]
+        }
 
     def alcance(self, s: EstadoEvaluacion) -> dict:
         hallazgos = validar_alcance_fijo(s["extraccion"])

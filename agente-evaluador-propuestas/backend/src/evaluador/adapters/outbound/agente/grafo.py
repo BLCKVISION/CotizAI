@@ -18,6 +18,7 @@ def construir_grafo(nodos: NodosEvaluacion):
     g.add_node("extraer", nodos.extraer)
     g.add_node("manipulacion", nodos.manipulacion)
     g.add_node("aritmetica", nodos.aritmetica)
+    g.add_node("reglas_tecnicas", nodos.reglas_tecnicas)
     g.add_node("alcance", nodos.alcance)
     g.add_node("decidir", nodos.decidir)
 
@@ -25,7 +26,8 @@ def construir_grafo(nodos: NodosEvaluacion):
     g.add_edge("recuperar_contexto", "extraer")
     g.add_conditional_edges("extraer", _tras_extraer, {"decidir": "decidir", "manipulacion": "manipulacion"})
     g.add_edge("manipulacion", "aritmetica")
-    g.add_edge("aritmetica", "alcance")
+    g.add_edge("aritmetica", "reglas_tecnicas")
+    g.add_edge("reglas_tecnicas", "alcance")
     g.add_edge("alcance", "decidir")
     g.add_edge("decidir", END)
     return g.compile()

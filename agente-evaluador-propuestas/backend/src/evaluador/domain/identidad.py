@@ -25,6 +25,7 @@ class Permiso(StrEnum):
     ANOTAR_REVISION = "anotar_revision"
     ADJUDICAR_O_CERRAR = "adjudicar_o_cerrar"
     VER_AUDITORIA = "ver_auditoria"
+    REGISTRAR_TASA = "registrar_tasa"
 
 
 # Matriz de la sección 4.1 del documento de arquitectura (mínimo privilegio).
@@ -33,7 +34,13 @@ PERMISOS_POR_ROL: dict[Rol, frozenset[Permiso]] = {
         {Permiso.CREAR_PROYECTO, Permiso.CARGAR_DOCUMENTOS, Permiso.INICIAR_EVALUACION, Permiso.VER_ESTADO}
     ),
     Rol.EVALUADOR: frozenset(
-        {Permiso.INICIAR_EVALUACION, Permiso.VER_ESTADO, Permiso.VER_RESULTADOS, Permiso.ANOTAR_REVISION}
+        {
+            Permiso.INICIAR_EVALUACION,
+            Permiso.VER_ESTADO,
+            Permiso.VER_RESULTADOS,
+            Permiso.ANOTAR_REVISION,
+            Permiso.REGISTRAR_TASA,
+        }
     ),
     Rol.APROBADOR: frozenset(
         {Permiso.VER_ESTADO, Permiso.VER_RESULTADOS, Permiso.ANOTAR_REVISION, Permiso.ADJUDICAR_O_CERRAR}
