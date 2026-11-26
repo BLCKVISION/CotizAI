@@ -1,5 +1,5 @@
 /**
- * Contrato de `GET /evaluaciones/{id}` (sección 3 de la arquitectura). Los montos viajan como texto (Decimal) y
+ * Contrato de `GET /evaluations/{id}` (sección 3 de la arquitectura). Los montos viajan como texto (Decimal) y
  * solo se convierten a número para mostrarlos: la pantalla nunca calcula ni decide, solo presenta.
  * Sin imports: lo usan la lógica pura y sus pruebas.
  */
