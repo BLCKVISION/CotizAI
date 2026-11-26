@@ -30,9 +30,9 @@ class Linea(_Base):
     marca: str | None = None
     modelo: str | None = None
     especificaciones: dict[str, str] = Field(default_factory=dict)
-    cantidad: Monto
-    precio_unitario: Monto
-    total_linea: Monto
+    cantidad: Monto | None = None  # None = no consta (no se rellena con suposiciones)
+    precio_unitario: Monto | None = None
+    total_linea: Monto | None = None
     evidencia: Evidencia = Field(default_factory=Evidencia)
     legibilidad: Literal["alta", "media", "baja"] = "alta"
 
@@ -43,11 +43,32 @@ class Totales(_Base):
     total: Monto | None = None
 
 
+class Recargo(_Base):
+    """Cargo adicional. `monto` o `porcentaje`; si el cargo se anuncia sin cifra, el Monto lleva `valor` vacío."""
+
+    concepto: str
+    monto: Monto | None = None
+    porcentaje: Monto | None = None  # sobre el subtotal
+
+
+class Condiciones(_Base):
+    """Costos y cláusulas fuera de las líneas. `None` = no consta; un Monto con `valor` no numérico = «a convenir»."""
+
+    flete: Monto | None = None
+    instalacion: Monto | None = None
+    recargos: list[Recargo] = Field(default_factory=list)
+    garantia: str | None = None
+    soporte: str | None = None
+    software: list[str] = Field(default_factory=list)
+
+
 class ExtraccionPropuesta(_Base):
     proveedor: str | None = None
     moneda: str | None = None
     lineas: list[Linea] = Field(default_factory=list)
     totales: Totales = Field(default_factory=Totales)
+    condiciones: Condiciones = Field(default_factory=Condiciones)
+    notas_literales: list[str] = Field(default_factory=list)
     sospechas_de_manipulacion: list[str] = Field(default_factory=list)
 
 
@@ -57,3 +78,10 @@ class JuicioDeAlcance(_Base):
     cumple: bool
     faltantes: list[str] = Field(default_factory=list)
     evidencia: list[str] = Field(default_factory=list)
+
+
+class TranscripcionImagen(_Base):
+    """Salida del modelo de visión: transcripción literal de una imagen (foto o captura de una propuesta)."""
+
+    texto: str = ""
+    ilegible: bool = False  # True si la imagen no permite leer con fiabilidad: se pide revisión, no se inventa

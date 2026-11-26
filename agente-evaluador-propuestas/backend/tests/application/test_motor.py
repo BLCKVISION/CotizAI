@@ -20,6 +20,7 @@ def linea(cat: str, cant="11", precio="100.00", total="1100.00") -> dict:
         "cantidad": m(cant),
         "precio_unitario": m(precio),
         "total_linea": m(total),
+        "evidencia": {"pagina_o_celda": "p.1", "texto": f"{cat} {cant} x {precio}"},
     }
 
 
@@ -120,5 +121,29 @@ def test_modelo_sin_faltantes_no_descarta():
 
 
 def test_cantidad_nan_no_rompe_la_evaluacion():
-    ext = extraccion(lineas=[linea("gabinete", cant="NaN")] + [linea(c) for c in ("monitor", "teclado", "raton", "protector")])
+    ext = extraccion(
+        lineas=[linea("gabinete", cant="NaN")] + [linea(c) for c in ("monitor", "teclado", "raton", "protector")]
+    )
     assert evaluar(motor(ext)[0]).veredicto is Veredicto.PENDIENTE_DE_REVISION
+
+
+def test_contrato_incumplido_se_relee_y_si_persiste_pide_revision():
+    sin_evidencia = extraccion()
+    sin_evidencia.lineas[0].evidencia.texto = ""
+    mt, modelo = motor(sin_evidencia)
+    r = evaluar(mt)
+    assert r.veredicto is Veredicto.PENDIENTE_DE_REVISION and not any(h.descarta for h in r.hallazgos)
+    assert len([c for c in modelo.llamadas if "Transcribe" in c[0]]) == 2
+
+
+def test_contrato_incumplido_una_vez_se_recupera_con_la_relectura():
+    malo = extraccion()
+    malo.lineas[0].evidencia.texto = ""
+    respuestas = iter([malo, extraccion()])
+    modelo = ModeloFalso(
+        {ExtraccionPropuesta: lambda _: next(respuestas), JuicioDeAlcance: JuicioDeAlcance(cumple=True)}
+    )
+    emb, idx = EmbebedorFalso(), IndiceEnMemoria()
+    evid = Fragmento("f1", "t1", "p1", 0, "Incluye instalación, garantía de 3 años y soporte técnico.")
+    idx.indexar([evid], emb.embeber_documentos([evid.contenido]))
+    assert evaluar(MotorLangGraph(modelo, emb, idx)).veredicto is Veredicto.VALIDA

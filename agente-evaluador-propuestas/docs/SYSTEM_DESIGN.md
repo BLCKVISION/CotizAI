@@ -14,6 +14,21 @@ Evaluar de 3 a 20 propuestas para dotar un laboratorio de 11 computadoras, expli
 5. **Aislamiento multi-tenant por construcción**, no por convención.
 6. **Monolito modular** hexagonal. Sin microservicios, Kubernetes ni Redis en el MVP.
 
+### Convención de idioma (obligatoria)
+
+El **backend y la API se escriben en inglés**; el producto que ve la persona usuaria sigue en español.
+
+| Va en **inglés** | Va en **español** |
+|---|---|
+| Identificadores, módulos y archivos (`rules/scope.py`, `calculate_real_cost`), nombres de tests | Textos de la interfaz y mensajes de error que se muestran a la persona usuaria |
+| Rutas y recursos de la API en plural (`/projects`, `/sessions`, `/projects/{id}/transitions`) | Documentación (`docs/`, README) y comentarios explicativos del *porqué* |
+| Campos JSON, DTOs, códigos de error y valores de enums (`valid`, `discarded`, `pending_review`) | |
+| Commits (Conventional Commits), ramas y nombres de variables de entorno nuevas | |
+
+**Excepciones** (el nombre lo fija un tercero y no se traduce): las claves de `salida.json` y los nombres de las causas de descarte del enunciado (`ALCANCE`, `COMPAT`, `CAPACIDAD`, `CALIDAD`, `ABUSIVO`, `ARITMETICA`, `MANIPULACION`), que se exponen tal cual en informes y salida.
+
+**Regla para código nuevo:** todo lo que se escriba desde ahora cumple esta tabla. **Migración del código existente:** se hace en una sola pasada coordinada con el equipo (cambia rutas, campos JSON y valores de enums, así que el frontend y los datos guardados deben migrar a la vez), no archivo por archivo.
+
 ## 2. Vista de contexto
 
 ```mermaid
@@ -45,7 +60,8 @@ backend/src/evaluador/
     use_cases/       Orquestación: autenticacion, proyectos, rag. Aplican permisos y tenant.
   adapters/
     inbound/http/    FastAPI: dtos, guards, interceptores, routers, errores_http
-    inbound/cli/     Modo lote
+    inbound/cli/     Modo lote: `python -m evaluador.lote --lote ./lote --salida ./salida.json` (paralelo y reintentos configurables)
+    outbound/extraccion/  Lectores: XLSX (fórmulas, valores, comentarios, ocultos), PDF (texto oculto/diminuto), imagen (visión)
     outbound/        security (Argon2id, tokens) · memory · persistence (pgvector) · ia (modelos, embeddings) · agente (LangGraph)
   composition/       Única raíz de composición + configuración por entorno
   observabilidad/    contexto (trackId…), censura, logs JSON

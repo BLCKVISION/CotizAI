@@ -8,7 +8,9 @@ from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severi
 from evaluador.domain.extraccion import ExtraccionPropuesta, Monto
 
 
-def _d(m: Monto) -> Decimal | None:
+def _d(m: Monto | None) -> Decimal | None:
+    if m is None:
+        return None
     try:
         d = Decimal(m.valor)
     except (InvalidOperation, ValueError):

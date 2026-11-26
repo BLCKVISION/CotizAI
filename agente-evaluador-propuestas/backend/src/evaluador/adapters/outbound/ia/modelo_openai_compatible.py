@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 from pydantic import BaseModel
 
-from ._comun import construir_mensajes, extraer_json
+from ._comun import construir_mensajes, extraer_json, imagen_base64, sistema_para_imagen
 
 
 class ModeloOpenAICompatible:
@@ -24,5 +24,26 @@ class ModeloOpenAICompatible:
                 "messages": construir_mensajes(instrucciones, contenido_no_confiable, esquema),
             },
         )
+        r.raise_for_status()
+        return esquema.model_validate(extraer_json(r.json()["choices"][0]["message"]["content"]))
+
+    def estructurar_imagen(
+        self, *, instrucciones: str, imagen: bytes, mime: str, esquema: type[BaseModel]
+    ) -> BaseModel:
+        url = f"data:{mime};base64,{imagen_base64(imagen)}"
+        r = self._http.post(
+            "/chat/completions",
+            json={
+                "model": self._modelo,
+                "temperature": 0,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": sistema_para_imagen(instrucciones, esquema)},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": "Transcribe la imagen adjunta."},
+                        {"type": "image_url", "image_url": {"url": url}}]},
+                ],
+            },
+        )  # fmt: skip
         r.raise_for_status()
         return esquema.model_validate(extraer_json(r.json()["choices"][0]["message"]["content"]))

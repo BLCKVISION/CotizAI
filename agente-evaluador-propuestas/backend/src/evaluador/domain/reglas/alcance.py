@@ -17,10 +17,15 @@ def normalizar_categoria(texto: str) -> str:
     """Minúsculas, sin acentos ni plural simple: 'Ratón', 'ratones' y 'mouse' -> 'raton'."""
     t = "".join(c for c in unicodedata.normalize("NFKD", texto.strip().lower()) if not unicodedata.combining(c))
     for sufijo in ("es", "s"):
-        if t.endswith(sufijo) and t not in CATEGORIAS_REQUERIDAS and t[: -len(sufijo)] in {
-            *CATEGORIAS_REQUERIDAS,
-            *_SINONIMOS,
-        }:
+        if (
+            t.endswith(sufijo)
+            and t not in CATEGORIAS_REQUERIDAS
+            and t[: -len(sufijo)]
+            in {
+                *CATEGORIAS_REQUERIDAS,
+                *_SINONIMOS,
+            }
+        ):
             t = t[: -len(sufijo)]
             break
     return _SINONIMOS.get(t, t)
@@ -39,7 +44,7 @@ def validar_alcance_fijo(e: ExtraccionPropuesta, equipos: int = EQUIPOS_REQUERID
     con_cantidad_ilegible: set[str] = set()
     for ln in e.lineas:
         categoria = normalizar_categoria(ln.categoria)
-        cantidad = _cantidad(ln.cantidad.valor)
+        cantidad = _cantidad(ln.cantidad.valor if ln.cantidad else "")
         if cantidad is None:
             con_cantidad_ilegible.add(categoria)
             continue
