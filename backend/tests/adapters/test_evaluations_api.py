@@ -74,8 +74,10 @@ class FakeModel:
     def __init__(self) -> None:
         self.down = False
         self.gate: threading.Event | None = None
+        self.temperatures: dict[type, float] = {}
 
-    def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema):
+    def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema, temperature: float = 0):
+        self.temperatures[esquema] = temperature
         if self.down:
             raise ConnectionError("provider unreachable")
         if self.gate is not None:
@@ -314,7 +316,7 @@ def test_report_downloads_in_both_formats(app_client):
     assert app_client.get(f"/api/v1/proyectos/{pid}/evaluations/report?fmt=exe", headers=headers).status_code == 422
 
 
-def test_questions_return_only_real_citations(app_client):
+def test_questions_return_only_real_citations(app_client, model):
     pid = _project(app_client)
     _evaluate(app_client, pid)
     r = app_client.post(
@@ -324,6 +326,8 @@ def test_questions_return_only_real_citations(app_client):
     )
     assert r.status_code == 200, r.text
     assert [c["number"] for c in r.json()["citations"]] == [1]  # duplicates and invented numbers dropped
+    assert model.temperatures[GroundedAnswer] == 0.3  # Coti answers with natural wording
+    assert model.temperatures[RubricaPuntuada] == 0  # the evaluation itself stays deterministic
 
 
 def test_supplier_discarded_before_is_flagged(app_client):

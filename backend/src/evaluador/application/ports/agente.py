@@ -15,7 +15,9 @@ T = TypeVar("T", bound=BaseModel)
 class ModeloDeLenguaje(Protocol):
     """Sin herramientas: el modelo solo lee y devuelve datos validados contra un esquema."""
 
-    def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[T]) -> T: ...
+    def estructurar(
+        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[T], temperature: float = 0
+    ) -> T: ...
 
 
 class ModeloConVision(Protocol):

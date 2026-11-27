@@ -13,7 +13,9 @@ class ModeloFalso:
         self.llamadas: list[tuple[str, str]] = []
         self.llamadas_imagen: list[tuple[str, str]] = []  # (instrucciones, mime)
 
-    def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel]):
+    def estructurar(
+        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
+    ):
         self.llamadas.append((instrucciones, contenido_no_confiable))
         r = self._respuestas[esquema]
         return r(contenido_no_confiable) if callable(r) else r
