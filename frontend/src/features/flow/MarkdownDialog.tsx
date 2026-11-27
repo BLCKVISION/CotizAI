@@ -26,7 +26,7 @@ function Original({ projectId, proposal }: { projectId: string; proposal: Propue
     const type = proposal.formato === 'pdf' ? 'application/pdf' : (IMAGE_TYPES[proposal.formato] ?? datos.type);
     const objectUrl = URL.createObjectURL(new Blob([datos], { type }));
     setUrl(objectUrl); // eslint-disable-line react-hooks/set-state-in-effect -- the URL only exists once the file is downloaded
-    return () => URL.revokeObjectURL(objectUrl);
+    return () => { URL.revokeObjectURL(objectUrl); };
   }, [datos, proposal.formato]);
   if (error) return <ErrorConReintento texto={error} onReintentar={recargar} />;
   if (!url) return <Cargando />;
@@ -72,8 +72,8 @@ function TextView({ projectId, proposal }: { projectId: string; proposal: Propue
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: espacio.sm }}>
         <Insignia etiqueta={`Extraído con ${datos.engine}`} tono="info" icono="cpu" />
         <View style={{ flex: 1 }} />
-        <Chip etiqueta="Vista" seleccionado={!raw} onPress={() => setRaw(false)} />
-        <Chip etiqueta="Código" seleccionado={raw} onPress={() => setRaw(true)} />
+        <Chip etiqueta="Vista" seleccionado={!raw} onPress={() => { setRaw(false); }} />
+        <Chip etiqueta="Código" seleccionado={raw} onPress={() => { setRaw(true); }} />
         <Boton etiqueta="Copiar" icono="copy" variante="secundario" onPress={() => void copy()} />
         <Boton etiqueta="Descargar .md" icono="download" variante="secundario" onPress={download} />
       </View>
@@ -101,8 +101,8 @@ function Content({ projectId, proposal }: { projectId: string; proposal: Propues
     <View style={{ gap: espacio.md }}>
       {canShowOriginal ? (
         <View style={{ flexDirection: 'row', gap: espacio.sm }}>
-          <Chip etiqueta="Documento original" seleccionado={showOriginal} onPress={() => setShowOriginal(true)} />
-          <Chip etiqueta="Texto extraído" seleccionado={!showOriginal} onPress={() => setShowOriginal(false)} />
+          <Chip etiqueta="Documento original" seleccionado={showOriginal} onPress={() => { setShowOriginal(true); }} />
+          <Chip etiqueta="Texto extraído" seleccionado={!showOriginal} onPress={() => { setShowOriginal(false); }} />
         </View>
       ) : null}
       {showOriginal ? <Original projectId={projectId} proposal={proposal} /> : <TextView projectId={projectId} proposal={proposal} />}

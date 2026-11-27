@@ -243,7 +243,7 @@ export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, m
           <BotonIcono
             nombre={visible ? 'eye-off' : 'eye'}
             etiqueta={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-            onPress={() => setVisible((v) => !v)}
+            onPress={() => { setVisible((v) => !v); }}
           />
         ) : null}
       </View>

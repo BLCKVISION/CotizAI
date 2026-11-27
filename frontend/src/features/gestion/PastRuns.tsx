@@ -20,7 +20,7 @@ export function PastRuns({ projectId }: { projectId: string }) {
   const runs = useDatos(evaluationRunsApi(projectId), projectId);
   const [failure, setFailure] = useState<string | null>(null);
 
-  const download = async (run: EvaluationRun, format: 'pdf' | 'xlsx') => {
+  const download = async (run: EvaluationRun, format: 'pdf' | 'csv' | 'xlsx') => {
     try {
       const url = URL.createObjectURL(await conSesion(runReportApi(projectId, run.id, format)));
       const link = document.createElement('a');
@@ -49,6 +49,7 @@ export function PastRuns({ projectId }: { projectId: string }) {
           derecha={
             <View style={{ flexDirection: 'row', gap: espacio.xs }}>
               <BotonIcono nombre="file-text" etiqueta="Descargar informe en PDF" onPress={() => void download(run, 'pdf')} />
+              <BotonIcono nombre="list" etiqueta="Descargar tabla en CSV" onPress={() => void download(run, 'csv')} />
               <BotonIcono nombre="grid" etiqueta="Descargar tabla en Excel" onPress={() => void download(run, 'xlsx')} />
             </View>
           }

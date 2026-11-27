@@ -23,7 +23,7 @@ const batch = (list: Propuesta[]) => new Set(list.slice(0, MAX_PER_RUN).map((p) 
 export function toggleSelection({ selected, onChange }: Selection, id: string) {
   const next = new Set(selected);
   if (!next.delete(id)) {
-    if (next.size >= MAX_PER_RUN) return showToast({ tone: 'info', title: `Máximo ${MAX_PER_RUN} por tanda`, detail: 'Quite una para elegir otra' });
+    if (next.size >= MAX_PER_RUN) { showToast({ tone: 'info', title: `Máximo ${MAX_PER_RUN} por tanda`, detail: 'Quite una para elegir otra' }); return; }
     next.add(id);
   }
   onChange(next);
@@ -43,7 +43,7 @@ export function SelectBox({ proposal, selection }: { proposal: Propuesta; select
         accessibilityState={{ checked: on }}
         aria-checked={on}
         hitSlop={8}
-        onPress={() => toggleSelection(selection, proposal.id)}
+        onPress={() => { toggleSelection(selection, proposal.id); }}
         style={(e: PressState) => ({ width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 2 : 2, borderColor: e.focused ? t.foco : on ? t.accent : t.bordeControl, backgroundColor: on ? t.accent : 'transparent' })}
       >
         {on ? <Icono nombre="check" tamano="sm" color={t.onAccent} /> : null}
@@ -66,11 +66,11 @@ export function SelectionChips({ proposals, selection }: { proposals: Propuesta[
         {fresh.length > 0 && evaluated.size > 0 ? ` · ${fresh.length} sin analizar` : ''}
       </Texto>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
-        <Chip etiqueta={proposals.length > MAX_PER_RUN ? `Primeras ${MAX_PER_RUN}` : 'Todas'} seleccionado={isBatch(proposals)} onPress={() => onChange(batch(proposals))} />
+        <Chip etiqueta={proposals.length > MAX_PER_RUN ? `Primeras ${MAX_PER_RUN}` : 'Todas'} seleccionado={isBatch(proposals)} onPress={() => { onChange(batch(proposals)); }} />
         {evaluated.size > 0 && fresh.length > 0 ? (
-          <Chip etiqueta={`Sin analizar (${Math.min(fresh.length, MAX_PER_RUN)})`} seleccionado={isBatch(fresh)} onPress={() => onChange(batch(fresh))} />
+          <Chip etiqueta={`Sin analizar (${Math.min(fresh.length, MAX_PER_RUN)})`} seleccionado={isBatch(fresh)} onPress={() => { onChange(batch(fresh)); }} />
         ) : null}
-        <Chip etiqueta="Ninguna" seleccionado={selected.size === 0} onPress={() => onChange(new Set())} />
+        <Chip etiqueta="Ninguna" seleccionado={selected.size === 0} onPress={() => { onChange(new Set()); }} />
       </View>
       {evaluated.size > 0 ? <Aviso tono="info" texto="Las que no elija conservan su resultado. Las que vuelva a evaluar tendrá que verificarlas otra vez." /> : null}
     </View>

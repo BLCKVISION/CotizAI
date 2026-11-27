@@ -194,21 +194,21 @@ export default function DetalleProyecto() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: espacio.sm }}>
         <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
           {pestanas.map((x) => (
-            <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => setPestana(x.id)} />
+            <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => { setPestana(x.id); }} />
           ))}
         </View>
         {can(usuario?.rol, 'createProject') && canBeDeleted(proyecto) ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Eliminar proyecto"
-            onPress={() => setDeleting(true)}
+            onPress={() => { setDeleting(true); }}
             style={(s: { pressed: boolean; hovered?: boolean; focused?: boolean }) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.xs + 2, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 2, borderColor: s.focused ? t.foco : 'transparent', backgroundColor: s.pressed || s.hovered ? swatch.red700 : swatch.red600 })}
           >
             <Icono nombre="trash-2" tamano="sm" color={swatch.white} />
             <Texto variante="etiqueta" color={swatch.white}>Eliminar proyecto</Texto>
           </Pressable>
         ) : null}
-        <DeleteProjectDialog project={deleting ? proyecto : null} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/proyectos')} />
+        <DeleteProjectDialog project={deleting ? proyecto : null} onClose={() => { setDeleting(false); }} onDeleted={() => { router.replace('/proyectos'); }} />
       </View>
     </View>
   );

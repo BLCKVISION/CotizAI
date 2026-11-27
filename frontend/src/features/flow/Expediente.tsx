@@ -42,13 +42,13 @@ export function ZonaDeCarga({ onArchivos, ocupado, compact = false }: { onArchiv
       e.preventDefault();
       setEncima(true);
     };
-    const fuera = () => setEncima(false);
+    const fuera = () => { setEncima(false); };
     const soltar = (e: DragEvent) => {
       e.preventDefault();
       setEncima(false);
       entregar.current(Array.from(e.dataTransfer?.files ?? []));
     };
-    const keepBrowserFromOpening = (e: DragEvent) => e.preventDefault();
+    const keepBrowserFromOpening = (e: DragEvent) => { e.preventDefault(); };
     window.addEventListener('dragover', keepBrowserFromOpening);
     window.addEventListener('drop', keepBrowserFromOpening);
     el.addEventListener('dragover', sobre);
@@ -68,7 +68,7 @@ export function ZonaDeCarga({ onArchivos, ocupado, compact = false }: { onArchiv
     input.type = 'file';
     input.multiple = true;
     input.accept = '.pdf,.jpg,.jpeg,.png,.xlsx';
-    input.onchange = () => entregar.current(Array.from(input.files ?? []));
+    input.onchange = () => { entregar.current(Array.from(input.files ?? [])); };
     input.click();
   };
 
@@ -180,9 +180,9 @@ export function Expediente({ proyecto, onCambio, selection }: { proyecto: Proyec
               derecha={
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   {selection ? <SelectBox proposal={p} selection={selection} /> : null}
-                  {canRead ? <BotonIcono nombre="file-text" etiqueta={`Ver ${p.archivo} en Markdown`} onPress={() => setAsMarkdown(p)} /> : null}
+                  {canRead ? <BotonIcono nombre="file-text" etiqueta={`Ver ${p.archivo} en Markdown`} onPress={() => { setAsMarkdown(p); }} /> : null}
                   {usuario && Platform.OS === 'web' ? <BotonIcono nombre="download" etiqueta={`Descargar ${p.archivo}`} onPress={() => descargar(p)} /> : null}
-                  {removable ? <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.archivo}`} onPress={() => setToDelete(p)} /> : null}
+                  {removable ? <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.archivo}`} onPress={() => { setToDelete(p); }} /> : null}
                 </View>
               } />
           ))}
@@ -195,10 +195,10 @@ export function Expediente({ proyecto, onCambio, selection }: { proyecto: Proyec
         description={`Se borrará «${toDelete?.archivo ?? ''}». Si ya fue evaluado, también se borran su resultado y su verificación. No se puede deshacer.`}
         confirmLabel="Sí, eliminar"
         confirmIcon="trash-2"
-        onCancel={() => setToDelete(null)}
+        onCancel={() => { setToDelete(null); }}
         onConfirm={() => void remove()}
       />
-      <MarkdownDialog projectId={proyecto.id} proposal={asMarkdown} onClose={() => setAsMarkdown(null)} />
+      <MarkdownDialog projectId={proyecto.id} proposal={asMarkdown} onClose={() => { setAsMarkdown(null); }} />
       <UploadFlow visible={flow.visible} items={flow.items} busy={flow.busy} onClose={flow.close} />
     </View>
   );

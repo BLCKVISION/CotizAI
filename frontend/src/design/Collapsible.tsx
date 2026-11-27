@@ -19,7 +19,7 @@ export function CollapsibleCard({ title, detail, defaultOpen = false, children }
         accessibilityLabel={detail ? `${title}. ${detail}` : title}
         accessibilityState={{ expanded: open }}
         aria-expanded={open}
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => { setOpen((v) => !v); }}
         style={(e: PressState) => ({
           flexDirection: 'row',
           alignItems: 'center',

@@ -143,8 +143,8 @@ export function TodoCard({ tasks, verified, verifiedError, canSeeResults, hasPro
             {showingVerified ? 'Últimas verificadas' : 'Tareas pendientes'}
           </Texto>
           <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: 6 }}>
-            <Tab label="Verificadas" selected={showingVerified} onPress={() => setTab('verified')} />
-            <Tab label={tasks.length > 0 ? `Pendientes ${tasks.length}` : 'Pendientes'} selected={!showingVerified} onPress={() => setTab('tasks')} />
+            <Tab label="Verificadas" selected={showingVerified} onPress={() => { setTab('verified'); }} />
+            <Tab label={tasks.length > 0 ? `Pendientes ${tasks.length}` : 'Pendientes'} selected={!showingVerified} onPress={() => { setTab('tasks'); }} />
           </View>
         </View>
       }
@@ -162,7 +162,7 @@ export function TodoCard({ tasks, verified, verifiedError, canSeeResults, hasPro
           ) : (
             <ScrollView contentContainerStyle={{ paddingHorizontal: espacio.xs, paddingVertical: espacio.xs }}>
               {verified.map((row, i) => (
-                <VerifiedRow key={row.id} row={row} last={i === verified.length - 1} onPress={() => onOpen(`/proyectos/${row.projectId}`)} />
+                <VerifiedRow key={row.id} row={row} last={i === verified.length - 1} onPress={() => { onOpen(`/proyectos/${row.projectId}`); }} />
               ))}
             </ScrollView>
           )
@@ -173,7 +173,7 @@ export function TodoCard({ tasks, verified, verifiedError, canSeeResults, hasPro
         ) : (
           <ScrollView contentContainerStyle={{ paddingHorizontal: espacio.xs, paddingVertical: espacio.xs }}>
             {tasks.map((task, i) => (
-              <TaskRow key={`${task.projectId}-${task.kind}`} task={task} last={i === tasks.length - 1} onPress={() => onOpen(task.path)} />
+              <TaskRow key={`${task.projectId}-${task.kind}`} task={task} last={i === tasks.length - 1} onPress={() => { onOpen(task.path); }} />
             ))}
           </ScrollView>
         )}

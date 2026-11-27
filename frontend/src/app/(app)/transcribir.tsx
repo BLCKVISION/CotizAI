@@ -28,7 +28,7 @@ export default function Transcribir() {
 
   const transcribir = async (archivo: File) => {
     if (isTooLarge(archivo.size)) {
-      return setEstado({ fase: 'error', mensaje: tooLargeMessage(archivo.size) });
+      setEstado({ fase: 'error', mensaje: tooLargeMessage(archivo.size) }); return;
     }
     setCopia(null);
     setEstado({ fase: 'cargando', nombre: archivo.name });
@@ -40,7 +40,7 @@ export default function Transcribir() {
     }
   };
 
-  const elegir = () => pickFiles(ACEPTAR_IMAGENES, (archivos) => archivos[0] && void transcribir(archivos[0]));
+  const elegir = () => { pickFiles(ACEPTAR_IMAGENES, (archivos) => archivos[0] && void transcribir(archivos[0])); };
 
   const copiar = async (markdown: string) => {
     try {

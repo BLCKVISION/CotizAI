@@ -77,7 +77,7 @@ function UserChat({ userId }: { userId: string | undefined }) {
     saveChat(userId, projectId, messages);
   }, [userId, projectId, messages]);
 
-  const push = (m: Omit<Message, 'id'>) => setMessages((all) => [...all, { ...m, id: nextId.current++ }]);
+  const push = (m: Omit<Message, 'id'>) => { setMessages((all) => [...all, { ...m, id: nextId.current++ }]); };
 
   const send = async (override?: string) => {
     const text = (override ?? draft).trim();
@@ -86,8 +86,8 @@ function UserChat({ userId }: { userId: string | undefined }) {
     push({ from: 'user', text });
     setThinking(true);
     try {
-      const askAll = async () => push({ from: 'coti', text: (await conSesion(askPortfolioApi(text))).answer });
-      if (!projectId) return await askAll();
+      const askAll = async () => { push({ from: 'coti', text: (await conSesion(askPortfolioApi(text))).answer }); };
+      if (!projectId) { await askAll(); return; }
       try {
         const reply = await conSesion(askProjectApi(projectId, text));
         push({ from: 'coti', text: reply.answer, sources: reply.citations.map((c) => `[${c.number}] ${c.filename}`) });
@@ -131,7 +131,7 @@ function UserChat({ userId }: { userId: string | undefined }) {
               <Texto variante="etiqueta">Coti</Texto>
               <Texto variante="pequeno" suave>Asistente de cotizaciones</Texto>
             </View>
-            <BotonIcono nombre="x" etiqueta="Cerrar chat con Coti" onPress={() => setOpen(false)} />
+            <BotonIcono nombre="x" etiqueta="Cerrar chat con Coti" onPress={() => { setOpen(false); }} />
           </View>
 
           <ScrollView
@@ -181,7 +181,7 @@ function UserChat({ userId }: { userId: string | undefined }) {
         accessibilityRole="button"
         accessibilityLabel={open ? 'Cerrar chat con Coti' : 'Abrir chat con Coti'}
         accessibilityState={{ expanded: open }}
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => { setOpen((v) => !v); }}
         style={(e: { pressed: boolean; hovered?: boolean; focused?: boolean }) => ({
           width: 60,
           height: 60,

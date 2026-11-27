@@ -31,11 +31,11 @@ export default function Proveedores() {
   const [busqueda, setBusqueda] = useState('');
   const [fallo, setFallo] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
-  const campo = (k: keyof typeof VACIO) => ({ value: formulario[k], onChangeText: (v: string) => setFormulario((f) => ({ ...f, [k]: v })) });
+  const campo = (k: keyof typeof VACIO) => ({ value: formulario[k], onChangeText: (v: string) => { setFormulario((f) => ({ ...f, [k]: v })); } });
 
   const guardar = async () => {
-    if (Object.values(formulario).some((v) => v.trim().length < 3)) return setFallo('Complete todos los campos (mínimo 3 caracteres).');
-    if (!/^[JGVEP]-?\d{7,9}-?\d?$/i.test(formulario.rif.trim())) return setFallo('RIF no válido. Ejemplo de formato: J-12345678-9.');
+    if (Object.values(formulario).some((v) => v.trim().length < 3)) { setFallo('Complete todos los campos (mínimo 3 caracteres).'); return; }
+    if (!/^[JGVEP]-?\d{7,9}-?\d?$/i.test(formulario.rif.trim())) { setFallo('RIF no válido. Ejemplo de formato: J-12345678-9.'); return; }
     setGuardando(true);
     try {
       await conSesion(registrarProveedorApi(formulario));
@@ -69,7 +69,7 @@ export default function Proveedores() {
           icono="briefcase"
           titulo="Sin proveedores registrados"
           descripcion={canCreate ? 'Registre el primer proveedor para llevar su ficha.' : 'Un usuario con rol Cargador puede registrarlos.'}
-          accion={canCreate ? <Boton etiqueta="Nuevo proveedor" icono="plus" onPress={() => setAbierto(true)} /> : undefined}
+          accion={canCreate ? <Boton etiqueta="Nuevo proveedor" icono="plus" onPress={() => { setAbierto(true); }} /> : undefined}
         />
       ) : (
         <View style={{ gap: espacio.md }}>
@@ -78,14 +78,14 @@ export default function Proveedores() {
             {canCreate ? (
               <View style={{ width: `${100 / columns}%`, padding: 12 }}>
                 <View style={{ height: PROVIDER_CARD_HEIGHT }}>
-                  <NewItemTile label="Nuevo proveedor" icon="plus" onPress={() => setAbierto(true)} />
+                  <NewItemTile label="Nuevo proveedor" icon="plus" onPress={() => { setAbierto(true); }} />
                 </View>
               </View>
             ) : null}
             {visibles.map((p, i) => (
               <View key={p.registration?.id ?? p.key} style={{ width: `${100 / columns}%`, padding: 12 }}>
                 <Entrada indice={Math.min(i, 8)}>
-                  <ProviderCard index={Math.min(i, 8)} provider={p} onPress={() => setSelected(p)} />
+                  <ProviderCard index={Math.min(i, 8)} provider={p} onPress={() => { setSelected(p); }} />
                 </Entrada>
               </View>
             ))}
@@ -94,7 +94,7 @@ export default function Proveedores() {
           <Aviso tono="info" texto="Los proveedores detectados al evaluar aparecen aquí solos, con una alerta si antes fueron descartados." />
         </View>
       )}
-      <Lightbox visible={selected !== null} title={selected?.name ?? ''} description="Ficha y antecedentes del proveedor" onClose={() => setSelected(null)} maxWidth={560}>
+      <Lightbox visible={selected !== null} title={selected?.name ?? ''} description="Ficha y antecedentes del proveedor" onClose={() => { setSelected(null); }} maxWidth={560}>
         {selected ? (
           <View style={{ gap: espacio.md }}>
             <SupplierBackground supplier={selected} restricted={datos?.restricted ?? false} />

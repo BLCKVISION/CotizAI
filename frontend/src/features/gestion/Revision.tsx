@@ -58,9 +58,9 @@ export function Revision({ proyecto, onCambio }: { proyecto: Proyecto; onCambio:
         <CollapsibleCard title="Adjudicar el proyecto" detail="La decisión es del comité: revise antes el ranking y la evidencia.">
           <Boton etiqueta={confirmAward ? 'Confirmar adjudicación' : 'Marcar como adjudicado'} icono="award"
             onPress={() => {
-              if (!confirmAward) return setConfirmAward(true);
+              if (!confirmAward) { setConfirmAward(true); return; }
               setConfirmAward(false);
-              void ejecutar(async () => onCambio(await conSesion(transicionarProyectoApi(proyecto.id, 'adjudicado', null))));
+              void ejecutar(async () => { onCambio(await conSesion(transicionarProyectoApi(proyecto.id, 'adjudicado', null))); });
             }} />
           <Texto variante="pequeno" suave>Para indicar el proveedor elegido y el motivo, agregue una nota del comité.</Texto>
         </CollapsibleCard>
@@ -70,7 +70,7 @@ export function Revision({ proyecto, onCambio }: { proyecto: Proyecto; onCambio:
         <CollapsibleCard title="Cerrar el proceso" detail={proyecto.estado === 'adjudicado' ? 'El proceso ya fue adjudicado.' : 'Cerrar sin adjudicar exige un motivo.'}>
           <CampoDeTexto etiqueta="Motivo" value={motivo} onChangeText={setMotivo} maxLength={500} />
           <Boton etiqueta="Cerrar proceso" variante="secundario" icono="lock" deshabilitado={proyecto.estado !== 'adjudicado' && !motivo.trim()}
-            onPress={() => ejecutar(async () => onCambio(await conSesion(transicionarProyectoApi(proyecto.id, 'cerrado', motivo || null))))} />
+            onPress={() => ejecutar(async () => { onCambio(await conSesion(transicionarProyectoApi(proyecto.id, 'cerrado', motivo || null))); })} />
         </CollapsibleCard>
       ) : null}
 

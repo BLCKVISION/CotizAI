@@ -50,12 +50,12 @@ export function LineField({ label, error, secret = false, hint, ...props }: Text
           accessibilityHint={error}
           aria-invalid={Boolean(error)}
           secureTextEntry={secret && !visible}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onFocus={() => { setFocused(true); }}
+          onBlur={() => { setFocused(false); }}
           style={[{ ...texto.cuerpo, fontSize: 16, flex: 1, minWidth: 0, minHeight: 42, color: authColor.text }, soloWeb({ outlineStyle: 'none', backgroundColor: 'transparent' })]}
         />
         {secret ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'} onPress={() => setVisible((v) => !v)} style={{ width: 44, height: 42, alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'} onPress={() => { setVisible((v) => !v); }} style={{ width: 44, height: 42, alignItems: 'center', justifyContent: 'center' }}>
             <Icono nombre={visible ? 'eye-off' : 'eye'} tamano="sm" color={authColor.soft} />
           </Pressable>
         ) : null}

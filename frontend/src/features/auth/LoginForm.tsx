@@ -80,7 +80,7 @@ export function LoginForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
             accessibilityLabel="Recordar mi usuario"
             accessibilityState={{ checked: remember }}
             aria-checked={remember}
-            onPress={() => setRemember((v) => !v)}
+            onPress={() => { setRemember((v) => !v); }}
             style={(e: PressState) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: espacio.sm, borderBottomWidth: 1, borderBottomColor: e.focused ? authColor.focus : 'transparent' })}
           >
             <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: remember ? authColor.text : authColor.underline, backgroundColor: remember ? authColor.text : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
@@ -90,7 +90,7 @@ export function LoginForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
               Recordar mi usuario
             </Texto>
           </Pressable>
-          <TextLink label="¿Olvidó su contraseña?" onPress={() => onMode('forgot')} />
+          <TextLink label="¿Olvidó su contraseña?" onPress={() => { onMode('forgot'); }} />
         </View>
       </View>
       <NoticeBox notice={notice} />
@@ -99,7 +99,7 @@ export function LoginForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
         <Texto variante="pequeno" color={authColor.soft}>
           ¿No tiene cuenta?
         </Texto>
-        <TextLink strong label="Crear cuenta" onPress={() => onMode('register')} />
+        <TextLink strong label="Crear cuenta" onPress={() => { onMode('register'); }} />
       </View>
     </>
   );

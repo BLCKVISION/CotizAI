@@ -28,7 +28,9 @@ export function useDatos<T>(llamada: (token: string) => Promise<T>, clave = '') 
             setError(null);
           }
         })
-        .catch((e) => vigente && setError(mensajeDeError(e)));
+        .catch((e) => {
+        if (vigente) setError(mensajeDeError(e));
+      });
       return () => {
         vigente = false;
       };
@@ -36,5 +38,5 @@ export function useDatos<T>(llamada: (token: string) => Promise<T>, clave = '') 
     }, [conSesion, clave, intento]),
   );
 
-  return { datos, error, recargar: useCallback(() => setIntento((n) => n + 1), []) };
+  return { datos, error, recargar: useCallback(() => { setIntento((n) => n + 1); }, []) };
 }

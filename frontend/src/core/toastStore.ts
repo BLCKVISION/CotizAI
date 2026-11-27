@@ -9,7 +9,7 @@ type Listener = (toasts: Toast[]) => void;
 let toasts: Toast[] = [];
 let nextId = 1;
 const listeners = new Set<Listener>();
-const emit = () => listeners.forEach((l) => l(toasts));
+const emit = () => { listeners.forEach((l) => { l(toasts); }); };
 
 export function dismissToast(id: number) {
   toasts = toasts.filter((t) => t.id !== id);
@@ -22,7 +22,7 @@ export function showToast(toast: Omit<Toast, 'id'>) {
   const id = nextId++;
   toasts = [...toasts, { ...toast, id }].slice(-MAX_VISIBLE);
   emit();
-  setTimeout(() => dismissToast(id), DURATION_MS[toast.tone]);
+  setTimeout(() => { dismissToast(id); }, DURATION_MS[toast.tone]);
 }
 
 export function subscribeToasts(listener: Listener) {

@@ -31,6 +31,7 @@ import { UploadFlow } from '@/design/UploadFlow';
 import { DocumentTile } from './DocumentTile';
 import { currentStep, defaultSelection, EVALUATION_STEPS, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
 import { PreparationHero } from './PreparationHero';
+import { ReportBar } from './ReportBar';
 import { ResultStep } from './ResultStep';
 import { Stepper } from './Stepper';
 import { VERDICT_TONE, VerdictSheet } from './VerdictSheet';
@@ -146,7 +147,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
     }
   };
 
-  const addProposals = () => pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, (files) => void upload.upload(project.id, files));
+  const addProposals = () => { pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, (files) => void upload.upload(project.id, files)); };
   const chooseAgain = () => {
     setSelection(null); // back to the default batch: what has not been analysed yet
     goTo('analysis');
@@ -181,7 +182,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       <>
         {addButton}
         {evaluateOthers}
-        {pending.length === 0 && seesResults ? <Boton etiqueta="Ver la respuesta final" icono="arrow-right" onPress={() => goTo('result')} /> : null}
+        {pending.length === 0 && seesResults ? <Boton etiqueta="Ver la respuesta final" icono="arrow-right" onPress={() => { goTo('result'); }} /> : null}
       </>
     );
   } else if (step === 'result') {
@@ -233,6 +234,8 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         />
       ) : null}
       {showSteps ? <Stepper active="analysis" reached="analysis" onSelect={goTo} /> : null}
+      {/* Only for roles that may read results: the server refuses the report to the others. */}
+      {seesResults && !running ? <ReportBar available={results !== null} onDownload={(format) => void download(format)} /> : null}
       {/* Top bar while verifying: where things stand, and the ways to add or analyse more. */}
       {step === 'verification' && !running ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
@@ -285,7 +288,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
           {wide ? (
             <View style={{ flex: 1, minHeight: 0, flexDirection: 'row', gap: espacio.md }}>
               <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 2, minWidth: 220, borderRadius: radio.xl }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
-                <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
+                <DocumentTile filename={open.filename} onOpen={() => { setViewing(open.proposal_id); }} />
                 {canDecide ? decisionPanel : null}
               </ScrollView>
               <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 8, minWidth: 0, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
@@ -297,7 +300,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
           ) : (
             <ScrollView key={open.proposal_id} style={{ flex: 1 }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
               <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
-              <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
+              <DocumentTile filename={open.filename} onOpen={() => { setViewing(open.proposal_id); }} />
             </ScrollView>
           )}
         </View>
@@ -323,8 +326,8 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
                     running={running}
                     elapsed={elapsed}
                     onEvaluate={() => void evaluate()}
-                    onShowProcess={() => setShowProcess(true)}
-                    onBackToResult={hasEvaluation ? () => goTo(null) : undefined}
+                    onShowProcess={() => { setShowProcess(true); }}
+                    onBackToResult={hasEvaluation ? () => { goTo(null); } : undefined}
                   >
                     <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
                   </PreparationHero>
@@ -345,7 +348,6 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
             <ResultStep
               evaluation={results}
               decisions={decisions}
-              onDownload={(f) => void download(f)}
               onOpen={(id) => {
                 setOpenId(id);
                 goTo('verification');
@@ -384,7 +386,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         </View>
       ) : null}
 
-      <MarkdownDialog projectId={project.id} proposal={list.find((p) => p.id === viewing) ?? null} onClose={() => setViewing(null)} />
+      <MarkdownDialog projectId={project.id} proposal={list.find((p) => p.id === viewing) ?? null} onClose={() => { setViewing(null); }} />
       <UploadFlow visible={upload.visible} items={upload.items} busy={upload.busy} onClose={upload.close} />
       <EvaluationProcess
         visible={showProcess}

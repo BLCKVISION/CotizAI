@@ -40,7 +40,7 @@ export function ProjectPicker({ visible, projects, counts, pendingFiles, onPick,
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Agregar a ${p.nombre}`}
-              onPress={() => onPick(p)}
+              onPress={() => { onPick(p); }}
               style={(e: PressState) => ({ flex: 1, alignItems: 'center', justifyContent: 'center', gap: espacio.xs, padding: espacio.sm, borderRadius: 22, borderWidth: 2, borderColor: e.focused ? t.foco : e.hovered ? t.accentStrong : t.borde, backgroundColor: e.hovered ? swatch.ice50 : swatch.white })}
             >
               <View style={{ width: 48, height: 48, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: t.accent }}>
@@ -61,7 +61,7 @@ export function ProjectPicker({ visible, projects, counts, pendingFiles, onPick,
       </View>
       {open.length > FIRST_PAGE ? (
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-          <Boton etiqueta={all ? 'Ver menos' : `Ver más (${open.length - FIRST_PAGE})`} icono={all ? 'chevron-up' : 'chevron-down'} variante="secundario" onPress={() => setAll((v) => !v)} />
+          <Boton etiqueta={all ? 'Ver menos' : `Ver más (${open.length - FIRST_PAGE})`} icono={all ? 'chevron-up' : 'chevron-down'} variante="secundario" onPress={() => { setAll((v) => !v); }} />
         </View>
       ) : null}
       {open.length === 0 ? <Texto suave>Ningún proyecto está recibiendo propuestas. Cree uno nuevo.</Texto> : null}

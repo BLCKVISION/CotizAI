@@ -5,5 +5,5 @@ import { Boton } from './componentes';
 
 export function BackButton({ fallback }: { fallback: Href }) {
   const router = useRouter();
-  return <Boton etiqueta="Atrás" icono="arrow-left" variante="secundario" onPress={() => (router.canGoBack() ? router.back() : router.replace(fallback))} />;
+  return <Boton etiqueta="Atrás" icono="arrow-left" variante="secundario" onPress={() => { if (router.canGoBack()) router.back(); else router.replace(fallback); }} />;
 }

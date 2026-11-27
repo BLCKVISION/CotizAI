@@ -22,9 +22,9 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       // Si el usuario ya inició sesión mientras se restauraba, no se pisa su estado.
-      const aplicar = (nuevo: Estado) => setEstado((actual) => (actual.listo ? actual : nuevo));
+      const aplicar = (nuevo: Estado) => { setEstado((actual) => (actual.listo ? actual : nuevo)); };
       const token = await almacenDeToken.leer();
-      if (!token) return aplicar({ listo: true, token: null, usuario: null });
+      if (!token) { aplicar({ listo: true, token: null, usuario: null }); return; }
       try {
         aplicar({ listo: true, token, usuario: await usuarioActualApi(token) });
       } catch (e) {

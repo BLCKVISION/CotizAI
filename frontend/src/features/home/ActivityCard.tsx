@@ -18,7 +18,7 @@ function useCycle(duration: number, delay = 0) {
   useEffect(() => {
     if (reduce) return;
     const loop = Animated.loop(Animated.timing(value, { toValue: 1, duration, easing: Easing.linear, useNativeDriver: true }));
-    const start = setTimeout(() => loop.start(), delay);
+    const start = setTimeout(() => { loop.start(); }, delay);
     return () => {
       clearTimeout(start);
       loop.stop();
@@ -106,7 +106,7 @@ export function ActivityCard({ hasProjects, canEdit, busy, onAddProposals, onNav
       e.preventDefault();
       if (enabled.current) setDragging(true);
     };
-    const leave = () => setDragging(false);
+    const leave = () => { setDragging(false); };
     const drop = (e: DragEvent) => {
       e.preventDefault();
       setDragging(false);
@@ -124,16 +124,16 @@ export function ActivityCard({ hasProjects, canEdit, busy, onAddProposals, onNav
 
   const creating = canEdit && !hasProjects;
   const action = canUpload
-    ? { icon: 'plus' as const, title: 'Agregar propuestas', detail: 'Elija el proyecto y suba fotos, PDF o Excel', run: () => !busy && onAddProposals([]) }
+    ? { icon: 'plus' as const, title: 'Agregar propuestas', detail: 'Elija el proyecto y suba fotos, PDF o Excel', run: () => { if (!busy) onAddProposals([]); } }
     : creating
-      ? { icon: 'folder-plus' as const, title: 'Agregar proyecto', detail: 'Empiece con el requerimiento y la ubicación', run: () => onNavigate('/proyectos/nuevo') }
-      : { icon: 'folder' as const, title: 'Ver proyectos', detail: hasProjects ? 'Consulte las propuestas y su evaluación' : 'Todavía no hay proyectos', run: () => onNavigate('/proyectos') };
+      ? { icon: 'folder-plus' as const, title: 'Agregar proyecto', detail: 'Empiece con el requerimiento y la ubicación', run: () => { onNavigate('/proyectos/nuevo'); } }
+      : { icon: 'folder' as const, title: 'Ver proyectos', detail: hasProjects ? 'Consulte las propuestas y su evaluación' : 'Todavía no hay proyectos', run: () => { onNavigate('/proyectos'); } };
 
   return (
     <Panel
       title="Mi actividad"
       subtitle={!hasProjects ? 'Empiece agregando un proyecto' : canEdit ? 'Paso a paso: proyecto, archivos y evaluación' : 'Sus procesos de compra'}
-      actions={<RoundButton icon="calendar" label="Ver proyectos" onPress={() => onNavigate('/proyectos')} />}
+      actions={<RoundButton icon="calendar" label="Ver proyectos" onPress={() => { onNavigate('/proyectos'); }} />}
     >
       <View ref={zone} style={{ ...innerSurface, padding: 16, gap: espacio.sm }}>
         <ColumnGuides />

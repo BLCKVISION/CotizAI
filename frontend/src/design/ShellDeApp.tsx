@@ -97,7 +97,7 @@ export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
   const { usuario, cerrarSesion } = useSesion();
   const esEscritorio = dispositivo === 'escritorio';
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
-  const askToSignOut = () => setConfirmingSignOut(true);
+  const askToSignOut = () => { setConfirmingSignOut(true); };
   const signOutDialog = (
     <ConfirmDialog
       visible={confirmingSignOut}
@@ -105,7 +105,7 @@ export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
       description="Tendrá que escribir su correo y contraseña para volver a entrar."
       confirmLabel="Sí, cerrar sesión"
       confirmIcon="log-out"
-      onCancel={() => setConfirmingSignOut(false)}
+      onCancel={() => { setConfirmingSignOut(false); }}
       onConfirm={() => {
         setConfirmingSignOut(false);
         void cerrarSesion();
@@ -115,17 +115,16 @@ export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
   const categorias = NAVEGACION.map((c) => ({ ...c, items: c.items.filter((i) => !i.soloRol || i.soloRol === usuario?.rol) })).filter(
     (c) => c.items.length > 0,
   );
-  const ir = (destino: string) => router.push(destino as Href);
+  const ir = (destino: string) => { router.push(destino as Href); };
   const [expanded, setExpanded] = useState(readExpanded);
-  const toggleSidebar = () =>
-    setExpanded((v) => {
+  const toggleSidebar = () => { setExpanded((v) => {
       try {
         window.localStorage.setItem(SIDEBAR_KEY, v ? '0' : '1'); // UI preference only, never data
       } catch {
         /* storage blocked: the choice simply is not remembered */
       }
       return !v;
-    });
+    }); };
 
   if (esEscritorio) {
     const items = categorias.flatMap((c) => c.items);
@@ -133,7 +132,7 @@ export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
       <View style={{ flex: 1 }}>
         {/* Top bar: only the isotype, notifications and the account bubble. */}
         <View style={{ height: 76, flexDirection: 'row', alignItems: 'center', paddingLeft: margenFlotante, paddingRight: espacio.lg, zIndex: 30 }}>
-          <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => ir('/home')} style={{ width: RAIL_COLLAPSED, alignItems: 'center' }}>
+          <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => { ir('/home'); }} style={{ width: RAIL_COLLAPSED, alignItems: 'center' }}>
             <Isotype size={48} />
           </Pressable>
           <View style={{ flex: 1 }} />
@@ -157,7 +156,7 @@ export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
               <RailItem label={expanded ? 'Contraer menú' : 'Expandir menú'} icon="menu" expandable expanded={expanded} onPress={toggleSidebar} />
               <View accessibilityRole="menu" style={{ gap: espacio.sm }}>
                 {items.map((n) => (
-                  <RailItem key={n.ruta} label={n.etiqueta} icon={n.icono} expanded={expanded} active={ruta.startsWith(n.ruta)} onPress={() => ir(n.ruta)} />
+                  <RailItem key={n.ruta} label={n.etiqueta} icon={n.icono} expanded={expanded} active={ruta.startsWith(n.ruta)} onPress={() => { ir(n.ruta); }} />
                 ))}
               </View>
             </View>
@@ -188,7 +187,7 @@ export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
           zIndex: 30,
         }}
       >
-        <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => ir('/home')}>
+        <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => { ir('/home'); }}>
           <BrandRow size={36} />
         </Pressable>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.xs }}>
@@ -203,7 +202,7 @@ export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: espacio.sm, paddingHorizontal: espacio.md, paddingTop: espacio.sm }}>
         {categorias.flatMap((c) => c.items).map((n) => (
-          <Chip key={n.ruta} etiqueta={n.etiqueta} seleccionado={ruta.startsWith(n.ruta)} onPress={() => ir(n.ruta)} />
+          <Chip key={n.ruta} etiqueta={n.etiqueta} seleccionado={ruta.startsWith(n.ruta)} onPress={() => { ir(n.ruta); }} />
         ))}
       </ScrollView>
       <View style={{ flex: 1 }}>{children}</View>

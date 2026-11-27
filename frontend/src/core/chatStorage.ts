@@ -24,10 +24,10 @@ const removeChats = (matches: (key: string) => boolean): void => {
 const storageKey = (userId: string, projectId: string | null) => `${OWNED_PREFIX}${userId}.${projectId ?? 'none'}`;
 
 /** Earlier versions saved chats without an owner; they cannot be attributed to anyone, so they are removed. */
-export const purgeUnownedChats = (): void => removeChats((key) => !key.startsWith(OWNED_PREFIX));
+export const purgeUnownedChats = (): void => { removeChats((key) => !key.startsWith(OWNED_PREFIX)); };
 
 /** Called whenever a session ends, so no answer about project data stays in a shared browser. */
-export const clearChats = (): void => removeChats(() => true);
+export const clearChats = (): void => { removeChats(() => true); };
 
 /** `null` when there is no saved conversation or no known user. */
 export const loadChat = (userId: string | undefined, projectId: string | null): Message[] | null => {

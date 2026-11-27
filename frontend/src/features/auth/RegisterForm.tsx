@@ -82,7 +82,7 @@ export function RegisterForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
         <Texto variante="pequeno" color={authColor.soft}>
           ¿Ya tiene cuenta?
         </Texto>
-        <TextLink strong label="Iniciar sesión" onPress={() => onMode('login')} />
+        <TextLink strong label="Iniciar sesión" onPress={() => { onMode('login'); }} />
       </View>
     </>
   );

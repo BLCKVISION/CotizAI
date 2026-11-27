@@ -73,7 +73,7 @@ export default function Projects() {
   const params = useLocalSearchParams<{ new?: string }>();
   const [creating, setCreating] = useState(false);
   const dialogOpen = canCreate && (creating || params.new === '1');
-  const create = () => setCreating(true);
+  const create = () => { setCreating(true); };
   const closeDialog = () => {
     setCreating(false);
     if (params.new) router.setParams({ new: undefined });
@@ -113,14 +113,14 @@ export default function Projects() {
             style={[{ ...texto.cuerpo, flex: 1, minWidth: 0, minHeight: 42, color: t.texto }, soloWeb({ outlineStyle: 'none' })]}
           />
         </View>
-        <PillButton icon="sliders" label={filter === 'all' ? 'Filtrar' : ESTADOS[filter].etiqueta} expanded={showFilters} onPress={() => setShowFilters((v) => !v)} />
+        <PillButton icon="sliders" label={filter === 'all' ? 'Filtrar' : ESTADOS[filter].etiqueta} expanded={showFilters} onPress={() => { setShowFilters((v) => !v); }} />
       </View>
 
       {showFilters ? (
         <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
-          <Chip etiqueta="Todos" seleccionado={filter === 'all'} onPress={() => setFilter('all')} />
+          <Chip etiqueta="Todos" seleccionado={filter === 'all'} onPress={() => { setFilter('all'); }} />
           {ORDEN_DE_ESTADOS.map((s) => (
-            <Chip key={s} etiqueta={ESTADOS[s].etiqueta} seleccionado={filter === s} onPress={() => setFilter(s)} />
+            <Chip key={s} etiqueta={ESTADOS[s].etiqueta} seleccionado={filter === s} onPress={() => { setFilter(s); }} />
           ))}
         </View>
       ) : null}
@@ -155,7 +155,7 @@ export default function Projects() {
                     count={`${n} ${n === 1 ? 'propuesta' : 'propuestas'}`}
                     footer={`${infoEstado(p.estado).etiqueta} · ${formatoFecha(p.creado)}`}
                     preview={`${formatoDinero(p.presupuesto_referencial, p.moneda)} · ${p.requerimiento}`}
-                    onPress={() => router.push(`/proyectos/${p.id}` as Href)}
+                    onPress={() => { router.push(`/proyectos/${p.id}` as Href); }}
                   />
                 </Entrada>
               </View>
@@ -172,7 +172,7 @@ export default function Projects() {
           ) : null}
           {visible.length > FIRST_PAGE && !searching ? (
             <View style={{ width: '100%', alignItems: 'center', padding: 12 }}>
-              <Boton etiqueta={showAll ? 'Ver menos' : `Ver más (${visible.length - FIRST_PAGE})`} icono={showAll ? 'chevron-up' : 'chevron-down'} variante="secundario" onPress={() => setShowAll((v) => !v)} />
+              <Boton etiqueta={showAll ? 'Ver menos' : `Ver más (${visible.length - FIRST_PAGE})`} icono={showAll ? 'chevron-up' : 'chevron-down'} variante="secundario" onPress={() => { setShowAll((v) => !v); }} />
             </View>
           ) : null}
         </ScrollView>

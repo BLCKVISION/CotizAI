@@ -59,7 +59,7 @@ export function RatePanel({ rates, error, canRegister, onSave }: Props) {
           )}
         </View>
         {canRegister ? (
-          <Boton etiqueta={open ? 'Cancelar' : 'Registrar tasa manual'} variante="secundario" icono={open ? 'x' : 'edit-2'} onPress={() => setOpen((v) => !v)} />
+          <Boton etiqueta={open ? 'Cancelar' : 'Registrar tasa manual'} variante="secundario" icono={open ? 'x' : 'edit-2'} onPress={() => { setOpen((v) => !v); }} />
         ) : null}
       </View>
       {error && !usd ? <Aviso tono="aviso" texto={error} /> : null}

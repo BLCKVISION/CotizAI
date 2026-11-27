@@ -43,7 +43,7 @@ function Pill({ toast }: { toast: Toast }) {
       <Pressable
         accessibilityRole="alert"
         accessibilityLabel={`${toast.title.replace(/\.$/, '')}${toast.detail ? `. ${toast.detail}` : ''}. Tocar para cerrar`}
-        onPress={() => dismissToast(toast.id)}
+        onPress={() => { dismissToast(toast.id); }}
         style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm + 4, maxWidth: 560, paddingLeft: 8, paddingRight: espacio.lg, paddingVertical: 8, borderRadius: radio.pildora, backgroundColor: swatch.navy, shadowColor: swatch.navy, shadowOpacity: 0.28, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, ...soloWeb({ boxShadow: `0 18px 40px -16px ${tint.navy(0.55)}` }) }}
       >
         <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: look.badge }}>

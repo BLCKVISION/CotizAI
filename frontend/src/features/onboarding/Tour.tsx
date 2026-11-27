@@ -35,7 +35,7 @@ function useLoop(scene: Scene) {
       ]),
     );
     loop.start();
-    return () => loop.stop();
+    return () => { loop.stop(); };
   }, [value, reduce, scene]);
   return value;
 }
@@ -111,8 +111,8 @@ export function Tour() {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     if (hasSeenTour()) return;
-    const id = setTimeout(() => setVisible(true), SPLASH_MS + 500); // after the loading screen
-    return () => clearTimeout(id);
+    const id = setTimeout(() => { setVisible(true); }, SPLASH_MS + 500); // after the loading screen
+    return () => { clearTimeout(id); };
   }, []);
   const [step, setStep] = useState(0);
   useEffect(
@@ -144,12 +144,12 @@ export function Tour() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.md }}>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {SLIDES.map((s, i) => (
-                <Pressable key={s.scene} accessibilityRole="button" accessibilityLabel={`Ir al paso ${i + 1}`} hitSlop={10} onPress={() => setStep(i)} style={{ width: i === step ? 24 : 8, height: 8, borderRadius: 4, backgroundColor: i === step ? t.accentStrong : swatch.gray250, ...soloWeb({ transitionProperty: 'width', transitionDuration: '280ms' }) }} />
+                <Pressable key={s.scene} accessibilityRole="button" accessibilityLabel={`Ir al paso ${i + 1}`} hitSlop={10} onPress={() => { setStep(i); }} style={{ width: i === step ? 24 : 8, height: 8, borderRadius: 4, backgroundColor: i === step ? t.accentStrong : swatch.gray250, ...soloWeb({ transitionProperty: 'width', transitionDuration: '280ms' }) }} />
               ))}
             </View>
             <View style={{ flexDirection: 'row', gap: espacio.sm }}>
               {last ? null : <Boton etiqueta="Saltar" variante="fantasma" onPress={close} />}
-              <Boton etiqueta={last ? 'Empezar' : 'Siguiente'} icono={last ? 'check' : 'arrow-right'} onPress={last ? close : () => setStep((s) => s + 1)} />
+              <Boton etiqueta={last ? 'Empezar' : 'Siguiente'} icono={last ? 'check' : 'arrow-right'} onPress={last ? close : () => { setStep((s) => s + 1); }} />
             </View>
           </View>
         </View>

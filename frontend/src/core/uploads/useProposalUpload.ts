@@ -31,7 +31,7 @@ export function useProposalUpload(onDone: () => void) {
     setVisible(true);
     const batch: UploadItem[] = files.map((f, i) => ({ key: `${i}-${f.name}`, name: f.name, size: f.size, state: 'waiting' }));
     setItems(batch);
-    const update = (index: number, change: Partial<UploadItem>) => setItems((list) => list.map((item, i) => (i === index ? { ...item, ...change } : item)));
+    const update = (index: number, change: Partial<UploadItem>) => { setItems((list) => list.map((item, i) => (i === index ? { ...item, ...change } : item))); };
 
     const rejected: { name: string; reason: string }[] = [];
     for (const [i, file] of files.entries()) {
@@ -61,5 +61,5 @@ export function useProposalUpload(onDone: () => void) {
     return saved;
   };
 
-  return { items, busy, visible, close: () => setVisible(false), upload };
+  return { items, busy, visible, close: () => { setVisible(false); }, upload };
 }

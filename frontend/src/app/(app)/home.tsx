@@ -63,7 +63,10 @@ export default function Home() {
   /** Open while choosing the destination; holds any files already dropped. */
   const [picking, setPicking] = useState<File[] | null>(null);
   // "New project" opens over Home instead of leaving it.
-  const go = (path: string) => (path === '/proyectos/nuevo' ? setCreating(true) : router.push(path as Href));
+  const go = (path: string) => {
+    if (path === '/proyectos/nuevo') setCreating(true);
+    else router.push(path as Href);
+  };
   const wide = dispositivo === 'escritorio';
   const Container = wide ? FixedPage : Pagina;
 
@@ -103,16 +106,16 @@ export default function Home() {
         </View>
         {datos ? (
           <View style={{ flexDirection: 'row', gap: espacio.xl }}>
-            <BigMetric label="Proyectos" value={datos.stats.total_proyectos} onPress={() => go('/proyectos')} />
-            <BigMetric label="Propuestas cargadas" value={datos.stats.total_propuestas} onPress={() => go('/estadisticas')} />
+            <BigMetric label="Proyectos" value={datos.stats.total_proyectos} onPress={() => { go('/proyectos'); }} />
+            <BigMetric label="Propuestas cargadas" value={datos.stats.total_propuestas} onPress={() => { go('/estadisticas'); }} />
           </View>
         ) : null}
         {canEdit ? (
-          <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={() => go('/proyectos/nuevo')} />
+          <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={() => { go('/proyectos/nuevo'); }} />
         ) : usuario?.rol === 'auditor' ? (
-          <Boton etiqueta="Abrir auditoría" icono="shield" onPress={() => go('/auditoria')} />
+          <Boton etiqueta="Abrir auditoría" icono="shield" onPress={() => { go('/auditoria'); }} />
         ) : (
-          <Boton etiqueta="Ver proyectos" icono="folder" onPress={() => go('/proyectos')} />
+          <Boton etiqueta="Ver proyectos" icono="folder" onPress={() => { go('/proyectos'); }} />
         )}
       </View>
 
@@ -127,7 +130,7 @@ export default function Home() {
                 projects={datos.projects}
                 counts={datos.stats.propuestas_por_proyecto}
                 canCreate={canEdit}
-                onCreate={() => setCreating(true)}
+                onCreate={() => { setCreating(true); }}
                 onNavigate={go}
               />
             </Entrada>
@@ -137,10 +140,10 @@ export default function Home() {
           </View>
           <View style={row(1)}>
             <Entrada indice={2} estilo={cell(0.56)}>
-              <TodoCard key={role} tasks={tasks} verified={latest.datos} verifiedError={latest.error} canSeeResults={canSeeResults} hasProjects={datos.projects.length > 0} canCreate={canEdit} onOpen={go} onCreate={() => setCreating(true)} />
+              <TodoCard key={role} tasks={tasks} verified={latest.datos} verifiedError={latest.error} canSeeResults={canSeeResults} hasProjects={datos.projects.length > 0} canCreate={canEdit} onOpen={go} onCreate={() => { setCreating(true); }} />
             </Entrada>
             <Entrada indice={3} estilo={cell(1)}>
-              <SummaryCard stats={datos.stats} onOpen={() => go('/estadisticas')} />
+              <SummaryCard stats={datos.stats} onOpen={() => { go('/estadisticas'); }} />
             </Entrada>
           </View>
         </View>
@@ -156,7 +159,7 @@ export default function Home() {
           setPicking(null);
           setCreating(true);
         }}
-        onClose={() => setPicking(null)}
+        onClose={() => { setPicking(null); }}
       />
       <NewProjectDialog
         visible={canEdit && creating}

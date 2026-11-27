@@ -80,10 +80,10 @@ export function ProjectsCard({ projects, counts, canCreate, onCreate, onNavigate
     <Panel
       header={
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
-          <RoundButton icon="folder" label="Proyectos" dark={tab === 'projects'} onPress={() => setTab('projects')} />
-          <RoundButton icon="info" label="Información: cómo se usa" dark={tab === 'guide'} onPress={() => setTab('guide')} />
+          <RoundButton icon="folder" label="Proyectos" dark={tab === 'projects'} onPress={() => { setTab('projects'); }} />
+          <RoundButton icon="info" label="Información: cómo se usa" dark={tab === 'guide'} onPress={() => { setTab('guide'); }} />
           <View style={{ flex: 1 }} />
-          {projects.length > 0 ? <SeeAll onPress={() => onNavigate('/proyectos')} /> : null}
+          {projects.length > 0 ? <SeeAll onPress={() => { onNavigate('/proyectos'); }} /> : null}
         </View>
       }
     >
@@ -109,7 +109,7 @@ export function ProjectsCard({ projects, counts, canCreate, onCreate, onNavigate
                     count={`${counts[p.id] ?? 0} ${counts[p.id] === 1 ? 'propuesta' : 'propuestas'}`}
                     footer={infoEstado(p.estado).etiqueta}
                     preview={p.requerimiento}
-                    onPress={() => onNavigate(`/proyectos/${p.id}`)}
+                    onPress={() => { onNavigate(`/proyectos/${p.id}`); }}
                   />
                 </View>
               ))}

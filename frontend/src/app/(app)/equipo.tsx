@@ -26,7 +26,7 @@ function RolePicker({ value, onChange }: { value: Role; onChange: (role: Role) =
       <Texto variante="etiqueta">Rol</Texto>
       <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
         {ROLE_ORDER.map((role) => (
-          <Chip key={role} etiqueta={ROLE_INFO[role].label} seleccionado={value === role} onPress={() => onChange(role)} />
+          <Chip key={role} etiqueta={ROLE_INFO[role].label} seleccionado={value === role} onPress={() => { onChange(role); }} />
         ))}
       </View>
       <Texto variante="pequeno" suave>
@@ -41,13 +41,13 @@ const initials = (name: string) =>
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
+    .map((w) => w.charAt(0).toUpperCase())
     .join('');
 
 /** One card per person: avatar, name, role and status on top, the actions at the bottom. */
 function MemberCard({ member, canManage, onRole, onToggle }: { member: Member; canManage: boolean; onRole: () => void; onToggle: () => void }) {
   const t = useTema();
-  const name = member.display_name || member.email.split('@')[0]!;
+  const name = member.display_name || member.email.replace(/@.*$/, '');
   return (
     <View style={{ flexGrow: 1, flexBasis: 300, minWidth: 0, gap: espacio.md, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: swatch.white, opacity: member.active ? 1 : 0.7 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md }}>
@@ -85,7 +85,7 @@ export default function Equipo() {
   const [busy, setBusy] = useState(false);
   const field = (key: 'display_name' | 'email' | 'password') => ({
     value: form[key],
-    onChangeText: (value: string) => setForm((f) => ({ ...f, [key]: value })),
+    onChangeText: (value: string) => { setForm((f) => ({ ...f, [key]: value })); },
   });
 
   const run = async (action: () => Promise<unknown>, done: string, close: () => void) => {
@@ -104,11 +104,11 @@ export default function Equipo() {
   };
 
   const add = () => {
-    if (form.display_name.trim().length < 3) return setFailure('Escriba el nombre de la persona.');
-    if (!isEmail(form.email)) return setFailure('Escriba un correo válido.');
+    if (form.display_name.trim().length < 3) { setFailure('Escriba el nombre de la persona.'); return; }
+    if (!isEmail(form.email)) { setFailure('Escriba un correo válido.'); return; }
     if (!isStrongPassword(form.password, form.email)) {
       const missing = checkPassword(form.password, form.email).filter((r) => !r.passes).map((r) => r.label.toLowerCase());
-      return setFailure(`A la contraseña le falta: ${missing.join(', ')}.`);
+      setFailure(`A la contraseña le falta: ${missing.join(', ')}.`); return;
     }
     void run(
       () => conSesion(addMemberApi({ ...form, email: form.email.trim().toLowerCase(), display_name: form.display_name.trim() })),
@@ -134,7 +134,7 @@ export default function Equipo() {
         sobretitulo="Equipo"
         titulo="Equipo y roles"
         descripcion="Quién participa en las compras y qué puede hacer cada persona."
-        accion={data?.can_manage ? <Boton etiqueta="Agregar persona" icono="plus" onPress={() => setAdding(true)} /> : undefined}
+        accion={data?.can_manage ? <Boton etiqueta="Agregar persona" icono="plus" onPress={() => { setAdding(true); }} /> : undefined}
       />
       {team.error ? <ErrorConReintento texto={team.error} onReintentar={team.recargar} /> : null}
       {!data && !team.error ? <Cargando /> : null}
@@ -145,7 +145,7 @@ export default function Equipo() {
           <CollapsibleCard title="Personas" detail={`${data.members.length} en el equipo`} defaultOpen>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md }}>
               {data.members.map((m) => (
-                <MemberCard key={m.id} member={m} canManage={data.can_manage && !m.is_you} onRole={() => setEditing({ member: m, role: m.role })} onToggle={() => setToggling(m)} />
+                <MemberCard key={m.id} member={m} canManage={data.can_manage && !m.is_you} onRole={() => { setEditing({ member: m, role: m.role }); }} onToggle={() => { setToggling(m); }} />
               ))}
             </View>
           </CollapsibleCard>
@@ -170,7 +170,7 @@ export default function Equipo() {
         <CampoDeTexto etiqueta="Nombre completo" icono="user" {...field('display_name')} />
         <CampoDeTexto etiqueta="Correo" icono="mail" autoCapitalize="none" autoComplete="off" {...field('email')} />
         <CampoDeTexto etiqueta="Contraseña inicial" icono="lock" secureTextEntry autoComplete="new-password" ayuda="Mínimo 10 caracteres, con mayúsculas, minúsculas, número y símbolo." {...field('password')} />
-        <RolePicker value={form.role} onChange={(role) => setForm((f) => ({ ...f, role }))} />
+        <RolePicker value={form.role} onChange={(role) => { setForm((f) => ({ ...f, role })); }} />
         {failure ? <Aviso texto={failure} /> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: espacio.sm }}>
           <Boton etiqueta="Cancelar" variante="secundario" onPress={closeDialogs} deshabilitado={busy} />
@@ -179,7 +179,7 @@ export default function Equipo() {
       </Lightbox>
 
       <Lightbox visible={editing !== null} title="Cambiar rol" description={editing?.member.email} onClose={closeDialogs} maxWidth={560}>
-        {editing ? <RolePicker value={editing.role} onChange={(role) => setEditing({ ...editing, role })} /> : null}
+        {editing ? <RolePicker value={editing.role} onChange={(role) => { setEditing({ ...editing, role }); }} /> : null}
         {failure ? <Aviso texto={failure} /> : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: espacio.sm }}>
           <Boton etiqueta="Cancelar" variante="secundario" onPress={closeDialogs} deshabilitado={busy} />
@@ -187,7 +187,7 @@ export default function Equipo() {
             etiqueta="Guardar rol"
             icono="check"
             cargando={busy}
-            onPress={() => editing && void run(() => conSesion(changeMemberApi(editing.member.id, { role: editing.role })), 'Rol actualizado', () => setEditing(null))}
+            onPress={() => editing && void run(() => conSesion(changeMemberApi(editing.member.id, { role: editing.role })), 'Rol actualizado', () => { setEditing(null); })}
           />
         </View>
       </Lightbox>
@@ -198,7 +198,7 @@ export default function Equipo() {
         description={toggling?.active ? `${toggling.email} perderá el acceso de inmediato. Su historial se conserva.` : `${toggling?.email ?? ''} podrá volver a entrar.`}
         confirmLabel={toggling?.active ? 'Sí, desactivar' : 'Sí, activar'}
         confirmIcon="check"
-        onCancel={() => setToggling(null)}
+        onCancel={() => { setToggling(null); }}
         onConfirm={() => {
           const member = toggling;
           setToggling(null);

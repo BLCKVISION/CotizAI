@@ -16,8 +16,8 @@ export function SummaryCard({ stats, onOpen }: { stats: Estadisticas; onOpen: ()
   const [hover, setHover] = useState<number | null>(null);
   const [grown, setGrown] = useState(false);
   useEffect(() => {
-    const id = setTimeout(() => setGrown(true), 250); // bars rise once the card has entered
-    return () => clearTimeout(id);
+    const id = setTimeout(() => { setGrown(true); }, 250); // bars rise once the card has entered
+    return () => { clearTimeout(id); };
   }, []);
   const data = byFormat ? porFormato(stats) : porEstado(stats);
   const unit = byFormat ? 'propuestas' : 'proyectos';
@@ -45,7 +45,7 @@ export function SummaryCard({ stats, onOpen }: { stats: Estadisticas; onOpen: ()
     >
       <View style={{ ...innerSurface, flexDirection: 'row', alignItems: 'stretch', paddingHorizontal: espacio.md, paddingTop: espacio.sm, paddingBottom: espacio.sm, gap: espacio.xs }}>
         {data.map((d, i) => (
-          <Pressable key={d.etiqueta} accessibilityLabel={`${d.etiqueta}: ${d.valor} ${unit}`} onHoverIn={() => setHover(i)} onHoverOut={() => setHover(null)} onPress={() => setHover(i)} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+          <Pressable key={d.etiqueta} accessibilityLabel={`${d.etiqueta}: ${d.valor} ${unit}`} onHoverIn={() => { setHover(i); }} onHoverOut={() => { setHover(null); }} onPress={() => { setHover(i); }} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
             <View style={{ flex: 1, minHeight: 0, alignSelf: 'stretch', justifyContent: 'flex-end', alignItems: 'center' }}>
               <View style={{ height: 22, justifyContent: 'center', paddingHorizontal: espacio.sm, borderRadius: radio.sm, marginBottom: 4, backgroundColor: selected === i ? t.primario : 'transparent' }}>
                 <Texto variante="etiqueta" color={selected === i ? swatch.white : t.textoSuave}>

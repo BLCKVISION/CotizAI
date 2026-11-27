@@ -37,7 +37,7 @@ export function NotificationsBell() {
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const menu = useDismiss(open, () => setOpen(false));
+  const menu = useDismiss(open, () => { setOpen(false); });
   const [, setVersion] = useState(0);
   const seen = readSeen(seenKey);
   const unread = (items ?? []).filter((n) => !seen.includes(n.id));
@@ -78,7 +78,7 @@ export function NotificationsBell() {
         accessibilityLabel={unread.length ? `Notificaciones: ${unread.length} sin leer` : 'Notificaciones'}
         accessibilityState={{ expanded: open }}
         aria-expanded={open}
-        onPress={() => setOpen((v) => !v)}
+        onPress={() => { setOpen((v) => !v); }}
         style={(e: PressState) => ({ width: 44, height: 44, borderRadius: radio.pildora, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: open || e.hovered || e.pressed ? swatch.white : tint.white(0.62) })}
       >
         <LineIcon name="bell" />
@@ -99,7 +99,7 @@ export function NotificationsBell() {
                   Notificaciones
                 </Texto>
                 {unread.length > 0 ? (
-                  <Pressable accessibilityRole="button" onPress={() => markRead(unread.map((n) => n.id))} style={{ minHeight: 40, justifyContent: 'center' }}>
+                  <Pressable accessibilityRole="button" onPress={() => { markRead(unread.map((n) => n.id)); }} style={{ minHeight: 40, justifyContent: 'center' }}>
                     <Texto variante="etiqueta" color={t.foco}>
                       Marcar como leídas
                     </Texto>

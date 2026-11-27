@@ -31,7 +31,9 @@ export function useReducirMovimiento(): boolean {
   const [reducir, setReducir] = useState(prefersReducedMotion);
   useEffect(() => {
     let vivo = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((v) => vivo && setReducir(v));
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => {
+      if (vivo) setReducir(v);
+    });
     const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReducir);
     return () => {
       vivo = false;
@@ -148,9 +150,9 @@ export function useContador(objetivo: number): number {
   useEffect(() => {
     if (reducir) return;
     const v = new Animated.Value(0);
-    const id = v.addListener(({ value }) => setValor(Math.round(value)));
+    const id = v.addListener(({ value }) => { setValor(Math.round(value)); });
     Animated.timing(v, { toValue: objetivo, duration: movimiento.contador, easing: curva, useNativeDriver: false }).start();
-    return () => v.removeListener(id);
+    return () => { v.removeListener(id); };
   }, [objetivo, reducir]);
   return reducir ? objetivo : valor;
 }

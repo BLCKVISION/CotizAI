@@ -2,11 +2,11 @@
 import { View } from 'react-native';
 
 import { Aviso } from '@/design/bloques';
-import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
+import { Icono, Tarjeta, Texto } from '@/design/componentes';
 import { Entrada } from '@/design/efectos';
 import { swatch, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import type { ProjectEvaluation, ReportFormat, ReviewDecision } from '@/core/api/evaluations';
+import type { ProjectEvaluation, ReviewDecision } from '@/core/api/evaluations';
 import { AskCard } from './AskCard';
 import { formatMoney } from '@/core/evaluationFormat';
 
@@ -62,9 +62,9 @@ function Detail({ outcome, onOpen }: { outcome: Outcome<Item>; onOpen: () => voi
   );
 }
 
-type Props = { evaluation: ProjectEvaluation; decisions: ReviewDecision[]; onOpen: (proposalId: string) => void; onDownload: (format: ReportFormat) => void };
+type Props = { evaluation: ProjectEvaluation; decisions: ReviewDecision[]; onOpen: (proposalId: string) => void };
 
-export function ResultStep({ evaluation, decisions, onOpen, onDownload }: Props) {
+export function ResultStep({ evaluation, decisions, onOpen }: Props) {
   const t = useTema();
   const list = outcomes(evaluation.items, decisions);
   if (list.length === 0) return <Aviso tono="info" texto="Todavía no hay propuestas verificadas." />;
@@ -108,14 +108,9 @@ export function ResultStep({ evaluation, decisions, onOpen, onDownload }: Props)
       </Texto>
       {ordered.map((o, i) => (
         <Entrada key={o.item.proposal_id} indice={Math.min(i + 1, 8)}>
-          <Detail outcome={o} onOpen={() => onOpen(o.item.proposal_id)} />
+          <Detail outcome={o} onOpen={() => { onOpen(o.item.proposal_id); }} />
         </Entrada>
       ))}
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: espacio.sm }}>
-        <Boton etiqueta="Descargar PDF" icono="file-text" variante="secundario" onPress={() => onDownload('pdf')} />
-        <Boton etiqueta="Descargar Excel" icono="grid" variante="secundario" onPress={() => onDownload('xlsx')} />
-        <Boton etiqueta="Descargar Markdown" icono="file-text" variante="secundario" onPress={() => onDownload('md')} />
-      </View>
       <AskCard projectId={evaluation.project_id} />
     </View>
   );

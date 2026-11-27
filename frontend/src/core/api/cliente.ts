@@ -23,7 +23,7 @@ type Opciones = { metodo?: 'GET' | 'POST' | 'DELETE'; cuerpo?: unknown; token?: 
 export async function peticion<T>(ruta: string, { metodo = 'GET', cuerpo, token, timeoutMs = TIEMPO_MAXIMO_MS }: Opciones = {}): Promise<T> {
   const trackId = nuevoTrackId();
   const control = new AbortController();
-  const temporizador = setTimeout(() => control.abort(), timeoutMs);
+  const temporizador = setTimeout(() => { control.abort(); }, timeoutMs);
   try {
     const respuesta = await fetch(`${API_URL}/api/v1${ruta}`, {
       method: metodo,
@@ -59,7 +59,7 @@ export async function peticion<T>(ruta: string, { metodo = 'GET', cuerpo, token,
 export async function peticionBinaria(ruta: string, token: string, cuerpo?: Blob): Promise<Response> {
   const trackId = nuevoTrackId();
   const control = new AbortController();
-  const temporizador = setTimeout(() => control.abort(), 120_000);
+  const temporizador = setTimeout(() => { control.abort(); }, 120_000);
   try {
     const r = await fetch(`${API_URL}/api/v1${ruta}`, {
       method: cuerpo ? 'POST' : 'GET',

@@ -42,7 +42,7 @@ export default function LayoutRaiz() {
   // Decided once per load, so signing in never brings the loading screen back.
   const [showSplash] = useState(isSplashDue);
   const [sessionReady, setSessionReady] = useState(false);
-  const onReady = useCallback(() => setSessionReady(true), []);
+  const onReady = useCallback(() => { setSessionReady(true); }, []);
   const fontsReady = listas || Boolean(errorDeFuentes); // if fonts fail, the system font is used
   return (
     <View style={{ flex: 1 }}>

@@ -74,7 +74,7 @@ function NewProjectForm({ onClose }: { onClose: () => void }) {
       <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm, alignItems: 'center' }}>
         <Texto variante="etiqueta">Moneda</Texto>
         {(['USD', 'VES'] as const).map((c) => (
-          <Chip key={c} etiqueta={c === 'VES' ? 'Bolívares (VES)' : 'Dólares (USD)'} seleccionado={currency === c} onPress={() => setCurrency(c)} />
+          <Chip key={c} etiqueta={c === 'VES' ? 'Bolívares (VES)' : 'Dólares (USD)'} seleccionado={currency === c} onPress={() => { setCurrency(c); }} />
         ))}
       </View>
       {errors.general ? <Aviso texto={errors.general} /> : null}

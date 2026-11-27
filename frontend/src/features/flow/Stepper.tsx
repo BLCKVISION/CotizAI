@@ -30,7 +30,7 @@ export function Stepper({ active, reached, onSelect }: { active: StepId; reached
             accessibilityState={{ selected: isActive, disabled: !open }}
             aria-selected={isActive}
             disabled={!open}
-            onPress={() => onSelect(step.id)}
+            onPress={() => { onSelect(step.id); }}
             style={(e: PressState) => ({ flex: 1, minWidth: 0, gap: 6, opacity: open || done ? 1 : 0.45, borderRadius: radio.sm, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent' })}
           >
             <View style={{ height: 6, borderRadius: 3, backgroundColor: tint.navy(0.08), ...(done || isActive ? accentGradient(90) : null) }} />

@@ -9,7 +9,7 @@ import { tint } from './tema';
 /** Hover state for a field wrapper. Focus is tracked by the field, which also covers touch and keyboard. */
 export function useHover() {
   const [hovered, setHovered] = useState(false);
-  return { hovered, hoverProps: { onPointerEnter: () => setHovered(true), onPointerLeave: () => setHovered(false) } };
+  return { hovered, hoverProps: { onPointerEnter: () => { setHovered(true); }, onPointerLeave: () => { setHovered(false); } } };
 }
 
 export function FieldHint({ visible, children }: { visible: boolean; children: ReactNode }) {

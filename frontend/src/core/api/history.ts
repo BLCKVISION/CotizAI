@@ -15,5 +15,5 @@ export const supplierDirectoryApi = (token: string) => peticion<SupplierDirector
 
 const runsPath = (projectId: string) => `/proyectos/${projectId}/evaluation-runs`;
 export const evaluationRunsApi = (projectId: string) => (token: string) => peticion<EvaluationRun[]>(runsPath(projectId), { token });
-export const runReportApi = (projectId: string, runId: string, format: 'pdf' | 'xlsx') => async (token: string) =>
+export const runReportApi = (projectId: string, runId: string, format: 'pdf' | 'csv' | 'xlsx') => async (token: string) =>
   (await peticionBinaria(`${runsPath(projectId)}/${runId}/report?fmt=${format}`, token)).blob();

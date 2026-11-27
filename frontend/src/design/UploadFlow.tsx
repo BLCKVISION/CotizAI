@@ -28,7 +28,7 @@ function useLoop(active: boolean, duration: number) {
     value.setValue(0);
     const loop = Animated.loop(Animated.timing(value, { toValue: 1, duration, easing: Easing.linear, useNativeDriver: false }));
     loop.start();
-    return () => loop.stop();
+    return () => { loop.stop(); };
   }, [active, reduce, value, duration]);
   return value;
 }

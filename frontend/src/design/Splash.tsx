@@ -25,7 +25,7 @@ export function Splash({ leaving = false }: { leaving?: boolean }) {
     Animated.timing(intro, { toValue: 1, duration: 700, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: true }).start();
     const loop = Animated.loop(Animated.timing(sweep, { toValue: 1, duration: 1100, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }));
     loop.start();
-    return () => loop.stop();
+    return () => { loop.stop(); };
   }, [intro, sweep, reduce]);
 
   return (
@@ -50,7 +50,7 @@ export function SplashGate({ ready }: { ready: boolean }) {
   const [step, setStep] = useState<'show' | 'leaving' | 'done'>('show');
   useEffect(() => {
     if (!ready) return;
-    const leave = setTimeout(() => setStep('leaving'), SPLASH_MS);
+    const leave = setTimeout(() => { setStep('leaving'); }, SPLASH_MS);
     const done = setTimeout(() => {
       markSplashShown();
       setStep('done');

@@ -38,7 +38,7 @@ export function TarjetaDeGrafico({
   const maximo = Math.max(1, ...datos.map((d) => d.valor));
   const sel = activo === null ? null : datos[activo];
   const detalle = sel ? `${sel.etiqueta}: ${sel.valor} ${unidad} (${Math.round((sel.valor / Math.max(1, total)) * 100)} %)` : `${total} ${total === 1 ? unidad.replace(/s$/, '') : unidad} en total`;
-  const eventos = (i: number) => ({ onHoverIn: () => setActivo(i), onHoverOut: () => setActivo(null), onPress: () => setActivo(i) });
+  const eventos = (i: number) => ({ onHoverIn: () => { setActivo(i); }, onHoverOut: () => { setActivo(null); }, onPress: () => { setActivo(i); } });
 
   return (
     // Fixed height so every chart card in a grid looks the same; long lists scroll inside.
@@ -52,7 +52,7 @@ export function TarjetaDeGrafico({
             {total > 0 ? detalle : vacio}
           </Texto>
         </View>
-        {total > 0 ? <Chip etiqueta={tabla ? 'Ver gráfico' : 'Ver tabla'} seleccionado={false} onPress={() => setTabla((v) => !v)} /> : null}
+        {total > 0 ? <Chip etiqueta={tabla ? 'Ver gráfico' : 'Ver tabla'} seleccionado={false} onPress={() => { setTabla((v) => !v); }} /> : null}
       </View>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: forma === 'columnas' && !tabla ? 'flex-end' : 'flex-start' }}>
       {total === 0 ? (

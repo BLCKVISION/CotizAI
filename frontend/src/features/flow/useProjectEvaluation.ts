@@ -56,14 +56,14 @@ export function useProjectEvaluation(projectId: string, canViewResults: boolean)
       void loadRates();
       void loadEvaluation();
     }, 0);
-    return () => clearTimeout(start);
+    return () => { clearTimeout(start); };
   }, [loadRates, loadEvaluation]);
 
   useEffect(() => {
     if (!running) return;
     const started = Date.now();
-    const timer = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
-    return () => clearInterval(timer);
+    const timer = setInterval(() => { setElapsed(Math.round((Date.now() - started) / 1000)); }, 1000);
+    return () => { clearInterval(timer); };
   }, [running]);
 
   const run = async (proposalIds?: string[]): Promise<boolean> => {

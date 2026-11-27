@@ -4,7 +4,7 @@ export function pickFiles(accept: string, onPick: (files: File[]) => void) {
   input.type = 'file';
   input.multiple = true;
   input.accept = accept;
-  input.onchange = () => onPick(Array.from(input.files ?? []));
+  input.onchange = () => { onPick(Array.from(input.files ?? [])); };
   input.click();
 }
 

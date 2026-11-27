@@ -19,7 +19,7 @@ export const markTourSeen = () => {
   }
 };
 
-export const openTour = () => listeners.forEach((l) => l());
+export const openTour = () => { listeners.forEach((l) => { l(); }); };
 export const onOpenTour = (listener: Listener) => {
   listeners.add(listener);
   return () => {

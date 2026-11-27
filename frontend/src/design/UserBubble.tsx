@@ -36,7 +36,7 @@ function MenuRow({ icon, label, onPress, color }: { icon: LineIconName; label: s
 export function UserBubble({ name, role, onSignOut }: { name: string; role: string; onSignOut: () => void }) {
   const t = useTema();
   const [open, setOpen] = useState(false);
-  const menu = useDismiss(open, () => setOpen(false));
+  const menu = useDismiss(open, () => { setOpen(false); });
   const initials = name.slice(0, 2).toUpperCase();
   return (
     <View ref={menu} style={{ width: SIZE, height: SIZE, zIndex: 40 }}>
@@ -62,7 +62,7 @@ export function UserBubble({ name, role, onSignOut }: { name: string; role: stri
           accessibilityLabel={`Cuenta de ${name}, ${role}`}
           accessibilityState={{ expanded: open }}
           aria-expanded={open}
-          onPress={() => setOpen((v) => !v)}
+          onPress={() => { setOpen((v) => !v); }}
           style={(e: PressState) => ({ height: SIZE + (open ? espacio.md : 0), flexDirection: 'row', alignItems: 'center', justifyContent: open ? 'flex-start' : 'center', gap: espacio.sm + 2, paddingHorizontal: open ? espacio.md : 0, borderRadius: SIZE / 2, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent' })}
         >
           <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: open ? t.accent : 'transparent' }}>
