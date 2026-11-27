@@ -13,6 +13,7 @@ from evaluador.adapters.outbound.memory.repositories import (
 )
 from evaluador.adapters.outbound.security.argon2_hasher import Argon2Hasher
 from evaluador.adapters.outbound.security.tokens import IdsUuid, SecureTokens, SystemClock
+from evaluador.application.ports.agent import VisionModel
 from evaluador.application.use_cases.authentication import AuthenticateToken, CloseSession, StartSession
 from evaluador.application.use_cases.projects import (
     CreateProject,
@@ -20,6 +21,7 @@ from evaluador.application.use_cases.projects import (
     ListProjects,
     TransitionProject,
 )
+from evaluador.application.use_cases.transcription import TranscribeImage
 from evaluador.domain.identity import SessionPolicy
 
 
@@ -32,6 +34,7 @@ class Container:
     list_projects: ListProjects
     get_project: GetProject
     transition_project: TransitionProject
+    transcribe: TranscribeImage
     # Expuestos para scripts de semillas y pruebas
     tenants: InMemoryTenants
     users: InMemoryUsers
@@ -39,7 +42,8 @@ class Container:
     ids: IdsUuid
 
 
-def build_container(policy: SessionPolicy | None = None) -> Container:
+def build_container(policy: SessionPolicy | None = None, vision: VisionModel | None = None) -> Container:
+    """`vision` es el modelo que lee imágenes; sin él, transcribir responde «servicio no disponible» (503)."""
     policy = policy or SessionPolicy()
     clock, ids, tokens, hasher, audit = (
         SystemClock(),
@@ -59,6 +63,7 @@ def build_container(policy: SessionPolicy | None = None) -> Container:
         list_projects=ListProjects(projects),
         get_project=GetProject(projects),
         transition_project=TransitionProject(projects, audit),
+        transcribe=TranscribeImage(vision),
         tenants=tenants,
         users=users,
         hasher=hasher,

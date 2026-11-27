@@ -46,11 +46,21 @@ class TraceabilityInterceptor:
     El cuerpo se lee con tope de tamaño, se parsea como JSON y se censura antes de loguear.
     """
 
-    def __init__(self, app: ASGIApp, *, trust_proxy: bool, max_bytes: int, production: bool = False) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        trust_proxy: bool,
+        max_bytes: int,
+        production: bool = False,
+        large_body_paths: tuple[str, ...] = (),
+    ) -> None:
         self.app = app
         self._production = production
         self._trust_proxy = trust_proxy
         self._max_bytes = max_bytes
+        # Rutas que reciben archivos: la ruta impone su propio tope y su cuerpo (binario) nunca se copia al log.
+        self._large_body_paths = large_body_paths
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -85,7 +95,8 @@ class TraceabilityInterceptor:
             await send(message)
 
         declared = hdr.get("content-length", "")
-        too_large = declared.isdigit() and int(declared) > self._max_bytes
+        large = scope["path"] in self._large_body_paths
+        too_large = not large and declared.isdigit() and int(declared) > self._max_bytes
         try:
             if too_large:
                 exceeded = True
@@ -97,7 +108,7 @@ class TraceabilityInterceptor:
                 )  # fmt: skip
                 await response(scope, receive, send_with_headers)
             else:
-                await self.app(scope, receive_limited, send_with_headers)
+                await self.app(scope, receive if large else receive_limited, send_with_headers)
         finally:
             _log.info(
                 "http_request",
