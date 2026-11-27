@@ -175,3 +175,10 @@ Una sola base de código para web, iOS y Android con **Expo Router**. Capas: `ap
 | Rate limit distribuido | En memoria por proceso; suficiente para un solo nodo |
 | Proveedor de IA definitivo | Pendiente del evento; ya intercambiable |
 | Umbral de «precio abusivo» | Configurable, a calibrar con muestras |
+
+## Verificación humana y evaluación selectiva
+
+- `POST /proyectos/{id}/evaluations` admite `proposal_ids`: lee solo esas, conserva el resultado de las demás y reordena todas.
+- `GET`/`POST /proyectos/{id}/reviews`: una persona responde sí o no por propuesta. Si difiere de la IA debe justificarlo. Queda en la auditoría y caduca si la propuesta se vuelve a leer.
+- Se admiten propuestas nuevas hasta que el proyecto se adjudica o se cierra; borrar evidencia ya evaluada sigue prohibido.
+- Rol `coordinador`: carga, evalúa, ve resultados y verifica. No adjudica ni ve la auditoría.

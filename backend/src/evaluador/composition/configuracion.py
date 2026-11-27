@@ -25,6 +25,7 @@ class Configuracion(BaseSettings):
     semilla_clave: SecretStr | None = None  # crea el tenant 'demo' con un usuario por rol
     usuario_demo_correo: str | None = None  # cuenta demo adicional (rol cargador); clave solo por entorno
     usuario_demo_clave: SecretStr | None = None
+    usuario_demo_rol: str = "cargador"  # "coordinador" lets the demo account run and verify the whole flow
     demo_display_name: str = ""  # greeting name for the extra demo account
     permitir_semilla_en_produccion: bool = False  # demo del hackatón; retirar cuando exista persistencia SQL
 

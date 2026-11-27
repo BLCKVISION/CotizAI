@@ -44,9 +44,14 @@ class Gestion:
         if proyecto.estado is not EstadoProyecto.EN_RECEPCION:
             raise TransicionInvalida("Solo se modifican propuestas mientras el proyecto está en recepción.")
 
+    def _require_open_for_uploads(self, proyecto: Proyecto) -> None:
+        """New offers may arrive after an evaluation; removing evaluated evidence is still not allowed."""
+        if proyecto.estado not in (EstadoProyecto.EN_RECEPCION, EstadoProyecto.EN_REVISION_DEL_COMITE):
+            raise TransicionInvalida("El proyecto ya no admite propuestas nuevas.")
+
     def cargar(self, actor: Usuario, proyecto_id: str, archivo: str, contenido: bytes) -> Propuesta:
         actor.exigir(Permiso.CARGAR_DOCUMENTOS)
-        self._exigir_recepcion(self._proyecto(actor, proyecto_id))
+        self._require_open_for_uploads(self._proyecto(actor, proyecto_id))
         if self._almacen is None:
             raise ServicioNoDisponible("El almacén cifrado no está configurado.")
         formato = validar_documento(archivo, contenido)

@@ -34,11 +34,12 @@ from evaluador.application.use_cases.proyectos import (
     ObtenerProyecto,
     TransicionarProyecto,
 )
+from evaluador.application.use_cases.review_proposals import ReviewProposals
 from evaluador.composition.ai import lazy_services
 from evaluador.composition.configuracion import Configuracion
 from evaluador.domain.gestion import Evento, Nota, Propuesta, Proveedor
 from evaluador.domain.identidad import PoliticaDeSesion
-from evaluador.domain.project_evaluation import ProjectEvaluation
+from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
 from evaluador.domain.proyecto import Proyecto
 
 
@@ -54,6 +55,7 @@ class Contenedor:
     gestion: Gestion
     evaluate_project: EvaluateProject
     get_project_evaluation: GetProjectEvaluation
+    review_proposals: ReviewProposals
     ask_project: AskProject
     resolve_rates: ResolveRates
     register_manual_rate: RegisterManualRate
@@ -72,6 +74,7 @@ def _colecciones(config: Configuracion | None) -> dict:
         "notas": Nota,
         "eventos": Evento,
         "evaluations": ProjectEvaluation,
+        "reviews": ReviewDecision,
         "exchange_rates": RateRecord,
     }
     if config is not None and config.persistencia == "postgres":
@@ -105,6 +108,7 @@ def construir_contenedor(
     if config is not None and config.clave_cifrado and config.clave_cifrado.get_secret_value():
         almacen = AlmacenCifrado(config.directorio_documentos, config.clave_cifrado.get_secret_value())
     evaluations = datos.pop("evaluations")
+    reviews = datos.pop("reviews")
     rates = CollectionExchangeRates(datos.pop("exchange_rates"), reloj)
     gestion = Gestion(**datos, usuarios=usuarios, almacen=almacen, ids=ids, reloj=reloj, auditoria=auditoria)
     ai_services = ai_services or lazy_services(config)
@@ -132,6 +136,9 @@ def construir_contenedor(
             parallelism=config.evaluation_parallelism if config else 3,
         ),
         get_project_evaluation=get_evaluation,
+        review_proposals=ReviewProposals(
+            projects=proyectos, evaluations=evaluations, decisions=reviews, clock=reloj, audit=auditoria
+        ),
         ask_project=AskProject(get_evaluation, ai_services, auditoria),
         resolve_rates=resolve_rates,
         register_manual_rate=RegisterManualRate(rates, reloj, auditoria),

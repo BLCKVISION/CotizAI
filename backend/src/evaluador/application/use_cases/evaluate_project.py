@@ -108,7 +108,8 @@ class EvaluateProject:
         self._running: set[tuple[str, str]] = set()
         self._guard = threading.Lock()
 
-    def execute(self, actor: Usuario, project_id: str) -> ProjectEvaluation:
+    def execute(self, actor: Usuario, project_id: str, selected: list[str] | None = None) -> ProjectEvaluation:
+        """Evaluates all proposals, or only `selected`; the rest keep their previous result and all are re-ranked."""
         actor.exigir(Permiso.INICIAR_EVALUACION)
         key = (actor.tenant_id, project_id)
         with self._guard:
@@ -116,7 +117,7 @@ class EvaluateProject:
                 raise TransicionInvalida("Ya hay una evaluación en curso para este proyecto.")
             self._running.add(key)
         try:
-            return self._run(actor, project_id)
+            return self._run(actor, project_id, selected)
         finally:
             with self._guard:
                 self._running.discard(key)
@@ -138,21 +139,42 @@ class EvaluateProject:
         )
         return moved
 
-    def _run(self, actor: Usuario, project_id: str) -> ProjectEvaluation:
+    def _selection(
+        self, tenant_id: str, project_id: str, proposals: list[Propuesta], selected: list[str] | None
+    ) -> tuple[list[Propuesta], tuple[ProposalEvaluationItem, ...], tuple[ExchangeRateSnapshot, ...]]:
+        """Which proposals to read now, which earlier results to keep, and the rates those used."""
+        if selected is None:
+            return proposals, (), ()
+        wanted = set(selected)
+        if not wanted:
+            raise DatoInvalido("Elija al menos una propuesta para evaluar.")
+        if wanted - {p.id for p in proposals}:
+            raise NoEncontrado("Una de las propuestas elegidas no pertenece a este proyecto.")
+        previous = self._evaluations.por_id(tenant_id, project_id)
+        if previous is None:
+            if len(wanted) < MIN_PROPUESTAS:
+                raise DatoInvalido(f"La primera evaluación necesita al menos {MIN_PROPUESTAS} propuestas.")
+            return [p for p in proposals if p.id in wanted], (), ()
+        stored = {p.id for p in proposals}
+        kept = tuple(i for i in previous.items if i.proposal_id in stored and i.proposal_id not in wanted)
+        return [p for p in proposals if p.id in wanted], kept, previous.exchange_rates
+
+    def _run(self, actor: Usuario, project_id: str, selected: list[str] | None = None) -> ProjectEvaluation:
         project = self._project(actor.tenant_id, project_id)
         if project.estado not in _EVALUABLE_STATES:
             raise TransicionInvalida("Un proyecto adjudicado o cerrado no se puede volver a evaluar.")
         proposals = self._gestion.propuestas_de(actor, project_id)
         if len(proposals) < MIN_PROPUESTAS:
             raise DatoInvalido(f"Cargue al menos {MIN_PROPUESTAS} propuestas antes de evaluar.")
+        chosen, kept, kept_rates = self._selection(actor.tenant_id, project_id, proposals, selected)
         services = self._services()  # fails here, before touching the project, if the AI is not configured
 
         previous = project.estado
         if previous is EstadoProyecto.EN_RECEPCION:
             project = self._move(actor, project, EstadoProyecto.EN_EVALUACION)
         try:
-            outcomes = self._evaluate_all(actor, project, proposals, services)
-            evaluation = self._summarise(actor, project, outcomes)
+            outcomes = self._evaluate_all(actor, project, chosen, services)
+            evaluation = self._summarise(actor, project, outcomes, kept, kept_rates)
             current = self._project(actor.tenant_id, project_id)
             if current.estado is not project.estado:
                 raise TransicionInvalida("El proyecto cambió de estado durante la evaluación.")
@@ -236,11 +258,20 @@ class EvaluateProject:
         except TasaNoDisponible:
             return [], True
 
-    def _summarise(self, actor: Usuario, project: Proyecto, outcomes: list[_Outcome]) -> ProjectEvaluation:
+    def _summarise(
+        self,
+        actor: Usuario,
+        project: Proyecto,
+        outcomes: list[_Outcome],
+        kept: tuple[ProposalEvaluationItem, ...] = (),
+        kept_rates: tuple[ExchangeRateSnapshot, ...] = (),
+    ) -> ProjectEvaluation:
         target = project.moneda.upper()
         rates, needed_rates = self._rates_for(actor.tenant_id, target, outcomes)
         history = self._supplier_history(actor.tenant_id, project.id)
-        used: dict[tuple[str, str, str, str], ExchangeRateSnapshot] = {}
+        used: dict[tuple[str, str, str, str], ExchangeRateSnapshot] = {
+            (r.base, r.quote, r.effective_date, r.origin): r for r in kept_rates
+        }
         warnings: list[str] = []
         items: list[ProposalEvaluationItem] = []
         for outcome in outcomes:
@@ -251,6 +282,7 @@ class EvaluateProject:
                     r.de, r.a, r.valor, r.fuente, r.fecha.isoformat(), r.origen.value
                 )
 
+        items.extend(kept)
         not_converted = [
             i.filename for i in items if i.real_cost is not None and i.currency and i.converted_cost is None
         ]
@@ -340,6 +372,7 @@ class EvaluateProject:
                 reading_warnings=ev.warnings,
                 over_budget=budget is not None and converted is not None and converted > budget,
                 supplier_history=tuple(history.get(_supplier_key(supplier), [])[:5]) if supplier else (),
+                evaluated_at=self._clock.ahora(),
             ),
             used,
         )

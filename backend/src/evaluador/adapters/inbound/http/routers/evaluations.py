@@ -15,7 +15,7 @@ from evaluador.adapters.inbound.http.guards import exigir
 from evaluador.adapters.outbound.reportes.evaluation_report import render_csv_report, render_markdown_report
 from evaluador.application.use_cases.autenticacion import SesionAutenticada
 from evaluador.domain.identidad import Permiso
-from evaluador.domain.project_evaluation import ProjectEvaluation
+from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
 
 router = APIRouter(prefix="/proyectos", tags=["evaluations"])
 ProjectId = Annotated[str, Path(pattern=ID_PATRON)]
@@ -97,6 +97,30 @@ class ProjectEvaluationResponseDto(DtoSalida):
         )
 
 
+class EvaluationRequestDto(DtoEntrada):
+    # Omitted: evaluate every stored proposal. Otherwise only these; the others keep their previous result.
+    proposal_ids: Annotated[list[Annotated[str, Field(pattern=ID_PATRON)]] | None, Field(max_length=20)] = None
+
+
+class ReviewRequestDto(DtoEntrada):
+    proposal_id: Annotated[str, Field(pattern=ID_PATRON)]
+    approved: bool
+    comment: Annotated[str, Field(max_length=500)] = ""
+
+
+class ReviewResponseDto(DtoSalida):
+    proposal_id: str
+    approved: bool
+    comment: str
+    decided_by: str
+    decided_at: datetime
+
+    @classmethod
+    def from_domain(cls, d: ReviewDecision) -> ReviewResponseDto:
+        return cls(proposal_id=d.proposal_id, approved=d.approved, comment=d.comment, decided_by=d.decided_by,
+                   decided_at=d.creado)  # fmt: skip
+
+
 class QuestionDto(DtoEntrada):
     question: Annotated[str, Field(min_length=3, max_length=500)]
 
@@ -117,9 +141,11 @@ def evaluate_project(
     proyecto_id: ProjectId,
     request: Request,
     session: Annotated[SesionAutenticada, Depends(exigir(Permiso.INICIAR_EVALUACION))],
+    dto: EvaluationRequestDto | None = None,
 ) -> ProjectEvaluationResponseDto:
     # A plain `def` route: FastAPI runs it in its thread pool, so a long evaluation does not block the server.
-    result = request.app.state.contenedor.evaluate_project.execute(session.usuario, proyecto_id)
+    selected = dto.proposal_ids if dto else None
+    result = request.app.state.contenedor.evaluate_project.execute(session.usuario, proyecto_id, selected)
     restricted = not session.usuario.tiene(Permiso.VER_RESULTADOS)
     return ProjectEvaluationResponseDto.from_domain(result, restricted=restricted)
 
@@ -153,6 +179,29 @@ def download_report(
         media_type=f"{media_type}; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="informe-evaluacion.{fmt}"'},
     )
+
+
+@router.get("/{proyecto_id}/reviews")
+def list_reviews(
+    proyecto_id: ProjectId,
+    request: Request,
+    session: Annotated[SesionAutenticada, Depends(exigir(Permiso.VER_RESULTADOS))],
+) -> list[ReviewResponseDto]:
+    decisions = request.app.state.contenedor.review_proposals.current(session.usuario, proyecto_id)
+    return [ReviewResponseDto.from_domain(d) for d in decisions]
+
+
+@router.post("/{proyecto_id}/reviews", status_code=status.HTTP_201_CREATED)
+def decide_proposal(
+    proyecto_id: ProjectId,
+    dto: ReviewRequestDto,
+    request: Request,
+    session: Annotated[SesionAutenticada, Depends(exigir(Permiso.ANOTAR_REVISION))],
+) -> ReviewResponseDto:
+    decision = request.app.state.contenedor.review_proposals.decide(
+        session.usuario, proyecto_id, dto.proposal_id, dto.approved, dto.comment
+    )
+    return ReviewResponseDto.from_domain(decision)
 
 
 @router.post("/{proyecto_id}/ask")

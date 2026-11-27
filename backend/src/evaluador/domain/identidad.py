@@ -14,6 +14,7 @@ class Rol(StrEnum):
     EVALUADOR = "evaluador"
     APROBADOR = "aprobador"
     AUDITOR = "auditor"
+    COORDINADOR = "coordinador"
 
 
 class Permiso(StrEnum):
@@ -46,6 +47,18 @@ PERMISOS_POR_ROL: dict[Rol, frozenset[Permiso]] = {
         {Permiso.VER_ESTADO, Permiso.VER_RESULTADOS, Permiso.ANOTAR_REVISION, Permiso.ADJUDICAR_O_CERRAR}
     ),
     Rol.AUDITOR: frozenset({Permiso.VER_ESTADO, Permiso.VER_RESULTADOS, Permiso.VER_AUDITORIA}),
+    # Runs a purchase from start to verification in small teams. Awarding stays with the approver.
+    Rol.COORDINADOR: frozenset(
+        {
+            Permiso.CREAR_PROYECTO,
+            Permiso.CARGAR_DOCUMENTOS,
+            Permiso.INICIAR_EVALUACION,
+            Permiso.VER_ESTADO,
+            Permiso.VER_RESULTADOS,
+            Permiso.ANOTAR_REVISION,
+            Permiso.REGISTRAR_TASA,
+        }
+    ),
 }
 
 

@@ -49,6 +49,22 @@ class ProposalEvaluationItem:
     reading_warnings: tuple[str, ...] = ()
     over_budget: bool = False
     supplier_history: tuple[str, ...] = ()  # earlier discards of the same supplier in this organisation
+    evaluated_at: datetime | None = None  # when this proposal was read; a selective run keeps the older ones
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewDecision:
+    """A person's yes or no on the AI's result for one proposal. It only holds for the reading it reviewed."""
+
+    id: str  # "<project_id>.<proposal_id>": one current decision per proposal
+    tenant_id: str
+    project_id: str
+    proposal_id: str
+    approved: bool
+    comment: str
+    decided_by: str
+    creado: datetime
+    reviewed_reading: datetime | None  # `evaluated_at` of the item the person looked at
 
 
 @dataclass(frozen=True, slots=True)

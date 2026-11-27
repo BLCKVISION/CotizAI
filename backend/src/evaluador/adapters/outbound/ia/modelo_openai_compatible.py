@@ -8,7 +8,6 @@ from pydantic import BaseModel
 from ._comun import construir_mensajes, extraer_json, imagen_base64, sistema_para_imagen
 from ._retry import post_with_retry
 
-
 # Without a cap the provider reserves the model's whole output window and may refuse a low-credit account (402).
 MAX_ANSWER_TOKENS = 8000
 
