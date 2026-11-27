@@ -9,6 +9,7 @@ import { Entrada, soloWeb } from './efectos';
 import { LineIcon, type LineIconName } from './LineIcon';
 import { useTema } from './tema';
 import { espacio, radio } from './tokens';
+import { useDismiss } from './useDismiss';
 
 const SIZE = 44;
 const OPEN_WIDTH = 300;
@@ -35,10 +36,10 @@ function MenuRow({ icon, label, onPress, color }: { icon: LineIconName; label: s
 export function UserBubble({ name, role, onSignOut }: { name: string; role: string; onSignOut: () => void }) {
   const t = useTema();
   const [open, setOpen] = useState(false);
+  const menu = useDismiss(open, () => setOpen(false));
   const initials = name.slice(0, 2).toUpperCase();
   return (
-    <View style={{ width: SIZE, height: SIZE, zIndex: 40 }}>
-      {open ? <Pressable accessibilityLabel="Cerrar menú de usuario" onPress={() => setOpen(false)} style={[{ position: 'absolute', width: 1, height: 1 }, soloWeb({ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' })]} /> : null}
+    <View ref={menu} style={{ width: SIZE, height: SIZE, zIndex: 40 }}>
       <View
         style={{
           position: 'absolute',

@@ -6,10 +6,11 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError } from '@/core/useDatos';
 import { Texto } from '@/design/componentes';
-import { Entrada, soloWeb } from '@/design/efectos';
+import { Entrada } from '@/design/efectos';
 import { LineIcon } from '@/design/LineIcon';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
+import { useDismiss } from '@/design/useDismiss';
 import { estadisticasApi } from '@/features/gestion/api';
 import { listarProyectosApi } from '@/features/proyectos/api';
 
@@ -36,6 +37,7 @@ export function NotificationsBell() {
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const menu = useDismiss(open, () => setOpen(false));
   const [, setVersion] = useState(0);
   const seen = readSeen(seenKey);
   const unread = (items ?? []).filter((n) => !seen.includes(n.id));
@@ -70,8 +72,7 @@ export function NotificationsBell() {
   };
 
   return (
-    <View style={{ width: 44, height: 44, zIndex: 40 }}>
-      {open ? <Pressable accessibilityLabel="Cerrar notificaciones" onPress={() => setOpen(false)} tabIndex={-1} style={[{ position: 'absolute', width: 1, height: 1 }, soloWeb({ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', cursor: 'default' })]} /> : null}
+    <View ref={menu} style={{ width: 44, height: 44, zIndex: 40 }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={unread.length ? `Notificaciones: ${unread.length} sin leer` : 'Notificaciones'}
