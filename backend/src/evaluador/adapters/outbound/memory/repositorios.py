@@ -34,6 +34,9 @@ class UsuariosEnMemoria:
     def por_id(self, tenant_id: str, usuario_id: str) -> Usuario | None:
         return self._datos.get((tenant_id, usuario_id))
 
+    def of_tenant(self, tenant_id: str) -> list[Usuario]:
+        return [u for (t, _), u in self._datos.items() if t == tenant_id]
+
     def guardar(self, usuario: Usuario) -> None:
         existente = self.por_correo(usuario.correo)
         if existente is not None and existente.id != usuario.id:

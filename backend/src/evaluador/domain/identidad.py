@@ -27,6 +27,7 @@ class Permiso(StrEnum):
     ADJUDICAR_O_CERRAR = "adjudicar_o_cerrar"
     VER_AUDITORIA = "ver_auditoria"
     REGISTRAR_TASA = "registrar_tasa"
+    MANAGE_TEAM = "manage_team"
 
 
 # Matriz de la sección 4.1 del documento de arquitectura (mínimo privilegio).
@@ -47,7 +48,7 @@ PERMISOS_POR_ROL: dict[Rol, frozenset[Permiso]] = {
         {Permiso.VER_ESTADO, Permiso.VER_RESULTADOS, Permiso.ANOTAR_REVISION, Permiso.ADJUDICAR_O_CERRAR}
     ),
     Rol.AUDITOR: frozenset({Permiso.VER_ESTADO, Permiso.VER_RESULTADOS, Permiso.VER_AUDITORIA}),
-    # Runs a purchase from start to verification in small teams. Awarding stays with the approver.
+    # Runs a purchase from start to verification and manages the team. Awarding stays with the approver.
     Rol.COORDINADOR: frozenset(
         {
             Permiso.CREAR_PROYECTO,
@@ -57,6 +58,7 @@ PERMISOS_POR_ROL: dict[Rol, frozenset[Permiso]] = {
             Permiso.VER_RESULTADOS,
             Permiso.ANOTAR_REVISION,
             Permiso.REGISTRAR_TASA,
+            Permiso.MANAGE_TEAM,
         }
     ),
 }

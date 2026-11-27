@@ -53,6 +53,7 @@ from evaluador.application.use_cases.proyectos import (
 )
 from evaluador.application.use_cases.registration import SELF_SERVICE_PREFIX, RegisterAccount
 from evaluador.application.use_cases.review_proposals import ReviewProposals
+from evaluador.application.use_cases.team import Team
 from evaluador.application.use_cases.transcription import TranscribeImage
 from evaluador.composition.ai import lazy_services
 from evaluador.composition.assistant import (
@@ -93,6 +94,7 @@ class Contenedor:
     register_account: RegisterAccount
     evaluation_history: EvaluationHistory
     supplier_directory: GetSupplierDirectory
+    team: Team
     # Expuestos para scripts de semillas y pruebas
     tenants: TenantsEnMemoria
     usuarios: UsuariosEnMemoria
@@ -254,6 +256,7 @@ def construir_contenedor(
         ),
         evaluation_history=EvaluationHistory(proyectos, evaluations, gestion),
         supplier_directory=GetSupplierDirectory(proyectos, evaluations, datos["proveedores"]),
+        team=Team(users=usuarios, hasher=hasheador, ids=ids, audit=auditoria),
         tenants=tenants,
         usuarios=usuarios,
         hasheador=hasheador,
