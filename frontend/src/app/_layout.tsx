@@ -8,20 +8,25 @@ import {
 } from '@expo-google-fonts/urbanist';
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 
 import { SesionProvider, useSesion } from '@/core/sesion/SesionProvider';
 import { Fondo } from '@/design/efectos';
-import { Splash, SplashGate } from '@/design/Splash';
+import { SplashGate } from '@/design/Splash';
 import { isSplashDue } from '@/design/splashStore';
+import { ToastHost } from '@/design/ToastHost';
 
-function Raiz({ showSplash }: { showSplash: boolean }) {
+function Raiz({ onReady }: { onReady: () => void }) {
   const { listo } = useSesion();
+  useEffect(() => {
+    if (listo) onReady();
+  }, [listo, onReady]);
   return (
     <Fondo>
       <StatusBar style="dark" />
       <Slot />
-      {showSplash ? <SplashGate ready={listo} /> : null}
+      <ToastHost />
     </Fondo>
   );
 }
@@ -36,10 +41,18 @@ export default function LayoutRaiz() {
   });
   // Decided once per load, so signing in never brings the loading screen back.
   const [showSplash] = useState(isSplashDue);
-  if (!listas && !errorDeFuentes) return showSplash ? <Splash /> : null; // si fallan las fuentes se usa la del sistema en vez de dejar la pantalla en blanco
+  const [sessionReady, setSessionReady] = useState(false);
+  const onReady = useCallback(() => setSessionReady(true), []);
+  const fontsReady = listas || Boolean(errorDeFuentes); // if fonts fail, the system font is used
   return (
-    <SesionProvider>
-      <Raiz showSplash={showSplash} />
-    </SesionProvider>
+    <View style={{ flex: 1 }}>
+      {fontsReady ? (
+        <SesionProvider>
+          <Raiz onReady={onReady} />
+        </SesionProvider>
+      ) : null}
+      {/* A sibling that is mounted from the start: it never restarts its animation while things load. */}
+      {showSplash ? <SplashGate ready={fontsReady && sessionReady} /> : null}
+    </View>
   );
 }
