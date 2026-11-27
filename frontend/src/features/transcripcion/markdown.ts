@@ -20,7 +20,8 @@ function celdas(linea: string): string[] {
   return interior.split('|').map((c) => c.trim().split(BARRA_ESCAPADA).join('|'));
 }
 
-/** Una fila con menos celdas que la cabecera se completa; con más, se recorta: la tabla siempre queda rectangular. */
+/** Rellena con vacíos hasta `ancho`: la tabla siempre queda rectangular y nunca se descarta una celda (en un
+ * presupuesto, perder el total por un «|» suelto en una descripción es peor que mostrar una columna sobrante). */
 const ajustar = (fila: string[], ancho: number) => Array.from({ length: ancho }, (_, i) => fila[i] ?? '');
 
 export function bloquesDeMarkdown(markdown: string): Bloque[] {
@@ -46,15 +47,16 @@ export function bloquesDeMarkdown(markdown: string): Bloque[] {
     }
     if (esFila(linea) && i + 1 < lineas.length && SEPARADOR.test(lineas[i + 1])) {
       cerrarParrafo();
-      const cabecera = celdas(linea);
-      const filas: string[][] = [];
+      const cabeceraCruda = celdas(linea);
+      const crudas: string[][] = [];
       i += 2;
       while (i < lineas.length && esFila(lineas[i])) {
-        filas.push(ajustar(celdas(lineas[i]), cabecera.length));
+        crudas.push(celdas(lineas[i]));
         i++;
       }
       i--; // el `for` vuelve a sumar uno
-      bloques.push({ tipo: 'tabla', cabecera, filas });
+      const ancho = Math.max(cabeceraCruda.length, ...crudas.map((f) => f.length));
+      bloques.push({ tipo: 'tabla', cabecera: ajustar(cabeceraCruda, ancho), filas: crudas.map((f) => ajustar(f, ancho)) });
       continue;
     }
     parrafo.push(linea.trimEnd());
@@ -63,14 +65,36 @@ export function bloquesDeMarkdown(markdown: string): Bloque[] {
   return bloques;
 }
 
-const escaparRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const PARTE_DE_CIFRA = /[\d.,?]/;
 
-/** Parte `texto` en segmentos y marca los que coinciden literalmente con alguno de los `inciertos`. */
+/** Parte `texto` en segmentos y marca los que coinciden literalmente con alguno de los `inciertos`. Un incierto que
+ * empieza o termina en carácter de cifra solo cuenta como valor completo: el «3» incierto no marca el de «1.325,00». */
 export function partirPorInciertos(texto: string, inciertos: string[]): Segmento[] {
   if (!texto) return [];
   const validos = [...new Set(inciertos.filter(Boolean))].sort((a, b) => b.length - a.length);
   if (validos.length === 0) return [{ texto, incierto: false }];
-  const conjunto = new Set(validos);
-  const partes = texto.split(new RegExp(`(${validos.map(escaparRegex).join('|')})`));
-  return partes.filter(Boolean).map((t) => ({ texto: t, incierto: conjunto.has(t) }));
+  const coincide = (v: string, pos: number) => {
+    if (!texto.startsWith(v, pos)) return false;
+    const antes = texto[pos - 1];
+    const despues = texto[pos + v.length];
+    if (PARTE_DE_CIFRA.test(v[0]) && antes !== undefined && PARTE_DE_CIFRA.test(antes)) return false;
+    if (PARTE_DE_CIFRA.test(v[v.length - 1]) && despues !== undefined && PARTE_DE_CIFRA.test(despues)) return false;
+    return true;
+  };
+  const segmentos: Segmento[] = [];
+  let normal = '';
+  for (let i = 0; i < texto.length; ) {
+    const v = validos.find((x) => coincide(x, i));
+    if (v) {
+      if (normal) segmentos.push({ texto: normal, incierto: false });
+      normal = '';
+      segmentos.push({ texto: v, incierto: true });
+      i += v.length;
+    } else {
+      normal += texto[i];
+      i++;
+    }
+  }
+  if (normal) segmentos.push({ texto: normal, incierto: false });
+  return segmentos;
 }

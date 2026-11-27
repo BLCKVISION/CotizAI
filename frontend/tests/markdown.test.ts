@@ -30,11 +30,14 @@ describe('bloquesDeMarkdown', () => {
     ]);
   });
 
-  it('una fila con menos celdas se completa y con más se recorta a la cabecera', () => {
+  it('una fila con menos celdas se completa y con más ensancha la tabla: no se pierde ningún dato', () => {
     const md = '| A | B |\n|---|---|\n| 1 |\n| 1 | 2 | 3 |';
     const tabla = bloquesDeMarkdown(md)[0];
     assert.equal(tabla.tipo, 'tabla');
-    if (tabla.tipo === 'tabla') assert.deepEqual(tabla.filas, [['1', ''], ['1', '2']]);
+    if (tabla.tipo === 'tabla') {
+      assert.deepEqual(tabla.cabecera, ['A', 'B', '']);
+      assert.deepEqual(tabla.filas, [['1', '', ''], ['1', '2', '3']]);
+    }
   });
 
   it('una barra escapada dentro de una celda no parte la celda', () => {
@@ -88,6 +91,20 @@ describe('partirPorInciertos', () => {
 
   it('un incierto vacío se ignora y un incierto ausente del texto no cambia nada', () => {
     assert.deepEqual(partirPorInciertos('Total 100', ['', '999']), [{ texto: 'Total 100', incierto: false }]);
+  });
+
+  it('una cifra corta solo se resalta como valor completo, no dentro de otra cifra', () => {
+    assert.deepEqual(partirPorInciertos('Total 1.325,00 y 3', ['3']), [
+      { texto: 'Total 1.325,00 y ', incierto: false },
+      { texto: '3', incierto: true },
+    ]);
+  });
+
+  it('un incierto que no termina en dígito se resalta aunque lo siga un número', () => {
+    assert.deepEqual(partirPorInciertos('(1.0?)5', ['(1.0?)']), [
+      { texto: '(1.0?)', incierto: true },
+      { texto: '5', incierto: false },
+    ]);
   });
 
   it('texto vacío no produce segmentos', () => {
