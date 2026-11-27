@@ -51,6 +51,7 @@ services:
       EVALUADOR_IA_API_KEY: ${EVALUADOR_IA_API_KEY:-}
       EVALUADOR_MARKET_SEARCH_ENABLED: ${EVALUADOR_MARKET_SEARCH_ENABLED:-false}
       EVALUADOR_EMBEDDINGS_CACHE: /modelos
+      HF_HOME: /modelos/huggingface  # la descarga del modelo escribe aquí; el resto del contenedor es de solo lectura
     extra_hosts: ["host.docker.internal:host-gateway"]
     read_only: true
     tmpfs: [/tmp]
