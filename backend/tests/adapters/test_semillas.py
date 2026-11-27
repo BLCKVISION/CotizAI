@@ -6,7 +6,7 @@ from evaluador.composition.contenedor import construir_contenedor
 
 
 def _cliente(**cfg):
-    config = Configuracion(nivel_de_log="CRITICAL", **cfg)
+    config = Configuracion(_env_file=None, nivel_de_log="CRITICAL", **cfg)  # never read the developer's .env
     return TestClient(crear_aplicacion(config, construir_contenedor()))
 
 
@@ -15,6 +15,14 @@ def test_cuenta_demo_extra_inicia_sesion_solo_con_correo_y_clave():
     r = c.post("/api/v1/sesiones", json={"correo": "DEMO@demo.local", "contrasena": "Clave-Demo-1!"})
     assert r.status_code == 201 and r.json()["usuario"]["rol"] == "cargador"
     assert c.post("/api/v1/sesiones", json={"correo": "demo@demo.local", "contrasena": "otra"}).status_code == 401
+
+
+def test_demo_account_can_be_the_coordinator():
+    c = _cliente(
+        usuario_demo_correo="demo@demo.local", usuario_demo_clave="Clave-Demo-1!", usuario_demo_rol="coordinador"
+    )
+    r = c.post("/api/v1/sesiones", json={"correo": "demo@demo.local", "contrasena": "Clave-Demo-1!"})
+    assert r.json()["usuario"]["rol"] == "coordinador"
 
 
 def test_en_produccion_no_se_siembra_sin_permiso_explicito():
