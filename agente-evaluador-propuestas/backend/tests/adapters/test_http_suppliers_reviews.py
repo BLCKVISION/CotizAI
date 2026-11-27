@@ -50,8 +50,7 @@ class Audit:
 def wired(container):
     sup, rev, audit, lookup = InMemorySuppliers(), InMemoryReviews(), Audit(), Lookup()
     base = {f.name: getattr(container, f.name) for f in fields(container)}
-    ns = SimpleNamespace(
-        **base,
+    own = dict(  # el contenedor real ya trae estos casos de uso: el test sustituye los suyos, sobre sus propios repositorios
         add_review=AddReview(rev, lookup, container.ids, SimpleNamespace(now=lambda: datetime.now(UTC)), audit),
         list_reviews=ListReviews(rev, lookup),
         list_suppliers=ListSuppliers(sup),
@@ -59,6 +58,7 @@ def wired(container):
         check_supplier_history=CheckSupplierHistory(sup, lookup),
         register_outcomes=RegisterSupplierOutcomes(sup, container.ids, SimpleNamespace(now=lambda: datetime.now(UTC))),
     )
+    ns = SimpleNamespace(**{**base, **own})
     return ns, audit
 
 

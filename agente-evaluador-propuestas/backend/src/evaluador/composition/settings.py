@@ -42,6 +42,11 @@ class Settings(BaseSettings):
         SecretStr("postgresql://evaluador:evaluador@localhost:5432/evaluador"),
         validation_alias=_env("BASE_DE_DATOS_URL"),
     )
+    # `memory`: todo en memoria (demo y pruebas, se pierde al reiniciar). `sql`: base de datos + migraciones.
+    persistence: str = Field("memory", validation_alias=_env("PERSISTENCIA"))
+    # Clave AES-256 en base64 del almacén de documentos; sin ella los archivos van a memoria.
+    store_key: SecretStr | None = Field(None, validation_alias=_env("CLAVE_ALMACEN"))
+    documents_dir: str = Field("./data/documents", validation_alias=_env("DIRECTORIO_DOCUMENTOS"))
 
     # --- Modo lote (CLI) ---
     batch_parallel: int = Field(4, validation_alias=_env("LOTE_PARALELO"))  # archivos a la vez; el tiempo desempata

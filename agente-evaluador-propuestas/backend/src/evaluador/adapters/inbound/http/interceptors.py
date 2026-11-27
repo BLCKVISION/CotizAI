@@ -53,7 +53,7 @@ class TraceabilityInterceptor:
         trust_proxy: bool,
         max_bytes: int,
         production: bool = False,
-        large_body_paths: tuple[str, ...] = (),
+        large_body_paths: tuple[re.Pattern[str], ...] = (),
     ) -> None:
         self.app = app
         self._production = production
@@ -95,7 +95,7 @@ class TraceabilityInterceptor:
             await send(message)
 
         declared = hdr.get("content-length", "")
-        large = scope["path"] in self._large_body_paths
+        large = any(p.match(scope["path"]) for p in self._large_body_paths)
         too_large = not large and declared.isdigit() and int(declared) > self._max_bytes
         try:
             if too_large:

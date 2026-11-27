@@ -40,7 +40,8 @@ def make_client(container, answer):
     sources = Sources(alfa.id)
     model = FakeModel({ChatAnswer: answer})
     ask = AskEvaluationChat(sources, sources, model, FakeEmbedder(), NullAudit())
-    wired = SimpleNamespace(**{f.name: getattr(container, f.name) for f in dataclasses.fields(container)}, ask_chat=ask)
+    base = {f.name: getattr(container, f.name) for f in dataclasses.fields(container)}
+    wired = SimpleNamespace(**{**base, "ask_chat": ask})  # el contenedor real ya trae uno: el test pone el suyo
     app = create_app(Settings(log_level="CRITICAL"), wired)
     app.include_router(chat.router, prefix="/api/v1")
     return TestClient(app), model
