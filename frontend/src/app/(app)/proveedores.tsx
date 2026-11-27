@@ -82,7 +82,7 @@ export default function Proveedores() {
             {visibles.map((p, i) => (
               <View key={p.id} style={{ width: `${100 / columns}%`, padding: 12 }}>
                 <Entrada indice={Math.min(i, 8)}>
-                  <ProviderCard provider={p} onPress={() => setSelected(p)} />
+                  <ProviderCard index={Math.min(i, 8)} provider={p} onPress={() => setSelected(p)} />
                 </Entrada>
               </View>
             ))}

@@ -1,6 +1,7 @@
 /** Project shown as a folder: papers peek from behind a tabbed front; on hover/focus it turns sky-aqua. */
-import { Platform, Pressable, View, type ViewStyle } from 'react-native';
+import { Animated, Platform, Pressable, View, type ViewStyle } from 'react-native';
 
+import { Sheen, useAttention, wiggle } from '@/design/Attention';
 import { Texto } from '@/design/componentes';
 import { soloWeb } from '@/design/efectos';
 import { useTema } from '@/design/tema';
@@ -15,7 +16,7 @@ const TAB_SHAPE =
   'polygon(0px 16px, 1% 9px, 3% 3px, 7% 0px, 40% 0px, 44% 2px, 47% 7px, 52% 20px, 55% 25px, 59% 27px, 93% 27px, 97% 29px, 99% 34px, 100% 42px, 100% 100%, 0px 100%)';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
-type Props = { title: string; count: string; footer: string; preview: string; onPress: () => void; compact?: boolean; roomy?: boolean };
+type Props = { title: string; count: string; footer: string; preview: string; onPress: () => void; compact?: boolean; roomy?: boolean; index?: number };
 
 /** Vertical measures for the regular folder and the small one used inside dashboard cards (it fills its cell). */
 const SIZES = {
@@ -25,8 +26,9 @@ const SIZES = {
 
 const motion = (properties: string) => ({ transitionProperty: properties, transitionDuration: '420ms', transitionTimingFunction: easing });
 
-export function FolderCard({ title, count, footer, preview, onPress, compact = false, roomy = false }: Props) {
+export function FolderCard({ title, count, footer, preview, onPress, compact = false, roomy = false, index = 0 }: Props) {
   const t = useTema();
+  const pulse = useAttention(index);
   const m = compact ? SIZES.compact : SIZES.regular;
   const dense = compact && !roomy; // one title line and the state beside the count
   return (
@@ -58,7 +60,8 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
         const active = Boolean(hovered || focused);
         return (
           <>
-            {/* Papers */}
+            {/* Papers peek out and rock while the periodic light passes. */}
+            <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, wiggle(pulse)]}>
             <View style={{ position: 'absolute', top: m.paperTop, left: m.side + 12, right: m.side + 12, height: 110, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.55)', ...soloWeb({ ...motion('transform'), transform: active ? 'translateY(-12px) rotate(-4deg)' : 'rotate(0deg)' }) }} />
             <View style={{ position: 'absolute', top: m.paperTop + 6, left: m.side - 2, right: m.side - 2, height: 120, borderRadius: 14, backgroundColor: active ? '#FFFFFF' : 'rgba(255,255,255,0.85)', paddingHorizontal: espacio.md, paddingTop: 10, ...soloWeb({ ...motion('transform'), transform: active ? 'translateY(-10px) rotate(2deg)' : 'rotate(0deg)' }) }}>
               <View style={{ opacity: active ? 1 : 0, ...soloWeb(motion('opacity')) }}>
@@ -67,6 +70,7 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
                 </Texto>
               </View>
             </View>
+            </Animated.View>
             {/* Folder front. The shadow lives on the wrapper so it follows the clipped tab outline. */}
             <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, ...soloWeb({ filter: 'drop-shadow(0 -3px 9px rgba(15,23,42,0.10))' }) }}>
             <View
@@ -104,6 +108,7 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
               )}
             </View>
             </View>
+            <Sheen pulse={pulse} />
           </>
         );
       }}

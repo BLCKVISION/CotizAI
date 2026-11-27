@@ -99,9 +99,10 @@ export function ProjectsCard({ projects, counts, canCreate, onCreate, onNavigate
         ) : (
           <>
             <View style={{ flex: 1, minHeight: 118, flexDirection: 'row', gap: 10 }}>
-              {latest.map((p) => (
+              {latest.map((p, i) => (
                 <View key={p.id} style={{ flex: 1, minWidth: 0 }}>
                   <FolderCard
+                    index={i}
                     compact
                     roomy
                     title={p.nombre}

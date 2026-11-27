@@ -1,6 +1,7 @@
 /** A supplier shown as a company card: icon and name at rest; on hover or focus it turns sky-aqua and shows contact data. */
-import { Pressable, View } from 'react-native';
+import { Animated, Pressable, View } from 'react-native';
 
+import { Sheen, useAttention, wiggle } from '@/design/Attention';
 import { Icono, Texto } from '@/design/componentes';
 import { soloWeb } from '@/design/efectos';
 import { useTema } from '@/design/tema';
@@ -13,8 +14,9 @@ const motion = (properties: string) => ({ transitionProperty: properties, transi
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
-export function ProviderCard({ provider, onPress }: { provider: Proveedor; onPress: () => void }) {
+export function ProviderCard({ provider, onPress, index = 0 }: { provider: Proveedor; onPress: () => void; index?: number }) {
   const t = useTema();
+  const pulse = useAttention(index);
   return (
     <Pressable
       accessibilityRole="button"
@@ -44,9 +46,11 @@ export function ProviderCard({ provider, onPress }: { provider: Proveedor; onPre
         const active = Boolean(hovered || focused);
         return (
           <>
-            <View style={{ width: 56, height: 56, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? '#FFFFFF' : t.accent, ...soloWeb({ ...motion('transform, background-color'), transform: active ? 'scale(1.1) rotate(-6deg)' : 'scale(1) rotate(0deg)' }) }}>
-              <Icono nombre="briefcase" tamano="lg" color={t.onAccent} />
-            </View>
+            <Animated.View style={[{ alignSelf: 'flex-start' }, wiggle(pulse)]}>
+              <View style={{ width: 56, height: 56, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? '#FFFFFF' : t.accent, ...soloWeb({ ...motion('transform, background-color'), transform: active ? 'scale(1.1) rotate(-6deg)' : 'scale(1) rotate(0deg)' }) }}>
+                <Icono nombre="briefcase" tamano="lg" color={t.onAccent} />
+              </View>
+            </Animated.View>
             {/* Contact data slides in on hover; touch users open the card to read it. */}
             <View style={soloWeb({ ...motion('opacity, transform'), opacity: active ? 1 : 0, transform: active ? 'translateY(0px)' : 'translateY(8px)' })}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -64,6 +68,7 @@ export function ProviderCard({ provider, onPress }: { provider: Proveedor; onPre
                 {provider.rif} · {provider.ubicacion}
               </Texto>
             </View>
+            <Sheen pulse={pulse} />
           </>
         );
       }}

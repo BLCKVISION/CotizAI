@@ -149,6 +149,7 @@ export default function Projects() {
               <View key={p.id} style={{ width: `${100 / columns}%`, padding: 12 }}>
                 <Entrada indice={Math.min(i, 8)}>
                   <FolderCard
+                    index={Math.min(i, 8)}
                     title={p.nombre}
                     count={`${n} ${n === 1 ? 'propuesta' : 'propuestas'}`}
                     footer={`${infoEstado(p.estado).etiqueta} · ${formatoFecha(p.creado)}`}
