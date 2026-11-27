@@ -4,33 +4,20 @@ import { usePathname } from 'expo-router';
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 
+import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError } from '@/core/useDatos';
 import { Boton, BotonIcono, CampoDeTexto, Icono, Texto } from '@/design/componentes';
 import { soloWeb, vidrio } from '@/design/efectos';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import { askProjectApi } from '@/features/evaluations/api';
-import { listarProyectosApi } from '@/features/proyectos/api';
+import { askPortfolioApi, askProjectApi } from '@/features/evaluations/api';
 
 type Message = { id: number; from: 'coti' | 'user'; text: string; sources?: string[] };
 
 const GREETING =
   '¡Hola! Soy Coti, tu asistente de CotizAI. Te ayudo a analizar las cotizaciones de tus proyectos: costos, descartes y ranking. ¿Qué necesitas saber?';
 const SUGGESTIONS = ['¿Cuál es la mejor cotización?', '¿Qué cotizaciones se descartaron y por qué?', '¿Cuál tiene el menor costo total?'];
-const NO_PROJECT_HINT = 'Ábrelo y pregúntame por sus cotizaciones: costos, descartes o ranking.';
-const GREETING_ONLY = /^(hola|buenas|buenos días|buenas tardes|buenas noches|hey|hi|qué tal|saludos)[\s!.¡?]*$/i;
-const MAX_LISTED = 10;
-
-/** Outside a project there is no evaluation to ask about, so Coti answers from the project list instead of repeating one canned line. */
-const outsideProjectReply = async (text: string, projects: () => Promise<{ nombre: string }[]>): Promise<string> => {
-  const list = await projects();
-  const greeting = GREETING_ONLY.test(text) ? '¡Hola! ¿En qué te ayudo? ' : '';
-  if (list.length === 0) return `${greeting}Aún no tienes proyectos. Crea uno, sube sus cotizaciones y evalúalo; luego podré analizarlo contigo.`;
-  const names = list.slice(0, MAX_LISTED).map((p) => `• ${p.nombre}`).join('\n');
-  const more = list.length > MAX_LISTED ? `\n…y ${list.length - MAX_LISTED} más.` : '';
-  return `${greeting}Tienes ${list.length} ${list.length === 1 ? 'proyecto' : 'proyectos'}:\n${names}${more}\n\nPara analizar las cotizaciones de uno, ${NO_PROJECT_HINT.charAt(0).toLowerCase()}${NO_PROJECT_HINT.slice(1)}`;
-};
 
 /** `/proyectos/<id>` → the id; the list and the "new" screen have no project to ask about. */
 const projectIdFrom = (path: string): string | null => {
@@ -103,12 +90,16 @@ export function CotiChat() {
     push({ from: 'user', text });
     setThinking(true);
     try {
-      if (!projectId) {
-        push({ from: 'coti', text: await outsideProjectReply(text, () => conSesion(listarProyectosApi)) });
-        return;
+      const askAll = async () => push({ from: 'coti', text: (await conSesion(askPortfolioApi(text))).answer });
+      if (!projectId) return await askAll();
+      try {
+        const reply = await conSesion(askProjectApi(projectId, text));
+        push({ from: 'coti', text: reply.answer, sources: reply.citations.map((c) => `[${c.number}] ${c.filename}`) });
+      } catch (e) {
+        // A project without results yet (404), or a role that only sees status (403): answer from the project records.
+        if (!(e instanceof ErrorApi) || (e.estado !== 404 && e.estado !== 403)) throw e;
+        await askAll();
       }
-      const reply = await conSesion(askProjectApi(projectId, text));
-      push({ from: 'coti', text: reply.answer, sources: reply.citations.map((c) => `[${c.number}] ${c.filename}`) });
     } catch (e) {
       push({ from: 'coti', text: `Uy, no pude responder ahora. ${mensajeDeError(e)}` });
     } finally {

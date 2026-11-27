@@ -108,3 +108,12 @@ export type ReviewDecision = { proposal_id: string; approved: boolean; comment: 
 export const getReviewsApi = (projectId: string) => (token: string) => peticion<ReviewDecision[]>(`/proyectos/${projectId}/reviews`, { token });
 export const sendReviewApi = (projectId: string, proposalId: string, approved: boolean, comment: string) => (token: string) =>
   peticion<ReviewDecision>(`/proyectos/${projectId}/reviews`, { metodo: 'POST', cuerpo: { proposal_id: proposalId, approved, comment }, token });
+
+/** Coti outside a project: questions about every project of the organisation. */
+export const askPortfolioApi = (question: string) => (token: string) =>
+  peticion<{ answer: string }>('/portfolio/questions', {
+    metodo: 'POST',
+    cuerpo: { question },
+    token,
+    timeoutMs: QUESTION_TIMEOUT_MS,
+  });

@@ -14,6 +14,7 @@ from evaluador.adapters.inbound.http.routers import (
     exchange_rates,
     gestion,
     history,
+    portfolio,
     proyectos,
     sesiones,
     transcriptions,
@@ -57,6 +58,7 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
 
     api = APIRouter(prefix="/api/v1")
     api.include_router(sesiones.router)
+    api.include_router(portfolio.router)
     api.include_router(proyectos.router)
     api.include_router(gestion.router)
     api.include_router(history.router)

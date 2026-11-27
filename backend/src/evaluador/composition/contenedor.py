@@ -30,6 +30,7 @@ from evaluador.adapters.outbound.security.tokens import IdsUuid, JwtTokens, Relo
 from evaluador.application.ports.agente import ModeloConVision
 from evaluador.application.ports.assistant import MarketPriceLookup
 from evaluador.application.ports.exchange_rates import ExchangeRateSource
+from evaluador.application.use_cases.ask_portfolio import AskPortfolio
 from evaluador.application.use_cases.assistant.chat import AskAssistant, AssistantServices
 from evaluador.application.use_cases.assistant.tools import AssistantTools
 from evaluador.application.use_cases.autenticacion import AutenticarToken, CerrarSesion, IniciarSesion
@@ -81,6 +82,7 @@ class Contenedor:
     get_project_evaluation: GetProjectEvaluation
     review_proposals: ReviewProposals
     ask_project: AskProject
+    ask_portfolio: AskPortfolio
     resolve_rates: ResolveRates
     register_manual_rate: RegisterManualRate
     transcribe_image: TranscribeImage
@@ -229,6 +231,13 @@ def construir_contenedor(
         ),
         get_project_evaluation=get_evaluation,
         review_proposals=review_proposals,
+        ask_portfolio=AskPortfolio(
+            projects=ListarProyectos(proyectos),
+            management=gestion,
+            evaluations=get_evaluation,
+            services=ai_services,
+            audit=auditoria,
+        ),
         ask_project=AskProject(get_evaluation, ai_services, auditoria),
         resolve_rates=resolve_rates,
         register_manual_rate=RegisterManualRate(rates, reloj, auditoria),
