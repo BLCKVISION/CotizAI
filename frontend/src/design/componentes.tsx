@@ -285,7 +285,7 @@ export function Tarjeta({
     ...(e?.focused ? { borderColor: t.foco } : null),
     padding: espacio.lg,
     gap: espacio.sm,
-    ...(e?.hovered ? soloWeb({ transform: 'translateY(-2px)' }) : null), // hover: sube 2 px, como en Relay
+    ...(e?.hovered ? soloWeb({ transform: 'translateY(-2px)' }) : null), // hover: sube 2 px
     ...style,
   });
   if (!onPress) return <View style={base()}>{children}</View>;

@@ -1,4 +1,4 @@
-/** Tokens de escala (independientes del color). Los colores viven en tema.ts. Ver design-system/agente-evaluador/RELAY-LIGHT.md */
+/** Tokens de escala (independientes del color). Los colores viven en tema.ts. Ver design-system/agente-evaluador/LIGHT-THEME.md */
 export const espacio = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48, xxxl: 64 } as const; // ritmo de 4/8
 export const radio = { sm: 8, md: 12, nav: 15, lg: 18, xl: 24, panel: 28, pildora: 999 } as const;
 export const tamanoTactil = 48; // >= 44pt iOS / 48dp Android
@@ -10,14 +10,14 @@ export const margenFlotante = 14; // separación del sidebar y paneles flotantes
 /** Breakpoints: móvil < 640 ≤ tableta < 1024 ≤ escritorio */
 export const puntoDeQuiebre = { tableta: 640, escritorio: 1024 } as const;
 
-/** Movimiento (mismos valores que Relay: relayStaggerIn 500 ms, cubic-bezier(.16,1,.3,1)). */
+/** Movimiento (entrada escalonada: 500 ms, cubic-bezier(.16,1,.3,1)). */
 export const movimiento = {
   entrada: 500,
   escalon: 60,
   transicion: 250,
   contador: 900,
   distanciaEntrada: 18,
-  /** Curva «ease-out expo» de Relay. */
+  /** Curva «ease-out expo». */
   curva: [0.16, 1, 0.3, 1] as const,
 } as const;
 

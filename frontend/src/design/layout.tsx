@@ -25,7 +25,7 @@ export function Pagina({ children }: { children: ReactNode }) {
   );
 }
 
-/** Encabezado estilo Relay: migas «CotizAI / Sección», título display ligero y subtítulo suave. */
+/** Encabezado de página: migas «CotizAI / Sección», título display ligero y subtítulo suave. */
 export function EncabezadoDePagina({
   sobretitulo,
   titulo,

@@ -41,7 +41,7 @@ export function useReducirMovimiento(): boolean {
   return reducir;
 }
 
-/** Tarjeta de cristal blanco de Relay: blanco .90, blur 28, borde blanco, sombra suave larga + luz interior. */
+/** Tarjeta de cristal blanco: blanco .90, blur 28, borde blanco, sombra suave larga + luz interior. */
 export function vidrio(opciones: { opacidad?: number; blur?: number; radio: number; elevado?: boolean }): ViewStyle {
   const { opacidad = 0.9, blur = 28, radio, elevado = false } = opciones;
   return {
@@ -68,7 +68,7 @@ export function vidrio(opciones: { opacidad?: number; blur?: number; radio: numb
   };
 }
 
-/** Fondo de la aplicación: #EFF1F5 con los dos halos pastel de Relay (durazno arriba-dcha., menta abajo-izq.). */
+/** Fondo de la aplicación: #EFF1F5 con los dos halos pastel (durazno arriba-dcha., menta abajo-izq.). */
 /** CSS gradient for the accent panels (web); native falls back to the solid accent colour. */
 export function accentGradient(angle = 135): ViewStyle {
   const [a, b, c] = paletaClara.gradient;
@@ -93,7 +93,7 @@ export function Fondo({ children }: { children: ReactNode }) {
   );
 }
 
-/** Entrada «relayStaggerIn»: opacidad 0→1 y translateY(18)→0, con retardo por índice. */
+/** Entrada escalonada: opacidad 0→1 y translateY(18)→0, con retardo por índice. */
 export function Entrada({ indice = 0, children, estilo }: { indice?: number; children: ReactNode; estilo?: ViewStyle }) {
   const reducir = useReducirMovimiento();
   const [valor] = useState(() => new Animated.Value(0));
