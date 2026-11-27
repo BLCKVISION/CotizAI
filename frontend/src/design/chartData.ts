@@ -1,7 +1,7 @@
-import type { Dato } from '@/design/graficos';
-import { ESTADOS, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+import type { Dato } from './graficos';
+import { ESTADOS, ORDEN_DE_ESTADOS } from './projectStatus';
 
-import type { Estadisticas } from './api';
+import type { Estadisticas } from '../core/api/management';
 
 export const porEstado = (e: Estadisticas): Dato[] =>
   ORDEN_DE_ESTADOS.map((k) => ({ etiqueta: ESTADOS[k].etiqueta, valor: e.por_estado[k] }));

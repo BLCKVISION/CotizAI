@@ -1,6 +1,6 @@
-import { peticion, peticionBinaria } from '@/core/api/cliente';
+import { peticion, peticionBinaria } from './cliente';
 
-import type { SupplierDirectory } from './suppliers';
+import type { SupplierDirectory } from '../suppliers';
 
 export type EvaluationRun = {
   id: string;

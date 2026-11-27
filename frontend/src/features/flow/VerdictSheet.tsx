@@ -2,11 +2,11 @@
 import { View } from 'react-native';
 
 import { type NombreIcono, Texto, type Tono } from '@/design/componentes';
-import { useTema } from '@/design/tema';
+import { swatch, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import type { ProposalEvaluationItem, ReviewDecision } from '@/features/evaluations/api';
-import { type Bloque, bloquesDeMarkdown } from '@/features/transcripcion/markdown';
-import { BloqueVista } from '@/features/transcripcion/Vista';
+import type { ProposalEvaluationItem, ReviewDecision } from '@/core/api/evaluations';
+import { type Bloque, bloquesDeMarkdown } from '@/core/markdown';
+import { BloqueVista } from '@/design/MarkdownView';
 
 import { evaluationMarkdown } from './evaluationMarkdown';
 
@@ -52,7 +52,7 @@ function Block({ block, first }: { block: Bloque; first: boolean }) {
 export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem; decision: ReviewDecision | undefined }) {
   const blocks = bloquesDeMarkdown(evaluationMarkdown(item, decision));
   return (
-    <View style={{ gap: espacio.md, padding: espacio.xl, borderRadius: radio.xl, backgroundColor: '#FFFFFF', minWidth: 0 }}>
+    <View style={{ gap: espacio.md, padding: espacio.xl, borderRadius: radio.xl, backgroundColor: swatch.white, minWidth: 0 }}>
       {/* The first block is the title and the second is the lead paragraph under it. */}
       {blocks.map((block, i) => (
         <Block key={i} block={block} first={i <= 1} />

@@ -8,6 +8,7 @@ import { Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb } from '@/design/efectos';
 import { espacio, radio } from '@/design/tokens';
+import { tint } from '@/design/tema';
 
 import { type AuthMode, authColor } from './authParts';
 import { ForgotPasswordForm } from './ForgotPasswordForm';
@@ -23,7 +24,7 @@ function HeroSide() {
     <View style={{ flex: 1.08, borderRadius: radio.panel, overflow: 'hidden', justifyContent: 'flex-end', padding: espacio.lg }}>
       <Image source={HERO} resizeMode="cover" accessibilityIgnoresInvertColors style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
       <Entrada indice={3}>
-        <View style={{ alignSelf: 'flex-start', maxWidth: 460, padding: espacio.lg, borderRadius: radio.xl, borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)', backgroundColor: 'rgba(255,255,255,0.76)', ...soloWeb({ backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)' }) }}>
+        <View style={{ alignSelf: 'flex-start', maxWidth: 460, padding: espacio.lg, borderRadius: radio.xl, borderWidth: 1, borderColor: tint.white(0.8), backgroundColor: tint.white(0.76), ...soloWeb({ backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)' }) }}>
           <Texto variante="subtitulo" accessibilityRole="header" color={authColor.text} style={{ fontFamily: 'Urbanist_600SemiBold', fontSize: 22, lineHeight: 28 }}>
             La IA analiza e interpreta. La decisión final es humana.
           </Texto>

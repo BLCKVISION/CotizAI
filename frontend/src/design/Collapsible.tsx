@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { Icono, Texto } from './componentes';
 import { Entrada, soloWeb, vidrio } from './efectos';
-import { useTema } from './tema';
+import { tint, useTema } from './tema';
 import { espacio, radio } from './tokens';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
@@ -30,7 +30,7 @@ export function CollapsibleCard({ title, detail, defaultOpen = false, children }
           borderRadius: radio.xl,
           borderWidth: 2,
           borderColor: e.focused ? t.foco : 'transparent',
-          backgroundColor: e.hovered ? 'rgba(255,255,255,0.7)' : 'transparent',
+          backgroundColor: e.hovered ? tint.white(0.7) : 'transparent',
         })}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -43,7 +43,7 @@ export function CollapsibleCard({ title, detail, defaultOpen = false, children }
             </Texto>
           ) : null}
         </View>
-        <View style={{ width: 36, height: 36, borderRadius: radio.pildora, backgroundColor: 'rgba(15,23,42,0.05)', alignItems: 'center', justifyContent: 'center', ...soloWeb({ transitionProperty: 'transform', transitionDuration: '300ms', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }) }}>
+        <View style={{ width: 36, height: 36, borderRadius: radio.pildora, backgroundColor: tint.navy(0.05), alignItems: 'center', justifyContent: 'center', ...soloWeb({ transitionProperty: 'transform', transitionDuration: '300ms', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }) }}>
           <Icono nombre="chevron-down" tamano="sm" />
         </View>
       </Pressable>

@@ -8,9 +8,9 @@ import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { BotonIcono, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
-import { formatoFechaHora } from '@/features/proyectos/estados';
+import { formatoFechaHora } from '@/design/projectStatus';
 
-import { type EvaluationRun, evaluationRunsApi, runReportApi } from './api';
+import { type EvaluationRun, evaluationRunsApi, runReportApi } from '../../core/api/history';
 
 const summary = (run: EvaluationRun) =>
   `${run.evaluated_by} · ${run.valid} de ${run.proposals} válidas · ${run.recommended ? `recomendada: ${run.recommended}` : 'sin recomendación'}`;

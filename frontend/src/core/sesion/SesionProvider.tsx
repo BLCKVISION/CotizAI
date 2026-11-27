@@ -1,7 +1,8 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { ErrorApi } from '@/core/api/cliente';
-import { cerrarSesionApi, iniciarSesionApi, type Usuario, usuarioActualApi } from '@/features/auth/api';
+import { clearChats } from '@/core/chatStorage';
+import { cerrarSesionApi, iniciarSesionApi, type Usuario, usuarioActualApi } from '@/core/api/auth';
 
 import { almacenDeToken } from './almacen';
 
@@ -30,6 +31,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
         // Solo un 401/403 invalida el token; un fallo de red o un 5xx conserva la sesión (sin datos de usuario).
         if (e instanceof ErrorApi && (e.estado === 401 || e.estado === 403)) {
           await almacenDeToken.borrar();
+          clearChats();
           aplicar({ listo: true, token: null, usuario: null });
         } else {
           aplicar({ listo: true, token, usuario: null });
@@ -47,6 +49,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const cerrarSesion = useCallback(async () => {
     const token = estado.token;
     setEstado({ listo: true, token: null, usuario: null });
+    clearChats();
     await almacenDeToken.borrar();
     if (token) await cerrarSesionApi(token).catch(() => undefined); // best effort: el token ya no se usa
   }, [estado.token]);
@@ -59,6 +62,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         if (e instanceof ErrorApi && e.estado === 401) {
           await almacenDeToken.borrar();
+          clearChats();
           setEstado({ listo: true, token: null, usuario: null });
         }
         throw e;

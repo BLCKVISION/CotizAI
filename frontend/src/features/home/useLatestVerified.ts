@@ -1,8 +1,8 @@
 /** Latest verified proposals across projects. Only committee roles may read results; others get nothing. */
 import { useDatos } from '@/core/useDatos';
 import { ErrorApi } from '@/core/api/cliente';
-import { getEvaluationApi } from '@/features/evaluations/api';
-import { listarProyectosApi } from '@/features/proyectos/api';
+import { getEvaluationApi } from '@/core/api/evaluations';
+import { listarProyectosApi } from '@/core/api/projects';
 
 import { latestVerified, type VerifiedProposal } from './verified';
 

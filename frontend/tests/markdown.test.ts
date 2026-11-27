@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { bloquesDeMarkdown, partirPorInciertos } from '../src/features/transcripcion/markdown';
+import { bloquesDeMarkdown, partirPorInciertos } from '../src/core/markdown';
 
 describe('bloquesDeMarkdown', () => {
   it('entrada vacía no produce bloques', () => {

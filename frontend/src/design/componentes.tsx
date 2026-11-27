@@ -19,7 +19,7 @@ import { FieldHint, useHover } from './FieldHint';
 import { hasSvgIcon } from './icons/paths';
 import { SvgIcon } from './icons/SvgIcon';
 import { RollingLabel } from './RollingLabel';
-import { useTema } from './tema';
+import { swatch, tint, useTema } from './tema';
 import { espacio, icono as tamanoIcono, radio, tamanoTactil, texto } from './tokens';
 
 type EstadoPressable = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
@@ -110,7 +110,7 @@ export function Boton({
         justifyContent: 'center',
         alignSelf: anchoCompleto ? 'stretch' : 'flex-start',
         borderWidth: 2, // constante: el foco cambia solo el color y no desplaza el layout
-        borderColor: e.focused ? t.foco : variante === 'secundario' ? 'rgba(15,23,42,0.14)' : 'transparent',
+        borderColor: e.focused ? t.foco : variante === 'secundario' ? tint.navy(0.14) : 'transparent',
         backgroundColor:
           variante === 'primario'
             ? e.pressed
@@ -118,10 +118,10 @@ export function Boton({
               : t.accent
             : variante === 'secundario'
               ? e.pressed || e.hovered
-                ? '#FFFFFF'
-                : 'rgba(255,255,255,0.75)'
+                ? swatch.white
+                : tint.white(0.75)
               : e.pressed || e.hovered
-                ? 'rgba(15,23,42,0.05)'
+                ? tint.navy(0.05)
                 : 'transparent',
         opacity: inactivo ? 0.55 : 1,
         ...(variante === 'primario' && !inactivo
@@ -197,7 +197,7 @@ export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, m
           alignItems: multiline ? 'flex-start' : 'center',
           minHeight: tamanoTactil,
           borderRadius: radio.nav,
-          backgroundColor: 'rgba(255,255,255,0.92)',
+          backgroundColor: tint.white(0.92),
           borderWidth: 2,
           borderColor: colorBorde,
           paddingLeft: espacio.md,
@@ -342,8 +342,8 @@ export function Chip({ etiqueta, seleccionado, onPress }: { etiqueta: string; se
         paddingHorizontal: espacio.md,
         borderRadius: radio.pildora,
         borderWidth: 2,
-        borderColor: e.focused ? t.foco : seleccionado ? t.primario : 'rgba(15,23,42,0.10)',
-        backgroundColor: seleccionado ? t.primario : e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
+        borderColor: e.focused ? t.foco : seleccionado ? t.primario : tint.navy(0.1),
+        backgroundColor: seleccionado ? t.primario : e.hovered ? swatch.white : tint.white(0.7),
         ...soloWeb({ transitionProperty: 'background-color, border-color', transitionDuration: '200ms' }),
       })}
     >
@@ -375,8 +375,8 @@ export function EstadoVacio({
         borderRadius: radio.panel,
         borderWidth: 2,
         borderStyle: 'dashed',
-        borderColor: 'rgba(15,23,42,0.14)',
-        backgroundColor: 'rgba(255,255,255,0.6)',
+        borderColor: tint.navy(0.14),
+        backgroundColor: tint.white(0.6),
       }}
     >
       <View
@@ -422,12 +422,12 @@ export function Avatar({ texto: valor }: { texto: string }) {
         width: 40,
         height: 40,
         borderRadius: radio.pildora,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: swatch.white,
         borderWidth: 1,
-        borderColor: 'rgba(15,23,42,0.08)',
+        borderColor: tint.navy(0.08),
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
+        shadowColor: swatch.black,
         shadowOpacity: 0.06,
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 2 },

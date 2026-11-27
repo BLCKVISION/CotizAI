@@ -2,7 +2,7 @@
 import { Pressable, View } from 'react-native';
 
 import { Icono, Texto } from '@/design/componentes';
-import { useTema } from '@/design/tema';
+import { swatch, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
@@ -14,7 +14,7 @@ export function DocumentTile({ filename, onOpen }: { filename: string; onOpen: (
       accessibilityRole="button"
       accessibilityLabel={`Ver el documento ${filename}`}
       onPress={onOpen}
-      style={(e: PressState) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.md, padding: espacio.md, borderRadius: radio.xl, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: e.hovered ? t.superficieAlta : '#FFFFFF' })}
+      style={(e: PressState) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.md, padding: espacio.md, borderRadius: radio.xl, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: e.hovered ? t.superficieAlta : swatch.white })}
     >
       <View style={{ width: 48, height: 48, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: t.superficieAlta }}>
         <Icono nombre="file-text" />

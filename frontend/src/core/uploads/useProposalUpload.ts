@@ -2,9 +2,9 @@ import { useRef, useState } from 'react';
 
 import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
-import { showToast } from '@/design/toastStore';
-import { cargarPropuestaApi } from '@/features/gestion/api';
-import { isTooLarge, tooLargeMessage } from '@/features/uploads/limits';
+import { showToast } from '@/core/toastStore';
+import { cargarPropuestaApi } from '@/core/api/management';
+import { isTooLarge, tooLargeMessage } from './limits';
 
 export type UploadState = 'waiting' | 'uploading' | 'saved' | 'rejected';
 export type UploadItem = { key: string; name: string; size: number; state: UploadState; reason?: string };

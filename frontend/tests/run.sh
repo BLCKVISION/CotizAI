@@ -5,4 +5,4 @@ cd "$(dirname "$0")/.."
 trap 'rm -rf .test-build' EXIT
 rm -rf .test-build
 npx tsc -p tests/tsconfig.json
-node --require ./tests/setup.js --test .test-build/tests/
+node --require ./tests/setup.js --test .test-build/tests/*.test.js  # Node 22 rejects a bare directory

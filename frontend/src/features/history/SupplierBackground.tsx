@@ -5,10 +5,10 @@ import { Aviso, Fila } from '@/design/bloques';
 import { Insignia, Texto, type Tono } from '@/design/componentes';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import { FINDING_LABELS, formatMoney } from '@/features/evaluations/format';
-import { formatoFecha } from '@/features/proyectos/estados';
+import { FINDING_LABELS, formatMoney } from '@/core/evaluationFormat';
+import { formatoFecha } from '@/design/projectStatus';
 
-import { alertText, type Participation, type SupplierEntry } from './suppliers';
+import { alertText, type Participation, type SupplierEntry } from '../../core/suppliers';
 
 const VERDICTS: Record<string, { label: string; tone: Tono }> = {
   valida: { label: 'Válida', tone: 'exito' },

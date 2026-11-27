@@ -5,9 +5,9 @@ import { Sheen, useAttention, wiggle } from '@/design/Attention';
 import { Icono, Insignia, Texto } from '@/design/componentes';
 import { soloWeb } from '@/design/efectos';
 import { isKeyboardFocus } from '@/design/focusModality';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import { backgroundLabel, type SupplierEntry } from '@/features/history/suppliers';
+import { backgroundLabel, type SupplierEntry } from '@/core/suppliers';
 
 export const PROVIDER_CARD_HEIGHT = 224;
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -32,15 +32,15 @@ export function ProviderCard({ provider, onPress, index = 0 }: { provider: Suppl
           height: PROVIDER_CARD_HEIGHT,
           borderRadius: 30,
           borderWidth: 2,
-          borderColor: isKeyboardFocus(e.focused) ? t.foco : 'rgba(255,255,255,0.85)',
-          backgroundColor: active ? '#A6E6F4' : 'rgba(255,255,255,0.9)',
+          borderColor: isKeyboardFocus(e.focused) ? t.foco : tint.white(0.85),
+          backgroundColor: active ? swatch.aqua250 : tint.white(0.9),
           overflow: 'hidden',
           padding: espacio.md + 4,
           justifyContent: 'space-between',
           ...soloWeb({
             ...motion('transform, box-shadow, background-color'),
-            backgroundImage: active ? 'linear-gradient(165deg, #B9E6FF 0%, #99E6F2 55%, #A8F3DD 100%)' : 'linear-gradient(180deg, #FFFFFF 0%, #F1F3F7 100%)',
-            boxShadow: active ? '0 26px 44px -22px rgba(14,143,168,0.55)' : '0 14px 30px -24px rgba(15,23,42,0.35), inset 0 0 22px rgba(255,255,255,0.65)',
+            backgroundImage: active ? `linear-gradient(165deg, ${swatch.sky200} 0%, ${swatch.aqua200} 55%, ${swatch.mint200} 100%)` : `linear-gradient(180deg, ${swatch.white} 0%, ${swatch.gray75} 100%)`,
+            boxShadow: active ? `0 26px 44px -22px ${tint.teal(0.55)}` : `0 14px 30px -24px ${tint.navy(0.35)}, inset 0 0 22px ${tint.white(0.65)}`,
             ...(active ? { transform: 'translateY(-6px)' } : null),
           }),
         };
@@ -52,7 +52,7 @@ export function ProviderCard({ provider, onPress, index = 0 }: { provider: Suppl
           <>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: espacio.sm }}>
             <Animated.View style={[{ alignSelf: 'flex-start' }, wiggle(pulse)]}>
-              <View style={{ width: 56, height: 56, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? '#FFFFFF' : t.accent, ...soloWeb({ ...motion('transform, background-color'), transform: active ? 'scale(1.1) rotate(-6deg)' : 'scale(1) rotate(0deg)' }) }}>
+              <View style={{ width: 56, height: 56, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? swatch.white : t.accent, ...soloWeb({ ...motion('transform, background-color'), transform: active ? 'scale(1.1) rotate(-6deg)' : 'scale(1) rotate(0deg)' }) }}>
                 <Icono nombre="briefcase" tamano="lg" color={t.onAccent} />
               </View>
             </Animated.View>

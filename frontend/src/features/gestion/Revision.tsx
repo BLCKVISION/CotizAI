@@ -9,11 +9,11 @@ import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, CampoDeTexto, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
-import { PastRuns } from '@/features/history/PastRuns';
-import { type Proyecto, transicionarProyectoApi } from '@/features/proyectos/api';
-import { formatoFechaHora } from '@/features/proyectos/estados';
+import { PastRuns } from './PastRuns';
+import { type Proyecto, transicionarProyectoApi } from '@/core/api/projects';
+import { formatoFechaHora } from '@/design/projectStatus';
 
-import { anotarApi, etiquetaDeAccion, historialApi, notasApi } from './api';
+import { anotarApi, etiquetaDeAccion, historialApi, notasApi } from '../../core/api/management';
 
 export function Revision({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (p: Proyecto) => void }) {
   const { usuario, conSesion } = useSesion();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { alertText, backgroundLabel, matchesSearch, type SupplierEntry } from '../src/features/history/suppliers';
+import { alertText, backgroundLabel, matchesSearch, type SupplierEntry } from '../src/core/suppliers';
 
 const participation = (verdict: string) => ({
   project_id: 'p', project_name: 'Laboratorio', filename: 'a.pdf', verdict, position: 1, competitors: 3,

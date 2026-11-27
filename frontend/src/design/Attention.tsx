@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Animated, Easing, Platform, View } from 'react-native';
 
 import { soloWeb, useReducirMovimiento } from './efectos';
+import { tint } from './tema';
 
 const PERIOD_MS = 20_000;
 const SWEEP_MS = 1300;
@@ -48,7 +49,7 @@ export function Sheen({ pulse }: { pulse: Animated.Value }) {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, overflow: 'hidden' }}>
       <Animated.View style={{ position: 'absolute', top: -60, bottom: -60, width: '45%', left: pulse.interpolate({ inputRange: [0, 1], outputRange: ['-70%', '150%'] }), opacity: pulse.interpolate({ inputRange: [0, 0.08, 0.92, 1], outputRange: [0, 1, 1, 0] }), transform: [{ rotate: '18deg' }] }}>
-        <View style={{ flex: 1, ...soloWeb({ backgroundImage: 'linear-gradient(90deg, rgba(147,221,249,0) 0%, rgba(147,221,249,0.38) 35%, rgba(255,255,255,0.95) 50%, rgba(164,244,221,0.38) 65%, rgba(164,244,221,0) 100%)' }) }} />
+        <View style={{ flex: 1, ...soloWeb({ backgroundImage: `linear-gradient(90deg, ${tint.sky(0)} 0%, ${tint.sky(0.38)} 35%, ${tint.white(0.95)} 50%, ${tint.mintSoft(0.38)} 65%, ${tint.mintSoft(0)} 100%)` }) }} />
       </Animated.View>
     </View>
   );

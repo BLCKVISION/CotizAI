@@ -2,12 +2,12 @@
 import { useEffect, useState } from 'react';
 import { Animated, Easing, View } from 'react-native';
 
-import { Boton, Icono, type NombreIcono, Texto } from '@/design/componentes';
-import { accentGradient, Entrada, useReducirMovimiento } from '@/design/efectos';
-import { Lightbox } from '@/design/Lightbox';
-import { useTema } from '@/design/tema';
-import { espacio, radio } from '@/design/tokens';
-import type { UploadItem } from '@/features/home/useProposalUpload';
+import { Boton, Icono, type NombreIcono, Texto } from './componentes';
+import { accentGradient, Entrada, useReducirMovimiento } from './efectos';
+import { Lightbox } from './Lightbox';
+import { swatch, useTema } from './tema';
+import { espacio, radio } from './tokens';
+import type { UploadItem } from '@/core/uploads/useProposalUpload';
 
 const FILE_ICONS: Record<string, NombreIcono> = { pdf: 'file-text', jpg: 'image', jpeg: 'image', png: 'message-square', xlsx: 'grid' };
 const iconFor = (name: string) => FILE_ICONS[name.split('.').pop()?.toLowerCase() ?? ''] ?? 'file';
@@ -67,7 +67,7 @@ function Row({ item }: { item: UploadItem }) {
   const rejected = item.state === 'rejected';
   return (
     <View accessible accessibilityLabel={`${item.name}: ${status}`} style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm + 4, padding: espacio.sm + 2, borderRadius: radio.lg, backgroundColor: rejected ? t.error.fondo : t.superficieAlta, opacity: item.state === 'waiting' ? 0.6 : 1 }}>
-      <View style={{ width: 38, height: 38, borderRadius: radio.md, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+      <View style={{ width: 38, height: 38, borderRadius: radio.md, alignItems: 'center', justifyContent: 'center', backgroundColor: swatch.white }}>
         <Icono nombre={iconFor(item.name)} tamano="sm" />
       </View>
       <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
@@ -78,7 +78,7 @@ function Row({ item }: { item: UploadItem }) {
           {status}
         </Texto>
         {item.state === 'uploading' ? (
-          <View style={{ height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
+          <View style={{ height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: swatch.white }}>
             <Animated.View style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', borderRadius: 2, left: sweep.interpolate({ inputRange: [0, 1], outputRange: ['-40%', '100%'] }), backgroundColor: t.accentStrong }} />
           </View>
         ) : null}
@@ -89,7 +89,7 @@ function Row({ item }: { item: UploadItem }) {
       {item.state === 'saved' || rejected ? (
         <Entrada>
           <View style={{ width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: rejected ? t.error.texto : t.accent }}>
-            <Icono nombre={rejected ? 'x' : 'check'} tamano="sm" color={rejected ? '#FFFFFF' : t.onAccent} />
+            <Icono nombre={rejected ? 'x' : 'check'} tamano="sm" color={rejected ? swatch.white : t.onAccent} />
           </View>
         </Entrada>
       ) : (

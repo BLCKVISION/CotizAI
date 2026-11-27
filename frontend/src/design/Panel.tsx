@@ -5,7 +5,7 @@ import { Pressable, View, type ViewStyle } from 'react-native';
 import { Icono, type NombreIcono, Texto } from './componentes';
 import { soloWeb } from './efectos';
 import { isLineIcon, LineIcon } from './LineIcon';
-import { useTema } from './tema';
+import { swatch, tint, useTema } from './tema';
 import { espacio, radio } from './tokens';
 
 type ButtonState = { pressed: boolean; hovered?: boolean; focused?: boolean };
@@ -26,28 +26,28 @@ export function RoundButton({ icon, label, onPress, dark = false }: { icon: Nomb
         justifyContent: 'center',
         borderWidth: 2,
         borderColor: e.focused ? t.foco : 'transparent',
-        backgroundColor: dark ? t.primario : e.hovered || e.pressed ? '#FFFFFF' : 'rgba(255,255,255,0.65)',
+        backgroundColor: dark ? t.primario : e.hovered || e.pressed ? swatch.white : tint.white(0.65),
         ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '200ms' }),
       })}
     >
-      {isLineIcon(icon) ? <LineIcon name={icon} color={dark ? '#FFFFFF' : t.texto} /> : <Icono nombre={icon} color={dark ? '#FFFFFF' : t.texto} />}
+      {isLineIcon(icon) ? <LineIcon name={icon} color={dark ? swatch.white : t.texto} /> : <Icono nombre={icon} color={dark ? swatch.white : t.texto} />}
     </Pressable>
   );
 }
 
 const shell: ViewStyle = {
   flex: 1,
-  backgroundColor: 'rgba(255,255,255,0.46)',
+  backgroundColor: tint.white(0.46),
   borderRadius: radio.panel,
   borderWidth: 1,
-  borderColor: 'rgba(255,255,255,0.7)',
+  borderColor: tint.white(0.7),
   padding: 14,
   gap: 12,
   overflow: 'hidden',
   ...soloWeb({ backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)' }),
 };
 
-export const innerSurface: ViewStyle = { flex: 1, minHeight: 0, backgroundColor: 'rgba(255,255,255,0.94)', borderRadius: radio.xl, overflow: 'hidden' };
+export const innerSurface: ViewStyle = { flex: 1, minHeight: 0, backgroundColor: tint.white(0.94), borderRadius: radio.xl, overflow: 'hidden' };
 
 export function Panel({ title, subtitle, actions, children, header }: { title?: string; subtitle?: string; actions?: ReactNode; children: ReactNode; header?: ReactNode }) {
   return (

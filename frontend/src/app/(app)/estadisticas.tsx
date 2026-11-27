@@ -9,9 +9,9 @@ import { TarjetaDeGrafico } from '@/design/graficos';
 import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import { estadisticasApi, type Estadisticas } from '@/features/gestion/api';
-import { porEstado, porFormato, porMes, porUbicacion } from '@/features/gestion/datosDeGraficos';
-import { formatoMonto } from '@/features/proyectos/estados';
+import { estadisticasApi, type Estadisticas } from '@/core/api/management';
+import { porEstado, porFormato, porMes, porUbicacion } from '@/design/chartData';
+import { formatoMonto } from '@/design/projectStatus';
 
 const CURRENCY_NAME: Record<string, string> = { USD: 'Dólares (USD)', VES: 'Bolívares (VES)' };
 

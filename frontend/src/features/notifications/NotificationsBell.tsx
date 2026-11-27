@@ -8,16 +8,16 @@ import { mensajeDeError } from '@/core/useDatos';
 import { Texto } from '@/design/componentes';
 import { Entrada } from '@/design/efectos';
 import { LineIcon } from '@/design/LineIcon';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import { useDismiss } from '@/design/useDismiss';
-import { estadisticasApi } from '@/features/gestion/api';
-import { listarProyectosApi } from '@/features/proyectos/api';
+import { estadisticasApi } from '@/core/api/management';
+import { listarProyectosApi } from '@/core/api/projects';
 
 import { type AppNotification, buildNotifications } from './build';
 
 const REFRESH_MS = 60_000;
-const DOT = { action: '#D97706', ready: '#0E8FA8', info: '#1D4ED8' } as const;
+const DOT = { action: swatch.amber600, ready: swatch.teal, info: swatch.blue700 } as const;
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
 const readSeen = (key: string): string[] => {
@@ -79,12 +79,12 @@ export function NotificationsBell() {
         accessibilityState={{ expanded: open }}
         aria-expanded={open}
         onPress={() => setOpen((v) => !v)}
-        style={(e: PressState) => ({ width: 44, height: 44, borderRadius: radio.pildora, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: open || e.hovered || e.pressed ? '#FFFFFF' : 'rgba(255,255,255,0.62)' })}
+        style={(e: PressState) => ({ width: 44, height: 44, borderRadius: radio.pildora, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: open || e.hovered || e.pressed ? swatch.white : tint.white(0.62) })}
       >
         <LineIcon name="bell" />
         {unread.length > 0 ? (
-          <View style={{ position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: '#B91C1C', alignItems: 'center', justifyContent: 'center' }}>
-            <Texto color="#FFFFFF" style={{ fontSize: 11, lineHeight: 14, fontFamily: 'Urbanist_700Bold' }}>
+          <View style={{ position: 'absolute', top: 2, right: 2, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: swatch.red700, alignItems: 'center', justifyContent: 'center' }}>
+            <Texto color={swatch.white} style={{ fontSize: 11, lineHeight: 14, fontFamily: 'Urbanist_700Bold' }}>
               {unread.length > 9 ? '9+' : unread.length}
             </Texto>
           </View>
@@ -93,7 +93,7 @@ export function NotificationsBell() {
       {open ? (
         <View style={{ position: 'absolute', top: 52, right: -52, width: 340 }}>
           <Entrada>
-            <View style={{ backgroundColor: '#FFFFFF', borderRadius: radio.xl, padding: espacio.sm, gap: espacio.xs, shadowColor: '#0F172A', shadowOpacity: 0.16, shadowRadius: 28, shadowOffset: { width: 0, height: 14 } }}>
+            <View style={{ backgroundColor: swatch.white, borderRadius: radio.xl, padding: espacio.sm, gap: espacio.xs, shadowColor: swatch.navy, shadowOpacity: 0.16, shadowRadius: 28, shadowOffset: { width: 0, height: 14 } }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: espacio.sm, minHeight: 40 }}>
                 <Texto variante="cuerpoMedio" accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold' }}>
                   Notificaciones

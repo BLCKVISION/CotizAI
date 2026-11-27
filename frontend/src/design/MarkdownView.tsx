@@ -1,12 +1,12 @@
 import { ScrollView, Text, View } from 'react-native';
 
-import { Aviso } from '@/design/bloques';
-import { Insignia, type Tono, Texto } from '@/design/componentes';
-import { useTema } from '@/design/tema';
-import { espacio, radio } from '@/design/tokens';
+import { Aviso } from './bloques';
+import { Insignia, type Tono, Texto } from './componentes';
+import { useTema } from './tema';
+import { espacio, radio } from './tokens';
 
-import type { Calidad, Transcripcion } from './api';
-import { type Bloque, bloquesDeMarkdown, partirPorInciertos } from './markdown';
+import type { Calidad, Transcripcion } from '../core/api/transcription';
+import { type Bloque, bloquesDeMarkdown, partirPorInciertos } from '../core/markdown';
 
 const CALIDAD: Record<Calidad, { tono: Tono; etiqueta: string; icono: 'check-circle' | 'alert-triangle' | 'alert-circle' }> = {
   alta: { tono: 'exito', etiqueta: 'Calidad alta', icono: 'check-circle' },

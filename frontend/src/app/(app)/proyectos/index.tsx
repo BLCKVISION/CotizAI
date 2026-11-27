@@ -12,13 +12,13 @@ import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb } from '@/design/efectos';
 import { FixedPage } from '@/design/layout';
 import { NewItemTile } from '@/design/NewItemTile';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio, texto } from '@/design/tokens';
-import { estadisticasApi } from '@/features/gestion/api';
-import { FOLDER_HEIGHT, FolderCard } from '@/features/projects/FolderCard';
+import { estadisticasApi } from '@/core/api/management';
+import { FOLDER_HEIGHT, FolderCard } from '@/design/FolderCard';
 import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
-import { type EstadoProyecto, listarProyectosApi } from '@/features/proyectos/api';
-import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+import { type EstadoProyecto, listarProyectosApi } from '@/core/api/projects';
+import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/design/projectStatus';
 
 const FIRST_PAGE = 7;
 
@@ -47,7 +47,7 @@ function PillButton({ icon, label, onPress, expanded, accessibilityLabel }: { ic
         borderRadius: radio.pildora,
         borderWidth: 2,
         borderColor: e.focused ? t.foco : 'transparent',
-        backgroundColor: e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.72)',
+        backgroundColor: e.hovered ? swatch.white : tint.white(0.72),
         ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '220ms' }),
       })}
     >
@@ -102,7 +102,7 @@ export default function Projects() {
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.md }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm, minHeight: 46, width: 320, maxWidth: '100%', paddingHorizontal: espacio.md, borderRadius: radio.pildora, backgroundColor: 'rgba(255,255,255,0.8)' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm, minHeight: 46, width: 320, maxWidth: '100%', paddingHorizontal: espacio.md, borderRadius: radio.pildora, backgroundColor: tint.white(0.8) }}>
           <Icono nombre="search" tamano="sm" color={t.textoSuave} />
           <TextInput
             value={query}

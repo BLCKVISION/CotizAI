@@ -7,12 +7,13 @@ import { useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, ErrorConReintento } from '@/design/bloques';
 import { Boton, Chip, Insignia, Texto } from '@/design/componentes';
 import { Lightbox } from '@/design/Lightbox';
-import { showToast } from '@/design/toastStore';
+import { showToast } from '@/core/toastStore';
 import { espacio } from '@/design/tokens';
-import { bloquesDeMarkdown } from '@/features/transcripcion/markdown';
-import { BloqueVista } from '@/features/transcripcion/Vista';
+import { bloquesDeMarkdown } from '@/core/markdown';
+import { BloqueVista } from '@/design/MarkdownView';
+import { swatch } from '@/design/tema';
 
-import { descargarPropuestaApi, type Propuesta, proposalMarkdownApi } from './api';
+import { descargarPropuestaApi, type Propuesta, proposalMarkdownApi } from '../../core/api/management';
 
 const IMAGE_TYPES: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
 
@@ -29,10 +30,10 @@ function Original({ projectId, proposal }: { projectId: string; proposal: Propue
   }, [datos, proposal.formato]);
   if (error) return <ErrorConReintento texto={error} onReintentar={recargar} />;
   if (!url) return <Cargando />;
-  const frame = { width: '100%', height: '76vh', border: 'none', borderRadius: 16, background: '#FFFFFF' };
+  const frame = { width: '100%', height: '76vh', border: 'none', borderRadius: 16, background: swatch.white };
   return proposal.formato === 'pdf'
     ? createElement('iframe', { src: url, title: proposal.archivo, style: frame })
-    : createElement('img', { src: url, alt: proposal.archivo, style: { width: '100%', maxHeight: '76vh', objectFit: 'contain', borderRadius: 16, background: '#FFFFFF' } });
+    : createElement('img', { src: url, alt: proposal.archivo, style: { width: '100%', maxHeight: '76vh', objectFit: 'contain', borderRadius: 16, background: swatch.white } });
 }
 
 function TextView({ projectId, proposal }: { projectId: string; proposal: Propuesta }) {

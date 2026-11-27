@@ -1,7 +1,7 @@
 import { Children, type ReactNode, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, View, type ViewStyle } from 'react-native';
 
-import { paletaClara, useTema } from './tema';
+import { paletaClara, swatch, tint, useTema } from './tema';
 import { movimiento } from './tokens';
 
 const esWeb = Platform.OS === 'web';
@@ -45,12 +45,12 @@ export function useReducirMovimiento(): boolean {
 export function vidrio(opciones: { opacidad?: number; blur?: number; radio: number; elevado?: boolean }): ViewStyle {
   const { opacidad = 0.9, blur = 28, radio, elevado = false } = opciones;
   return {
-    backgroundColor: `rgba(255,255,255,${opacidad})`,
+    backgroundColor: tint.white(opacidad),
     borderRadius: radio,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.95)',
+    borderColor: tint.white(0.95),
     // Sombra nativa (iOS/Android); en web se sustituye por boxShadow compuesto.
-    shadowColor: '#000',
+    shadowColor: swatch.black,
     shadowOpacity: elevado ? 0.1 : 0.06,
     shadowRadius: elevado ? 22 : 15,
     shadowOffset: { width: 0, height: elevado ? 12 : 8 },
@@ -59,8 +59,8 @@ export function vidrio(opciones: { opacidad?: number; blur?: number; radio: numb
       backdropFilter: `blur(${blur}px)`,
       WebkitBackdropFilter: `blur(${blur}px)`,
       boxShadow: elevado
-        ? '0 14px 38px -4px rgba(0,0,0,.09), 0 4px 10px rgba(0,0,0,.03), inset 0 1px 1.5px #fff'
-        : '0 8px 30px -4px rgba(0,0,0,.06), 0 2px 6px rgba(0,0,0,.02), inset 0 1px 1.5px #fff',
+        ? `0 14px 38px -4px ${tint.black(0.09)}, 0 4px 10px ${tint.black(0.03)}, inset 0 1px 1.5px ${swatch.white}`
+        : `0 8px 30px -4px ${tint.black(0.06)}, 0 2px 6px ${tint.black(0.02)}, inset 0 1px 1.5px ${swatch.white}`,
       transitionProperty: 'transform, box-shadow, background-color, border-color',
       transitionDuration: `${movimiento.transicion}ms`,
       transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
@@ -83,7 +83,7 @@ export function Fondo({ children }: { children: ReactNode }) {
       style={[
         { flex: 1, backgroundColor: t.fondo },
         soloWeb({
-          backgroundImage: `radial-gradient(ellipse at 85% 10%, ${t.halos.durazno} 0%, rgba(239,241,245,0) 55%), radial-gradient(ellipse at 15% 85%, ${t.halos.menta} 0%, rgba(239,241,245,0) 50%)`,
+          backgroundImage: `radial-gradient(ellipse at 85% 10%, ${t.halos.durazno} 0%, ${tint.mist(0)} 55%), radial-gradient(ellipse at 15% 85%, ${t.halos.menta} 0%, ${tint.mist(0)} 50%)`,
           backgroundAttachment: 'fixed',
         }),
       ]}

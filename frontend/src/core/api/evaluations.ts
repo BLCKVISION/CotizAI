@@ -1,7 +1,7 @@
 /** Typed client for project evaluations, exchange rates, reports and questions. */
-import { peticion, peticionBinaria } from '@/core/api/cliente';
+import { peticion, peticionBinaria } from './cliente';
 
-import type { Verdict } from './format';
+import type { Verdict } from '../evaluationFormat';
 
 /** Reading and judging up to 20 documents takes minutes, far beyond the default request timeout. */
 const EVALUATION_TIMEOUT_MS = 300_000;

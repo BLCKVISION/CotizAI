@@ -1,12 +1,12 @@
 /** Project shown as a folder: papers peek from behind a tabbed front; on hover/focus it turns sky-aqua. */
 import { Animated, Platform, Pressable, View, type ViewStyle } from 'react-native';
 
-import { Sheen, useAttention, wiggle } from '@/design/Attention';
-import { Texto } from '@/design/componentes';
-import { soloWeb } from '@/design/efectos';
-import { isKeyboardFocus } from '@/design/focusModality';
-import { useTema } from '@/design/tema';
-import { espacio } from '@/design/tokens';
+import { Sheen, useAttention, wiggle } from './Attention';
+import { Texto } from './componentes';
+import { soloWeb } from './efectos';
+import { isKeyboardFocus } from './focusModality';
+import { swatch, tint, useTema } from './tema';
+import { espacio } from './tokens';
 
 export const FOLDER_HEIGHT = 224;
 const RADIUS = 30;
@@ -45,13 +45,13 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
           minHeight: compact ? 118 : undefined,
           borderRadius: m.radius,
           borderWidth: 2,
-          borderColor: isKeyboardFocus(e.focused) ? t.foco : 'rgba(255,255,255,0.85)',
-          backgroundColor: active ? '#8FD6FA' : '#E1E5EC',
+          borderColor: isKeyboardFocus(e.focused) ? t.foco : tint.white(0.85),
+          backgroundColor: active ? swatch.sky300 : swatch.gray200,
           overflow: 'hidden',
           opacity: e.pressed ? 0.9 : 1,
           ...soloWeb({
             ...motion('transform, box-shadow, background-color'),
-            boxShadow: active ? '0 26px 44px -22px rgba(14,143,168,0.55)' : '0 14px 30px -24px rgba(15,23,42,0.35), inset 0 0 22px rgba(255,255,255,0.65)',
+            boxShadow: active ? `0 26px 44px -22px ${tint.teal(0.55)}` : `0 14px 30px -24px ${tint.navy(0.35)}, inset 0 0 22px ${tint.white(0.65)}`,
             ...(active ? { transform: 'translateY(-6px)' } : null),
           }),
         };
@@ -63,8 +63,8 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
           <>
             {/* Papers peek out and rock while the periodic light passes. */}
             <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }, wiggle(pulse)]}>
-            <View style={{ position: 'absolute', top: m.paperTop, left: m.side + 12, right: m.side + 12, height: 110, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.55)', ...soloWeb({ ...motion('transform'), transform: active ? 'translateY(-12px) rotate(-4deg)' : 'rotate(0deg)' }) }} />
-            <View style={{ position: 'absolute', top: m.paperTop + 6, left: m.side - 2, right: m.side - 2, height: 120, borderRadius: 14, backgroundColor: active ? '#FFFFFF' : 'rgba(255,255,255,0.85)', paddingHorizontal: espacio.md, paddingTop: 10, ...soloWeb({ ...motion('transform'), transform: active ? 'translateY(-10px) rotate(2deg)' : 'rotate(0deg)' }) }}>
+            <View style={{ position: 'absolute', top: m.paperTop, left: m.side + 12, right: m.side + 12, height: 110, borderRadius: 14, backgroundColor: tint.white(0.55), ...soloWeb({ ...motion('transform'), transform: active ? 'translateY(-12px) rotate(-4deg)' : 'rotate(0deg)' }) }} />
+            <View style={{ position: 'absolute', top: m.paperTop + 6, left: m.side - 2, right: m.side - 2, height: 120, borderRadius: 14, backgroundColor: active ? swatch.white : tint.white(0.85), paddingHorizontal: espacio.md, paddingTop: 10, ...soloWeb({ ...motion('transform'), transform: active ? 'translateY(-10px) rotate(2deg)' : 'rotate(0deg)' }) }}>
               <View style={{ opacity: active ? 1 : 0, ...soloWeb(motion('opacity')) }}>
                 <Texto variante="pequeno" suave numberOfLines={3} style={{ fontSize: 11, lineHeight: 15 }}>
                   {preview}
@@ -73,7 +73,7 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
             </View>
             </Animated.View>
             {/* Folder front. The shadow lives on the wrapper so it follows the clipped tab outline. */}
-            <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, ...soloWeb({ filter: 'drop-shadow(0 -3px 9px rgba(15,23,42,0.10))' }) }}>
+            <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, ...soloWeb({ filter: `drop-shadow(0 -3px 9px ${tint.navy(0.1)})` }) }}>
             <View
               style={{
                 position: 'absolute',
@@ -85,11 +85,11 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
                 paddingTop: m.frontTop,
                 paddingBottom: m.bottom,
                 justifyContent: 'space-between',
-                backgroundColor: active ? '#A6E6F4' : '#F8F9FB',
+                backgroundColor: active ? swatch.aqua250 : swatch.gray50,
                 borderRadius: Platform.OS === 'web' ? 0 : m.radius,
                 ...soloWeb({
                   clipPath: TAB_SHAPE,
-                  backgroundImage: active ? 'linear-gradient(165deg, #B9E6FF 0%, #99E6F2 55%, #A8F3DD 100%)' : 'linear-gradient(180deg, #FFFFFF 0%, #F1F3F7 100%)',
+                  backgroundImage: active ? `linear-gradient(165deg, ${swatch.sky200} 0%, ${swatch.aqua200} 55%, ${swatch.mint200} 100%)` : `linear-gradient(180deg, ${swatch.white} 0%, ${swatch.gray75} 100%)`,
                   ...motion('background-color'),
                 }),
               }}

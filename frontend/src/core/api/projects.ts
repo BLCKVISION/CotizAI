@@ -1,4 +1,4 @@
-import { peticion } from '@/core/api/cliente';
+import { peticion } from './cliente';
 
 export type EstadoProyecto = 'en_recepcion' | 'en_evaluacion' | 'en_revision_del_comite' | 'adjudicado' | 'cerrado';
 export type Proyecto = {

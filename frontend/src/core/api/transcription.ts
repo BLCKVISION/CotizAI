@@ -1,4 +1,4 @@
-import { ErrorApi, peticionBinaria } from '../../core/api/cliente';
+import { ErrorApi, peticionBinaria } from './cliente';
 
 export type Calidad = 'alta' | 'media' | 'baja';
 export type Transcripcion = { markdown: string; inciertos: string[]; calidad: Calidad; avisos: string[] };

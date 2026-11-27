@@ -14,19 +14,19 @@ import { Cargando, ErrorConReintento } from '@/design/bloques';
 import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb, vidrio } from '@/design/efectos';
-import { useTema } from '@/design/tema';
-import { showToast } from '@/design/toastStore';
+import { swatch, tint, useTema } from '@/design/tema';
+import { showToast } from '@/core/toastStore';
 import { espacio, radio, texto } from '@/design/tokens';
-import { downloadReportApi, getReviewsApi, type ReportFormat, sendReviewApi } from '@/features/evaluations/api';
-import { EvaluationProcess } from '@/features/evaluations/EvaluationProcess';
-import { RatePanel } from '@/features/evaluations/RatePanel';
-import { useProjectEvaluation } from '@/features/evaluations/useProjectEvaluation';
-import { propuestasApi } from '@/features/gestion/api';
-import { Expediente, ZonaDeCarga } from '@/features/gestion/Expediente';
-import { MarkdownDialog } from '@/features/gestion/MarkdownDialog';
-import { useProposalUpload } from '@/features/home/useProposalUpload';
-import type { Proyecto } from '@/features/proyectos/api';
-import { UploadFlow } from '@/features/uploads/UploadFlow';
+import { downloadReportApi, getReviewsApi, type ReportFormat, sendReviewApi } from '@/core/api/evaluations';
+import { EvaluationProcess } from './EvaluationProcess';
+import { RatePanel } from './RatePanel';
+import { useProjectEvaluation } from './useProjectEvaluation';
+import { propuestasApi } from '@/core/api/management';
+import { Expediente, ZonaDeCarga } from './Expediente';
+import { MarkdownDialog } from './MarkdownDialog';
+import { useProposalUpload } from '@/core/uploads/useProposalUpload';
+import type { Proyecto } from '@/core/api/projects';
+import { UploadFlow } from '@/design/UploadFlow';
 
 import { DocumentTile } from './DocumentTile';
 import { currentStep, defaultSelection, EVALUATION_STEPS, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
@@ -200,7 +200,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   const canDecide = verifying && can(role, 'review') && !closed;
 
   const decisionPanel = (
-    <View style={{ gap: espacio.sm, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: '#FFFFFF' }}>
+    <View style={{ gap: espacio.sm, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: swatch.white }}>
       <Texto variante="subtitulo" accessibilityRole="header">¿Está de acuerdo?</Texto>
       <TextInput
         value={comment}
@@ -210,7 +210,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         placeholder="Comentario (obligatorio si cambia la respuesta de la IA)"
         placeholderTextColor={t.textoSuave}
         accessibilityLabel="Comentario de su verificación"
-        style={[{ ...texto.cuerpo, minHeight: 84, padding: espacio.md, borderRadius: radio.lg, borderWidth: 1, borderColor: t.bordeControl, color: t.texto, backgroundColor: '#FFFFFF', textAlignVertical: 'top' }, soloWeb({ outlineStyle: 'none' })]}
+        style={[{ ...texto.cuerpo, minHeight: 84, padding: espacio.md, borderRadius: radio.lg, borderWidth: 1, borderColor: t.bordeControl, color: t.texto, backgroundColor: swatch.white, textAlignVertical: 'top' }, soloWeb({ outlineStyle: 'none' })]}
       />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
         <Boton etiqueta="No, rechazar" icono="x" variante="secundario" deshabilitado={saving} onPress={() => void decide(false)} />
@@ -262,7 +262,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
                       setOpenId(i.proposal_id);
                       setComment('');
                     }}
-                    style={(e: PressState) => ({ width: 250, flexDirection: 'row', alignItems: 'center', gap: espacio.sm, padding: espacio.sm, borderRadius: radio.lg, borderWidth: 2, borderColor: e.focused ? t.foco : current ? t.accentStrong : 'transparent', backgroundColor: current || e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.6)' })}
+                    style={(e: PressState) => ({ width: 250, flexDirection: 'row', alignItems: 'center', gap: espacio.sm, padding: espacio.sm, borderRadius: radio.lg, borderWidth: 2, borderColor: e.focused ? t.foco : current ? t.accentStrong : 'transparent', backgroundColor: current || e.hovered ? swatch.white : tint.white(0.6) })}
                   >
                     <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: t[look.tone].fondo }}>
                       <Icono nombre={look.icon} tamano="sm" color={t[look.tone].texto} />
@@ -376,7 +376,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
               placeholder="Comentario (obligatorio si cambia la respuesta de la IA)"
               placeholderTextColor={t.textoSuave}
               accessibilityLabel="Comentario de su verificación"
-              style={[{ ...texto.cuerpo, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 1, borderColor: t.bordeControl, color: t.texto, backgroundColor: '#FFFFFF' }, soloWeb({ outlineStyle: 'none' })]}
+              style={[{ ...texto.cuerpo, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 1, borderColor: t.bordeControl, color: t.texto, backgroundColor: swatch.white }, soloWeb({ outlineStyle: 'none' })]}
             />
             <Boton etiqueta="No, rechazar" icono="x" variante="secundario" deshabilitado={saving} onPress={() => void decide(false)} />
             <Boton etiqueta="Sí, aprobar" icono="check" cargando={saving} onPress={() => void decide(true)} />

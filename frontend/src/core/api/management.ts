@@ -1,5 +1,5 @@
-import { peticion, peticionBinaria } from '@/core/api/cliente';
-import type { EstadoProyecto } from '@/features/proyectos/api';
+import { peticion, peticionBinaria } from './cliente';
+import type { EstadoProyecto } from './projects';
 
 export type Estadisticas = {
   total_proyectos: number;

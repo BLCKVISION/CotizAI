@@ -8,16 +8,17 @@ import { accentGradient, soloWeb } from '@/design/efectos';
 import { FieldHint, useHover } from '@/design/FieldHint';
 import { RollingLabel } from '@/design/RollingLabel';
 import { espacio, radio, texto } from '@/design/tokens';
+import { swatch, tint } from '@/design/tema';
 
 export const authColor = {
-  backdrop: '#E9EBEF',
-  panel: '#FFFFFF',
-  text: '#0B1220',
-  soft: '#556070',
-  underline: '#8591A3',
-  focus: '#0369A1',
-  error: '#B91C1C',
-  onAccent: '#06283D',
+  backdrop: swatch.gray100,
+  panel: swatch.white,
+  text: swatch.night,
+  soft: swatch.slate550,
+  underline: swatch.slate400,
+  focus: swatch.sky700,
+  error: swatch.red700,
+  onAccent: swatch.deepNavy,
 } as const;
 
 export type AuthMode = 'login' | 'register' | 'forgot';
@@ -105,7 +106,7 @@ export function SubmitButton({ label, busy, onPress }: { label: string; busy: bo
         borderWidth: 2,
         borderColor: e.focused ? authColor.focus : 'transparent',
         ...accentGradient(100),
-        ...soloWeb({ transitionProperty: 'transform, box-shadow', transitionDuration: '260ms', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)', ...(e.hovered ? { transform: 'translateY(-2px)', boxShadow: '0 14px 28px -16px rgba(14,143,168,0.65)' } : null) }),
+        ...soloWeb({ transitionProperty: 'transform, box-shadow', transitionDuration: '260ms', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)', ...(e.hovered ? { transform: 'translateY(-2px)', boxShadow: `0 14px 28px -16px ${tint.teal(0.65)}` } : null) }),
       })}
     >
       {({ hovered }: PressState) =>
@@ -124,7 +125,7 @@ export function SubmitButton({ label, busy, onPress }: { label: string; busy: bo
 
 export function NoticeBox({ notice }: { notice: Notice }) {
   if (!notice) return null;
-  const tone = notice.tone === 'error' ? { text: authColor.error, background: '#FEE2E2', icon: 'alert-triangle' as const } : notice.tone === 'success' ? { text: '#166534', background: '#DCFCE7', icon: 'check-circle' as const } : { text: '#1E40AF', background: '#DBEAFE', icon: 'info' as const };
+  const tone = notice.tone === 'error' ? { text: authColor.error, background: swatch.red100, icon: 'alert-triangle' as const } : notice.tone === 'success' ? { text: swatch.green800, background: swatch.green100, icon: 'check-circle' as const } : { text: swatch.blue800, background: swatch.blue100, icon: 'info' as const };
   return (
     <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center', padding: espacio.sm + 4, borderRadius: radio.nav, backgroundColor: tone.background }}>
       <Icono nombre={tone.icon} tamano="sm" color={tone.text} />

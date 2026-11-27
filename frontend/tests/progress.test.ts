@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { estimateProgress, estimateSeconds, STAGES } from '../src/features/evaluations/progress';
+import { estimateProgress, estimateSeconds, STAGES } from '../src/features/flow/progress';
 
 describe('estimated evaluation progress', () => {
   it('grows with the number of proposals', () => {

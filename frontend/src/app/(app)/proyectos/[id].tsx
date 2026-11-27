@@ -10,15 +10,15 @@ import { CollapsibleCard } from '@/design/Collapsible';
 import { Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { EncabezadoDePagina, FixedPage, Pagina } from '@/design/layout';
-import { useTema } from '@/design/tema';
+import { swatch, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import { ProjectFlow } from '@/features/flow/ProjectFlow';
-import { Expediente } from '@/features/gestion/Expediente';
+import { Expediente } from '@/features/flow/Expediente';
 import { Revision } from '@/features/gestion/Revision';
 import { DeleteProjectDialog } from '@/features/proyectos/DeleteProjectDialog';
 import { canBeDeleted } from '@/features/proyectos/deletion';
-import { obtenerProyectoApi, type Proyecto } from '@/features/proyectos/api';
-import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
+import { obtenerProyectoApi, type Proyecto } from '@/core/api/projects';
+import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/design/projectStatus';
 
 function LineaDeTiempo({ actual }: { actual: Proyecto['estado'] }) {
   const t = useTema();
@@ -202,10 +202,10 @@ export default function DetalleProyecto() {
             accessibilityRole="button"
             accessibilityLabel="Eliminar proyecto"
             onPress={() => setDeleting(true)}
-            style={(s: { pressed: boolean; hovered?: boolean; focused?: boolean }) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.xs + 2, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 2, borderColor: s.focused ? t.foco : 'transparent', backgroundColor: s.pressed || s.hovered ? '#B91C1C' : '#DC2626' })}
+            style={(s: { pressed: boolean; hovered?: boolean; focused?: boolean }) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.xs + 2, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 2, borderColor: s.focused ? t.foco : 'transparent', backgroundColor: s.pressed || s.hovered ? swatch.red700 : swatch.red600 })}
           >
-            <Icono nombre="trash-2" tamano="sm" color="#FFFFFF" />
-            <Texto variante="etiqueta" color="#FFFFFF">Eliminar proyecto</Texto>
+            <Icono nombre="trash-2" tamano="sm" color={swatch.white} />
+            <Texto variante="etiqueta" color={swatch.white}>Eliminar proyecto</Texto>
           </Pressable>
         ) : null}
         <DeleteProjectDialog project={deleting ? proyecto : null} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/proyectos')} />

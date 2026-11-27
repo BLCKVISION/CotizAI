@@ -5,6 +5,7 @@ import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { Icono, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
+import { swatch } from '@/design/tema';
 
 import { type AuthMode, authColor, FormHeading, LineField, type Notice, NoticeBox, SubmitButton, TextLink } from './authParts';
 
@@ -83,7 +84,7 @@ export function LoginForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
             style={(e: PressState) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: espacio.sm, borderBottomWidth: 1, borderBottomColor: e.focused ? authColor.focus : 'transparent' })}
           >
             <View style={{ width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: remember ? authColor.text : authColor.underline, backgroundColor: remember ? authColor.text : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-              {remember ? <Icono nombre="check" tamano="sm" color="#FFFFFF" /> : null}
+              {remember ? <Icono nombre="check" tamano="sm" color={swatch.white} /> : null}
             </View>
             <Texto variante="pequeno" color={authColor.text}>
               Recordar mi usuario

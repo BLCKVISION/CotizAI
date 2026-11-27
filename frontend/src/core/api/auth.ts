@@ -1,4 +1,4 @@
-import { peticion } from '@/core/api/cliente';
+import { peticion } from './cliente';
 
 export type Rol = 'cargador' | 'evaluador' | 'aprobador' | 'auditor' | 'coordinador';
 export type Usuario = { id: string; correo: string; rol: Rol; organizacion_id: string; display_name?: string };

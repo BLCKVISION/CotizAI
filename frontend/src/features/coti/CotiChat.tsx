@@ -5,15 +5,14 @@ import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 
 import { ErrorApi } from '@/core/api/cliente';
+import { loadChat, type Message, purgeUnownedChats, saveChat } from '@/core/chatStorage';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError } from '@/core/useDatos';
 import { Boton, BotonIcono, CampoDeTexto, Icono, Texto } from '@/design/componentes';
 import { soloWeb, vidrio } from '@/design/efectos';
-import { useTema } from '@/design/tema';
+import { tint, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import { askPortfolioApi, askProjectApi } from '@/features/evaluations/api';
-
-type Message = { id: number; from: 'coti' | 'user'; text: string; sources?: string[] };
+import { askPortfolioApi, askProjectApi } from '@/core/api/evaluations';
 
 const GREETING =
   '¡Hola! Soy Coti, tu asistente de CotizAI. Te ayudo a analizar las cotizaciones de tus proyectos: costos, descartes y ranking. ¿Qué necesitas saber?';
@@ -27,30 +26,16 @@ const projectIdFrom = (path: string): string | null => {
 
 const firstMessage = (): Message => ({ id: 0, from: 'coti', text: GREETING });
 
-const MAX_SAVED = 50;
-const storageKey = (projectId: string | null) => `cotizai.coti.${projectId ?? 'none'}`;
+const loadMessages = (userId: string | undefined, projectId: string | null): Message[] =>
+  loadChat(userId, projectId) ?? [firstMessage()];
 
-/** Conversation kept in this browser only (a convenience, never data); any storage failure just means a fresh chat. */
-const loadMessages = (projectId: string | null): Message[] => {
-  try {
-    const raw = typeof window !== 'undefined' ? window.localStorage?.getItem(storageKey(projectId)) : null;
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed as Message[];
-  } catch {
-    /* blocked or corrupt storage */
-  }
-  return [firstMessage()];
-};
-
-const saveMessages = (projectId: string | null, messages: Message[]) => {
-  try {
-    window.localStorage.setItem(storageKey(projectId), JSON.stringify(messages.slice(-MAX_SAVED)));
-  } catch {
-    /* blocked storage: the chat just is not remembered */
-  }
-};
-
+/** Remounts on every change of user, so no message in memory outlives the session that asked for it. */
 export function CotiChat() {
+  const { usuario } = useSesion();
+  return <UserChat key={usuario?.id ?? 'unknown'} userId={usuario?.id} />;
+}
+
+function UserChat({ userId }: { userId: string | undefined }) {
   const t = useTema();
   const { conSesion } = useSesion();
   const { width, height } = useWindowDimensions();
@@ -65,30 +50,32 @@ export function CotiChat() {
       if (finished && !open) setMounted(false);
     });
   }, [open, progress]);
-  const [messages, setMessages] = useState<Message[]>(() => loadMessages(projectId));
+  const [messages, setMessages] = useState<Message[]>(() => loadMessages(userId, projectId));
   const skipSave = useRef(false); // right after a project switch `messages` still hold the previous project's chat
   const [draft, setDraft] = useState('');
   const [thinking, setThinking] = useState(false);
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
   const nextId = useRef(1);
 
+  useEffect(purgeUnownedChats, []);
+
   // Each project has its own saved conversation: switching project loads that one.
   useEffect(() => {
-    const saved = loadMessages(projectId);
+    const saved = loadMessages(userId, projectId);
     skipSave.current = true;
     nextId.current = Math.max(...saved.map((m) => m.id)) + 1;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reload the saved chat when the project changes
     setMessages(saved);
     setDraft('');
-  }, [projectId]);
+  }, [userId, projectId]);
 
   useEffect(() => {
     if (skipSave.current) {
       skipSave.current = false;
       return;
     }
-    saveMessages(projectId, messages);
-  }, [projectId, messages]);
+    saveChat(userId, projectId, messages);
+  }, [userId, projectId, messages]);
 
   const push = (m: Omit<Message, 'id'>) => setMessages((all) => [...all, { ...m, id: nextId.current++ }]);
 
@@ -204,7 +191,7 @@ export function CotiChat() {
           backgroundColor: e.pressed || e.hovered ? t.accentPressed : t.accent,
           borderWidth: 2,
           borderColor: e.focused ? t.foco : 'transparent',
-          ...soloWeb({ boxShadow: '0 8px 24px rgba(15,23,42,0.22)', transitionProperty: 'background-color, transform', transitionDuration: '260ms', transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }),
+          ...soloWeb({ boxShadow: `0 8px 24px ${tint.navy(0.22)}`, transitionProperty: 'background-color, transform', transitionDuration: '260ms', transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }),
         })}
       >
         {/* The two icons cross-fade and turn a little, instead of swapping abruptly. */}

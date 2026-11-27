@@ -9,8 +9,8 @@ import { Aviso } from '@/design/bloques';
 import { Boton, CampoDeTexto, Chip, Texto } from '@/design/componentes';
 import { Lightbox } from '@/design/Lightbox';
 import { espacio } from '@/design/tokens';
-import { crearProyectoApi, type Moneda } from '@/features/proyectos/api';
-import { parsearMonto } from '@/features/proyectos/monto';
+import { crearProyectoApi, type Moneda } from '@/core/api/projects';
+import { parsearMonto } from '@/core/amount';
 
 type Errors = { name?: string; requirement?: string; location?: string; budget?: string; general?: string };
 

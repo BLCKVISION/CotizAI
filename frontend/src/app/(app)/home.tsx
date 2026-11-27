@@ -12,7 +12,7 @@ import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, useContador } from '@/design/efectos';
 import { FixedPage, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
-import { estadisticasApi, type Estadisticas } from '@/features/gestion/api';
+import { estadisticasApi, type Estadisticas } from '@/core/api/management';
 import { ActivityCard } from '@/features/home/ActivityCard';
 import { ProjectPicker } from '@/features/home/ProjectPicker';
 import { ProjectsCard } from '@/features/home/ProjectsCard';
@@ -20,10 +20,10 @@ import { SummaryCard } from '@/features/home/SummaryCard';
 import { buildTasks } from '@/features/home/tasks';
 import { TodoCard } from '@/features/home/TodoCard';
 import { useLatestVerified } from '@/features/home/useLatestVerified';
-import { useProposalUpload } from '@/features/home/useProposalUpload';
+import { useProposalUpload } from '@/core/uploads/useProposalUpload';
 import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
-import { UploadFlow } from '@/features/uploads/UploadFlow';
-import { listarProyectosApi, type Proyecto } from '@/features/proyectos/api';
+import { UploadFlow } from '@/design/UploadFlow';
+import { listarProyectosApi, type Proyecto } from '@/core/api/projects';
 
 type HomeData = { stats: Estadisticas; projects: Proyecto[] };
 

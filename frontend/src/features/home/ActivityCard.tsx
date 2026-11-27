@@ -6,7 +6,7 @@ import { Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { accentGradient, soloWeb, useReducirMovimiento } from '@/design/efectos';
 import { innerSurface, Panel, RoundButton } from '@/design/Panel';
 import { RollingLabel } from '@/design/RollingLabel';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio, texto as tipografia } from '@/design/tokens';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
@@ -33,7 +33,7 @@ function Ring({ delay }: { delay: number }) {
   return (
     <Animated.View
       pointerEvents="none"
-      style={{ position: 'absolute', width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: '#FFFFFF', opacity: p.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 0.95, 0] }), transform: [{ scale: p.interpolate({ inputRange: [0, 1], outputRange: [1, 2.2] }) }] }}
+      style={{ position: 'absolute', width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: swatch.white, opacity: p.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 0.95, 0] }), transform: [{ scale: p.interpolate({ inputRange: [0, 1], outputRange: [1, 2.2] }) }] }}
     />
   );
 }
@@ -44,7 +44,7 @@ function Shine() {
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, overflow: 'hidden', borderRadius: radio.panel }}>
       <Animated.View style={{ position: 'absolute', top: -40, bottom: -40, width: 150, left: '-30%', transform: [{ translateX: p.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 1500, 1500] }) }, { rotate: '16deg' }] }}>
-        <View style={{ flex: 1, ...soloWeb({ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0) 100%)' }) }} />
+        <View style={{ flex: 1, ...soloWeb({ backgroundImage: `linear-gradient(90deg, ${tint.white(0)} 0%, ${tint.white(0.65)} 50%, ${tint.white(0)} 100%)` }) }} />
       </Animated.View>
     </View>
   );
@@ -59,7 +59,7 @@ function PulsingIcon({ icon, hovered }: { icon: NombreIcono; hovered: boolean })
       <Ring delay={0} />
       <Ring delay={1200} />
       <Animated.View style={{ transform: [{ translateY: p.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -10, 0, -3, 0] }) }] }}>
-        <View style={{ width: 68, height: 68, borderRadius: radio.pildora, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#0E8FA8', shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, ...soloWeb({ transitionProperty: 'transform', transitionDuration: '420ms', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)', transform: hovered ? 'scale(1.16) rotate(-8deg)' : 'scale(1) rotate(0deg)' }) }}>
+        <View style={{ width: 68, height: 68, borderRadius: radio.pildora, backgroundColor: swatch.white, alignItems: 'center', justifyContent: 'center', shadowColor: swatch.teal, shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, ...soloWeb({ transitionProperty: 'transform', transitionDuration: '420ms', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)', transform: hovered ? 'scale(1.16) rotate(-8deg)' : 'scale(1) rotate(0deg)' }) }}>
           <Icono nombre={icon} tamano="lg" color={t.onAccent} />
         </View>
       </Animated.View>
@@ -158,7 +158,7 @@ export function ActivityCard({ hasProjects, canEdit, busy, onAddProposals, onNav
               transitionProperty: 'transform, box-shadow',
               transitionDuration: '360ms',
               transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-              boxShadow: e.hovered ? '0 22px 44px -18px rgba(14,143,168,0.55)' : '0 12px 30px -22px rgba(14,143,168,0.5)',
+              boxShadow: e.hovered ? `0 22px 44px -18px ${tint.teal(0.55)}` : `0 12px 30px -22px ${tint.teal(0.5)}`,
               ...(e.hovered ? { transform: 'translateY(-3px)' } : null),
               ...(dragging ? { transform: 'scale(1.01)' } : null),
             }),

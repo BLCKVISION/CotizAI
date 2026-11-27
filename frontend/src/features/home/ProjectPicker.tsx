@@ -5,9 +5,9 @@ import { Pressable, View } from 'react-native';
 import { Boton, Icono, Texto } from '@/design/componentes';
 import { Lightbox } from '@/design/Lightbox';
 import { NewItemTile } from '@/design/NewItemTile';
-import { useTema } from '@/design/tema';
+import { swatch, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import type { Proyecto } from '@/features/proyectos/api';
+import type { Proyecto } from '@/core/api/projects';
 
 const FIRST_PAGE = 6;
 
@@ -41,7 +41,7 @@ export function ProjectPicker({ visible, projects, counts, pendingFiles, onPick,
               accessibilityRole="button"
               accessibilityLabel={`Agregar a ${p.nombre}`}
               onPress={() => onPick(p)}
-              style={(e: PressState) => ({ flex: 1, alignItems: 'center', justifyContent: 'center', gap: espacio.xs, padding: espacio.sm, borderRadius: 22, borderWidth: 2, borderColor: e.focused ? t.foco : e.hovered ? t.accentStrong : t.borde, backgroundColor: e.hovered ? '#F0FBFE' : '#FFFFFF' })}
+              style={(e: PressState) => ({ flex: 1, alignItems: 'center', justifyContent: 'center', gap: espacio.xs, padding: espacio.sm, borderRadius: 22, borderWidth: 2, borderColor: e.focused ? t.foco : e.hovered ? t.accentStrong : t.borde, backgroundColor: e.hovered ? swatch.ice50 : swatch.white })}
             >
               <View style={{ width: 48, height: 48, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: t.accent }}>
                 <Icono nombre="folder" color={t.onAccent} />

@@ -3,8 +3,9 @@ import { View } from 'react-native';
 
 import { Icono, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
+import { swatch } from '@/design/tema';
 
-import { registerAccountApi } from './api';
+import { registerAccountApi } from '../../core/api/auth';
 import { accountErrorNotice, type AuthMode, authColor, FormHeading, LineField, type Notice, NoticeBox, SubmitButton, TextLink } from './authParts';
 import { checkPassword, isEmail, isStrongPassword } from './passwordRules';
 
@@ -15,8 +16,8 @@ function PasswordRules({ password, email }: { password: string; email: string })
     <View accessibilityLabel="Requisitos de la contraseña" style={{ gap: 2 }}>
       {checkPassword(password, email).map((rule) => (
         <View key={rule.id} accessible accessibilityLabel={`${rule.label}: ${rule.passes ? 'cumplido' : 'pendiente'}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icono nombre={rule.passes ? 'check-circle' : 'circle'} tamano="sm" color={rule.passes ? '#166534' : authColor.underline} />
-          <Texto variante="pequeno" color={rule.passes ? '#166534' : authColor.soft} style={{ flex: 1 }}>
+          <Icono nombre={rule.passes ? 'check-circle' : 'circle'} tamano="sm" color={rule.passes ? swatch.green800 : authColor.underline} />
+          <Texto variante="pequeno" color={rule.passes ? swatch.green800 : authColor.soft} style={{ flex: 1 }}>
             {rule.label}
           </Texto>
         </View>

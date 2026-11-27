@@ -1,6 +1,6 @@
-import type { NombreIcono, Tono } from '@/design/componentes';
+import type { NombreIcono, Tono } from './componentes';
 
-import type { EstadoProyecto } from './api';
+import type { EstadoProyecto } from '../core/api/projects';
 
 /** Cada estado combina color + icono + texto: el significado nunca depende solo del color. */
 export const ESTADOS: Record<EstadoProyecto, { etiqueta: string; tono: Tono; icono: NombreIcono; descripcion: string }> = {

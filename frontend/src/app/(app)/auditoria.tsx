@@ -6,8 +6,8 @@ import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { EstadoVacio, Texto } from '@/design/componentes';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
-import { auditoriaApi, etiquetaDeAccion, type Evento } from '@/features/gestion/api';
-import { formatoFechaHora } from '@/features/proyectos/estados';
+import { auditoriaApi, etiquetaDeAccion, type Evento } from '@/core/api/management';
+import { formatoFechaHora } from '@/design/projectStatus';
 
 function groupByDay(events: Evento[]): Record<string, Evento[]> {
   const days: Record<string, Evento[]> = {};

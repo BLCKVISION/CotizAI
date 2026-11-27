@@ -36,6 +36,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test": "bash tests/run.sh",
     "export:web": "expo export --platform web"
   },
   "private": true,

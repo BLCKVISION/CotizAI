@@ -6,8 +6,8 @@ import { Aviso } from '@/design/bloques';
 import { Boton, CampoDeTexto, Insignia, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
 
-import type { ExchangeRate, ManualRate } from './api';
-import { formatMoney, localDate, parseRate } from './format';
+import type { ExchangeRate, ManualRate } from '../../core/api/evaluations';
+import { formatMoney, localDate, parseRate } from '../../core/evaluationFormat';
 
 type Props = {
   rates: ExchangeRate[] | null;

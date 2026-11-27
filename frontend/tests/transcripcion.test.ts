@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 
 import { ErrorApi } from '../src/core/api/cliente';
-import { aTranscripcion, transcribirImagenApi } from '../src/features/transcripcion/api';
+import { aTranscripcion, transcribirImagenApi } from '../src/core/api/transcription';
 
 type Llamada = { url: string; init: RequestInit };
 const llamadas: Llamada[] = [];

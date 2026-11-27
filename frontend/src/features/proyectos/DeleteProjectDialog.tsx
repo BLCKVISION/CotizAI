@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError } from '@/core/useDatos';
 import { ConfirmDialog } from '@/design/ConfirmDialog';
-import { showToast } from '@/design/toastStore';
+import { showToast } from '@/core/toastStore';
 
-import { deleteProjectApi, type Proyecto } from './api';
+import { deleteProjectApi, type Proyecto } from '../../core/api/projects';
 
 export function DeleteProjectDialog({ project, onClose, onDeleted }: { project: Proyecto | null; onClose: () => void; onDeleted: () => void }) {
   const { conSesion } = useSesion();

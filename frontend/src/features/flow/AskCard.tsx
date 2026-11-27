@@ -9,7 +9,7 @@ import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, CampoDeTexto, Chip, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
 
-import { type Answer, askProjectApi } from './api';
+import { type Answer, askProjectApi } from '../../core/api/evaluations';
 
 const SUGGESTIONS = [
   '¿Por qué esta propuesta quedó primera?',

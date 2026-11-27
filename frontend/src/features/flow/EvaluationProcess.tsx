@@ -6,10 +6,10 @@ import { Aviso } from '@/design/bloques';
 import { Boton, Icono, Insignia, type NombreIcono, Texto } from '@/design/componentes';
 import { accentGradient, Entrada, soloWeb, useReducirMovimiento } from '@/design/efectos';
 import { Lightbox } from '@/design/Lightbox';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 
-import type { ProjectEvaluation } from './api';
+import type { ProjectEvaluation } from '../../core/api/evaluations';
 import { estimateProgress, STAGES } from './progress';
 
 const STAGE_ICONS: NombreIcono[] = ['file-text', 'percent', 'check-square', 'dollar-sign', 'award'];
@@ -34,13 +34,13 @@ function ScannedFile({ name, index, active }: { name: string; index: number; act
   const t = useTema();
   const scan = useLoop(active, 1700, (index % 5) * 220);
   return (
-    <View accessible accessibilityLabel={name} {...({ title: name } as object)} style={{ width: 52, height: 62, borderRadius: radio.md, alignItems: 'center', justifyContent: 'center', gap: 2, overflow: 'hidden', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: t.borde }}>
+    <View accessible accessibilityLabel={name} {...({ title: name } as object)} style={{ width: 52, height: 62, borderRadius: radio.md, alignItems: 'center', justifyContent: 'center', gap: 2, overflow: 'hidden', backgroundColor: swatch.white, borderWidth: 1, borderColor: t.borde }}>
       <Icono nombre={iconFor(name)} tamano="sm" />
       <Texto suave style={{ fontSize: 10, lineHeight: 12 }}>
         {(name.split('.').pop() ?? '').toUpperCase()}
       </Texto>
       {active ? (
-        <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, height: 18, top: scan.interpolate({ inputRange: [0, 1], outputRange: [-20, 64] }), ...soloWeb({ backgroundImage: 'linear-gradient(180deg, rgba(147,228,244,0) 0%, rgba(147,228,244,0.75) 50%, rgba(147,228,244,0) 100%)' }) }} />
+        <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, height: 18, top: scan.interpolate({ inputRange: [0, 1], outputRange: [-20, 64] }), ...soloWeb({ backgroundImage: `linear-gradient(180deg, ${tint.aqua(0)} 0%, ${tint.aqua(0.75)} 50%, ${tint.aqua(0)} 100%)` }) }} />
       ) : null}
     </View>
   );
@@ -57,7 +57,7 @@ function StageRow({ index, current, finished }: { index: number; current: number
         {active ? (
           <Animated.View style={{ position: 'absolute', width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: t.accentStrong, opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.9, 0] }), transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.6] }) }] }} />
         ) : null}
-        <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? t.accent : active ? '#FFFFFF' : t.superficieAlta, borderWidth: active ? 2 : 0, borderColor: t.accentStrong }}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? t.accent : active ? swatch.white : t.superficieAlta, borderWidth: active ? 2 : 0, borderColor: t.accentStrong }}>
           <Icono nombre={done ? 'check' : STAGE_ICONS[index]} tamano="sm" color={done ? t.onAccent : t.texto} />
         </View>
       </View>

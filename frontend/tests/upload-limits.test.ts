@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { isTooLarge, MAX_FILE_BYTES, tooLargeMessage } from '../src/features/uploads/limits';
+import { isTooLarge, MAX_FILE_BYTES, tooLargeMessage } from '../src/core/uploads/limits';
 
 test('exactly 10 MB is accepted and one byte more is not', () => {
   assert.equal(MAX_FILE_BYTES, 10 * 1024 * 1024);

@@ -1,6 +1,6 @@
 /** The AI's analysis of one proposal written as Markdown, so it reads as one ordered page. */
-import type { ProposalEvaluationItem, ReviewDecision } from '@/features/evaluations/api';
-import { CRITERION_LABELS, formatMoney } from '@/features/evaluations/format';
+import type { ProposalEvaluationItem, ReviewDecision } from '@/core/api/evaluations';
+import { CRITERION_LABELS, formatMoney } from '@/core/evaluationFormat';
 
 import { ANSWERS, checklist, type CheckState, issues, type Issue } from './flow';
 

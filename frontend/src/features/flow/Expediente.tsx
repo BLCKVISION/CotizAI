@@ -10,15 +10,15 @@ import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, BotonIcono, Icono, type NombreIcono, Tarjeta, Texto } from '@/design/componentes';
 import { ConfirmDialog } from '@/design/ConfirmDialog';
 import { useTema } from '@/design/tema';
-import { showToast } from '@/design/toastStore';
+import { showToast } from '@/core/toastStore';
 import { espacio, radio } from '@/design/tokens';
-import { SelectBox, SelectionChips, type Selection } from '@/features/flow/ProposalSelection';
-import { useProposalUpload } from '@/features/home/useProposalUpload';
-import type { Proyecto } from '@/features/proyectos/api';
-import { MAX_FILE_LABEL } from '@/features/uploads/limits';
-import { UploadFlow } from '@/features/uploads/UploadFlow';
+import { SelectBox, SelectionChips, type Selection } from './ProposalSelection';
+import { useProposalUpload } from '@/core/uploads/useProposalUpload';
+import type { Proyecto } from '@/core/api/projects';
+import { MAX_FILE_LABEL } from '@/core/uploads/limits';
+import { UploadFlow } from '@/design/UploadFlow';
 
-import { descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from './api';
+import { descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from '../../core/api/management';
 import { MarkdownDialog } from './MarkdownDialog';
 
 const ICONOS: Record<string, NombreIcono> = { pdf: 'file-text', jpg: 'image', png: 'message-square', xlsx: 'grid' };

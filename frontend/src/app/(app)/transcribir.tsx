@@ -8,9 +8,9 @@ import { Aviso, Cargando } from '@/design/bloques';
 import { Boton, EstadoVacio, Tarjeta, Texto } from '@/design/componentes';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
-import { type Transcripcion, transcribirImagenApi } from '@/features/transcripcion/api';
-import { VistaTranscripcion } from '@/features/transcripcion/Vista';
-import { isTooLarge, MAX_FILE_LABEL, tooLargeMessage } from '@/features/uploads/limits';
+import { type Transcripcion, transcribirImagenApi } from '@/core/api/transcription';
+import { VistaTranscripcion } from '@/design/MarkdownView';
+import { isTooLarge, MAX_FILE_LABEL, tooLargeMessage } from '@/core/uploads/limits';
 
 // Propia de esta pantalla: ACCEPT_PHOTOS la comparten las subidas de propuestas, que no contemplan WebP en sus estadísticas.
 const ACEPTAR_IMAGENES = '.jpg,.jpeg,.png,.webp';

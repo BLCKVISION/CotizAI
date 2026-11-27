@@ -5,6 +5,7 @@ import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { BotonIcono, Texto } from './componentes';
 import { Entrada, soloWeb } from './efectos';
 import { espacio, radio } from './tokens';
+import { swatch, tint } from './tema';
 
 type Props = { visible: boolean; title: string; description?: string; onClose: () => void; maxWidth?: number; children: ReactNode };
 
@@ -17,10 +18,10 @@ export function Lightbox({ visible, title, description, onClose, maxWidth = 640,
           accessibilityLabel="Cerrar ventana"
           onPress={onClose}
           tabIndex={-1}
-          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(15,23,42,0.34)', ...soloWeb({ backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }) }}
+          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: tint.navy(0.34), ...soloWeb({ backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }) }}
         />
         <Entrada estilo={{ width: '100%', maxWidth, maxHeight: '100%' }}>
-          <View accessibilityViewIsModal style={{ maxHeight: '100%', flexShrink: 1, backgroundColor: '#FFFFFF', borderRadius: radio.panel, overflow: 'hidden' }}>
+          <View accessibilityViewIsModal style={{ maxHeight: '100%', flexShrink: 1, backgroundColor: swatch.white, borderRadius: radio.panel, overflow: 'hidden' }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: espacio.md, paddingHorizontal: espacio.lg, paddingTop: espacio.lg, paddingBottom: espacio.sm }}>
               <View style={{ flex: 1, gap: espacio.xs }}>
                 <Texto variante="subtitulo" accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold', fontSize: 22, lineHeight: 28 }}>

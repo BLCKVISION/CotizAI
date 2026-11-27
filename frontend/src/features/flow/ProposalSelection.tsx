@@ -5,8 +5,8 @@ import { Aviso } from '@/design/bloques';
 import { Chip, Icono, Insignia, Texto } from '@/design/componentes';
 import { useTema } from '@/design/tema';
 import { espacio } from '@/design/tokens';
-import { showToast } from '@/design/toastStore';
-import type { Propuesta } from '@/features/gestion/api';
+import { showToast } from '@/core/toastStore';
+import type { Propuesta } from '@/core/api/management';
 
 import { MAX_PER_RUN } from './flow';
 

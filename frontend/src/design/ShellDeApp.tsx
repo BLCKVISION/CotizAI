@@ -4,9 +4,6 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
-import { CotiChat } from '@/features/coti/CotiChat';
-import { NotificationsBell } from '@/features/notifications/NotificationsBell';
-import { Tour } from '@/features/onboarding/Tour';
 
 import { BrandRow, Isotype } from './Brand';
 import { BotonIcono, Chip, Insignia, Texto } from './componentes';
@@ -14,7 +11,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 import { useDispositivo } from './dispositivo';
 import { soloWeb, vidrio } from './efectos';
 import { LineIcon, type LineIconName } from './LineIcon';
-import { useTema } from './tema';
+import { swatch, tint, useTema } from './tema';
 import { UserBubble } from './UserBubble';
 import { espacio, margenFlotante, radio } from './tokens';
 
@@ -69,15 +66,15 @@ function RailItem({ label, icon, active = false, expanded, onPress, expandable, 
         overflow: 'hidden',
         borderWidth: 2,
         borderColor: e.focused ? t.foco : 'transparent',
-        backgroundColor: active ? t.primario : e.hovered || e.pressed ? '#FFFFFF' : 'rgba(255,255,255,0.62)',
+        backgroundColor: active ? t.primario : e.hovered || e.pressed ? swatch.white : tint.white(0.62),
         ...soloWeb({ transitionProperty: 'width, background-color', transitionDuration: '320ms', transitionTimingFunction: easing }),
       })}
     >
       <View style={{ width: CIRCLE - 4, alignItems: 'center' }}>
-        <LineIcon name={icon} color={danger ? t.error.texto : active ? '#FFFFFF' : t.texto} />
+        <LineIcon name={icon} color={danger ? t.error.texto : active ? swatch.white : t.texto} />
       </View>
       <View style={{ width: RAIL_EXPANDED - 24 - CIRCLE, opacity: expanded ? 1 : 0, ...soloWeb({ transitionProperty: 'opacity', transitionDuration: expanded ? '320ms' : '140ms' }) }}>
-        <Texto variante="etiqueta" numberOfLines={1} color={danger ? t.error.texto : active ? '#FFFFFF' : t.texto}>
+        <Texto variante="etiqueta" numberOfLines={1} color={danger ? t.error.texto : active ? swatch.white : t.texto}>
           {label}
         </Texto>
       </View>
@@ -85,7 +82,15 @@ function RailItem({ label, icon, active = false, expanded, onPress, expandable, 
   );
 }
 
-export function ShellDeApp({ children }: { children: ReactNode }) {
+type ShellProps = {
+  children: ReactNode;
+  /** Shown in the top bar. */
+  notifications: ReactNode;
+  /** Floating layers above the content, such as the tour and the assistant. */
+  overlays: ReactNode;
+};
+
+export function ShellDeApp({ children, notifications, overlays }: ShellProps) {
   const router = useRouter();
   const ruta = usePathname();
   const { dispositivo } = useDispositivo();
@@ -133,7 +138,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           </Pressable>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
-            <NotificationsBell />
+            {notifications}
             <UserBubble name={usuario?.display_name || usuario?.correo || '??'} role={usuario ? ETIQUETA_ROL[usuario.rol] : ''} onSignOut={askToSignOut} />
           </View>
         </View>
@@ -162,8 +167,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
         </View>
-        <Tour />
-        <CotiChat />
+        {overlays}
         {signOutDialog}
       </View>
     );
@@ -193,7 +197,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
               <Insignia tono="neutro" etiqueta={ETIQUETA_ROL[usuario.rol]} icono="user" />
             </View>
           ) : null}
-          <NotificationsBell />
+          {notifications}
           <BotonIcono nombre="log-out" etiqueta="Cerrar sesión" onPress={askToSignOut} />
         </View>
       </View>
@@ -203,8 +207,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
         ))}
       </ScrollView>
       <View style={{ flex: 1 }}>{children}</View>
-      <Tour />
-      <CotiChat />
+      {overlays}
       {signOutDialog}
     </SafeAreaView>
   );

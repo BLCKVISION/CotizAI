@@ -7,11 +7,11 @@ import { soloWeb } from '@/design/efectos';
 import { NewItemTile } from '@/design/NewItemTile';
 import { innerSurface, Panel, RoundButton } from '@/design/Panel';
 import { RollingLabel } from '@/design/RollingLabel';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio, texto } from '@/design/tokens';
-import { FolderCard } from '@/features/projects/FolderCard';
-import type { Proyecto } from '@/features/proyectos/api';
-import { infoEstado } from '@/features/proyectos/estados';
+import { FolderCard } from '@/design/FolderCard';
+import type { Proyecto } from '@/core/api/projects';
+import { infoEstado } from '@/design/projectStatus';
 
 const VISIBLE_PROJECTS = 3;
 
@@ -31,7 +31,7 @@ function SeeAll({ onPress }: { onPress: () => void }) {
       accessibilityRole="link"
       accessibilityLabel="Ver más proyectos"
       onPress={onPress}
-      style={(e: PressState) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.65)', ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '220ms' }) })}
+      style={(e: PressState) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: e.hovered ? swatch.white : tint.white(0.65), ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '220ms' }) })}
     >
       {({ hovered }: PressState) => <RollingLabel text="Ver más proyectos" active={Boolean(hovered)} style={{ ...texto.etiqueta, color: t.texto }} />}
     </Pressable>

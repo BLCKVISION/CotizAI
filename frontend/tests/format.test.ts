@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { costShare, localDate, parseRate } from '../src/features/evaluations/format';
+import { costShare, localDate, parseRate } from '../src/core/evaluationFormat';
 
 describe('evaluation format', () => {
   it('reads rates written the Venezuelan or the plain way', () => {

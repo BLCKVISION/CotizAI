@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { parsearMonto } from '../src/features/proyectos/monto';
+import { parsearMonto } from '../src/core/amount';
 
 describe('parsearMonto', () => {
   const validos: [string, number][] = [

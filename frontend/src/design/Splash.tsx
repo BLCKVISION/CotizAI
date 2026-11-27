@@ -5,7 +5,7 @@ import { Animated, Easing, View } from 'react-native';
 import { Logotype } from './Brand';
 import { accentGradient, soloWeb, useReducirMovimiento } from './efectos';
 import { markSplashShown } from './splashStore';
-import { useTema } from './tema';
+import { tint, useTema } from './tema';
 
 export const SPLASH_MS = 1600;
 const FADE_MS = 380;
@@ -33,12 +33,12 @@ export function Splash({ leaving = false }: { leaving?: boolean }) {
       accessibilityRole="progressbar"
       accessibilityLabel="Cargando CotizAI"
       pointerEvents={leaving ? 'none' : 'auto'}
-      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 100, alignItems: 'center', justifyContent: 'center', gap: 36, backgroundColor: t.fondo, opacity: leaving ? 0 : 1, ...soloWeb({ transitionProperty: 'opacity', transitionDuration: `${FADE_MS}ms`, backgroundImage: 'radial-gradient(ellipse at 75% 20%, rgba(167,243,208,0.45) 0%, rgba(233,235,239,0) 55%), radial-gradient(ellipse at 20% 85%, rgba(125,211,252,0.45) 0%, rgba(233,235,239,0) 55%)' }) }}
+      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 100, alignItems: 'center', justifyContent: 'center', gap: 36, backgroundColor: t.fondo, opacity: leaving ? 0 : 1, ...soloWeb({ transitionProperty: 'opacity', transitionDuration: `${FADE_MS}ms`, backgroundImage: `radial-gradient(ellipse at 75% 20%, ${tint.mint(0.45)} 0%, ${tint.gray(0)} 55%), radial-gradient(ellipse at 20% 85%, ${tint.skyDeep(0.45)} 0%, ${tint.gray(0)} 55%)` }) }}
     >
       <Animated.View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, opacity: intro, transform: [{ translateY: intro.interpolate({ inputRange: [0, 1], outputRange: [14, 0] }) }] }}>
         <Logotype height={60} />
       </Animated.View>
-      <View style={{ width: TRACK, height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: 'rgba(15,23,42,0.08)' }}>
+      <View style={{ width: TRACK, height: 4, borderRadius: 2, overflow: 'hidden', backgroundColor: tint.navy(0.08) }}>
         <Animated.View style={{ width: 64, height: 4, borderRadius: 2, ...accentGradient(90), transform: [{ translateX: sweep.interpolate({ inputRange: [0, 1], outputRange: [-64, TRACK] }) }] }} />
       </View>
     </View>

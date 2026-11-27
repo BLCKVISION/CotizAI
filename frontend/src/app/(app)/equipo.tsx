@@ -11,8 +11,8 @@ import { Boton, CampoDeTexto, Chip, Insignia, Texto } from '@/design/componentes
 import { ConfirmDialog } from '@/design/ConfirmDialog';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { Lightbox } from '@/design/Lightbox';
-import { useTema } from '@/design/tema';
-import { showToast } from '@/design/toastStore';
+import { swatch, useTema } from '@/design/tema';
+import { showToast } from '@/core/toastStore';
 import { espacio, radio } from '@/design/tokens';
 import { checkPassword, isEmail, isStrongPassword } from '@/features/auth/passwordRules';
 import { addMemberApi, changeMemberApi, type Member, type NewMember, teamApi } from '@/features/team/api';
@@ -49,7 +49,7 @@ function MemberCard({ member, canManage, onRole, onToggle }: { member: Member; c
   const t = useTema();
   const name = member.display_name || member.email.split('@')[0]!;
   return (
-    <View style={{ flexGrow: 1, flexBasis: 300, minWidth: 0, gap: espacio.md, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: '#FFFFFF', opacity: member.active ? 1 : 0.7 }}>
+    <View style={{ flexGrow: 1, flexBasis: 300, minWidth: 0, gap: espacio.md, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: swatch.white, opacity: member.active ? 1 : 0.7 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md }}>
         <View style={{ width: 48, height: 48, borderRadius: radio.pildora, alignItems: 'center', justifyContent: 'center', backgroundColor: t.accent }}>
           <Texto variante="cuerpoMedio" color={t.onAccent} style={{ fontFamily: 'Urbanist_600SemiBold' }}>{initials(name)}</Texto>

@@ -3,7 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import { Icono, Texto } from '@/design/componentes';
 import { accentGradient, soloWeb } from '@/design/efectos';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 
 import { EVALUATION_STEPS, type StepId, STEPS } from './flow';
@@ -33,13 +33,13 @@ export function Stepper({ active, reached, onSelect }: { active: StepId; reached
             onPress={() => onSelect(step.id)}
             style={(e: PressState) => ({ flex: 1, minWidth: 0, gap: 6, opacity: open || done ? 1 : 0.45, borderRadius: radio.sm, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent' })}
           >
-            <View style={{ height: 6, borderRadius: 3, backgroundColor: 'rgba(15,23,42,0.08)', ...(done || isActive ? accentGradient(90) : null) }} />
+            <View style={{ height: 6, borderRadius: 3, backgroundColor: tint.navy(0.08), ...(done || isActive ? accentGradient(90) : null) }} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: isActive ? t.primario : done ? t.accent : '#FFFFFF', ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '300ms' }) }}>
+              <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: isActive ? t.primario : done ? t.accent : swatch.white, ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '300ms' }) }}>
                 {done && !isActive ? (
                   <Icono nombre="check" tamano="sm" color={t.onAccent} />
                 ) : (
-                  <Texto variante="etiqueta" color={isActive ? '#FFFFFF' : t.textoSuave} style={{ fontSize: 11, lineHeight: 14 }}>
+                  <Texto variante="etiqueta" color={isActive ? swatch.white : t.textoSuave} style={{ fontSize: 11, lineHeight: 14 }}>
                     {i + 1}
                   </Texto>
                 )}

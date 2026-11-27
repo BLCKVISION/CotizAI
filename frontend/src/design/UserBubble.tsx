@@ -2,12 +2,12 @@
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { openTour } from '@/features/onboarding/tourStore';
+import { openTour } from '@/core/tourStore';
 
 import { Texto } from './componentes';
 import { Entrada, soloWeb } from './efectos';
 import { LineIcon, type LineIconName } from './LineIcon';
-import { useTema } from './tema';
+import { swatch, useTema } from './tema';
 import { espacio, radio } from './tokens';
 import { useDismiss } from './useDismiss';
 
@@ -48,9 +48,9 @@ export function UserBubble({ name, role, onSignOut }: { name: string; role: stri
           width: open ? OPEN_WIDTH : SIZE,
           maxHeight: open ? 260 : SIZE,
           overflow: 'hidden',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: swatch.white,
           borderRadius: open ? radio.xl : SIZE / 2,
-          shadowColor: '#0F172A',
+          shadowColor: swatch.navy,
           shadowOpacity: open ? 0.16 : 0.07,
           shadowRadius: open ? 28 : 10,
           shadowOffset: { width: 0, height: open ? 14 : 4 },

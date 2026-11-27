@@ -4,11 +4,11 @@ import { View } from 'react-native';
 import { Aviso } from '@/design/bloques';
 import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
 import { Entrada } from '@/design/efectos';
-import { useTema } from '@/design/tema';
+import { swatch, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import type { ProjectEvaluation, ReportFormat, ReviewDecision } from '@/features/evaluations/api';
-import { AskCard } from '@/features/evaluations/AskCard';
-import { formatMoney } from '@/features/evaluations/format';
+import type { ProjectEvaluation, ReportFormat, ReviewDecision } from '@/core/api/evaluations';
+import { AskCard } from './AskCard';
+import { formatMoney } from '@/core/evaluationFormat';
 
 import { finalAnswer, issues, type Outcome, outcomes } from './flow';
 
@@ -76,7 +76,7 @@ export function ResultStep({ evaluation, decisions, onOpen, onDownload }: Props)
     <View style={{ width: '100%', maxWidth: 920, alignSelf: 'center', gap: espacio.md }}>
       <Entrada>
         <View accessibilityLiveRegion="polite" style={{ alignItems: 'center', padding: espacio.xl, borderRadius: radio.panel, gap: espacio.md, backgroundColor: tone.fondo }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+          <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: swatch.white }}>
             <Icono nombre={answer.approved ? 'award' : 'alert-triangle'} tamano="xl" color={tone.texto} />
           </View>
           <View style={{ alignItems: 'center', gap: espacio.xs }}>

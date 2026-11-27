@@ -5,10 +5,10 @@ import { Animated, Easing, Modal, Pressable, View } from 'react-native';
 import { Boton, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { accentGradient, soloWeb, useReducirMovimiento } from '@/design/efectos';
 import { SPLASH_MS } from '@/design/Splash';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 
-import { hasSeenTour, markTourSeen, onOpenTour } from './tourStore';
+import { hasSeenTour, markTourSeen, onOpenTour } from '../../core/tourStore';
 
 type Scene = 'create' | 'upload' | 'review' | 'decide';
 const SLIDES: { scene: Scene; title: string; text: string }[] = [
@@ -42,7 +42,7 @@ function useLoop(scene: Scene) {
 
 function Sheet({ icon }: { icon: NombreIcono }) {
   return (
-    <View style={{ width: 58, height: 72, borderRadius: 12, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#0E4F6E', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }}>
+    <View style={{ width: 58, height: 72, borderRadius: 12, backgroundColor: swatch.white, alignItems: 'center', justifyContent: 'center', shadowColor: swatch.teal900, shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }}>
       <Icono nombre={icon} />
     </View>
   );
@@ -54,8 +54,8 @@ function Stage({ scene }: { scene: Scene }) {
   const at = (input: number[], output: number[]) => p.interpolate({ inputRange: input, outputRange: output });
   const folder = (
     <View style={{ width: 150, height: 96 }}>
-      <View style={{ position: 'absolute', top: 0, left: 0, width: 66, height: 26, borderTopLeftRadius: 14, borderTopRightRadius: 18, backgroundColor: 'rgba(255,255,255,0.92)' }} />
-      <View style={{ position: 'absolute', top: 16, left: 0, right: 0, bottom: 0, borderRadius: 18, borderTopLeftRadius: 0, backgroundColor: 'rgba(255,255,255,0.92)' }} />
+      <View style={{ position: 'absolute', top: 0, left: 0, width: 66, height: 26, borderTopLeftRadius: 14, borderTopRightRadius: 18, backgroundColor: tint.white(0.92) }} />
+      <View style={{ position: 'absolute', top: 16, left: 0, right: 0, bottom: 0, borderRadius: 18, borderTopLeftRadius: 0, backgroundColor: tint.white(0.92) }} />
     </View>
   );
   return (
@@ -64,7 +64,7 @@ function Stage({ scene }: { scene: Scene }) {
         <Animated.View style={{ opacity: at([0, 0.25, 1], [0, 1, 1]), transform: [{ scale: at([0, 0.45, 0.6, 1], [0.6, 1.08, 1, 1]) }] }}>
           {folder}
           <Animated.View style={{ position: 'absolute', right: -18, bottom: -16, width: 46, height: 46, borderRadius: 23, backgroundColor: t.primario, alignItems: 'center', justifyContent: 'center', transform: [{ scale: at([0, 0.5, 0.7, 1], [0, 0, 1, 1]) }] }}>
-            <Icono nombre="plus" color="#FFFFFF" />
+            <Icono nombre="plus" color={swatch.white} />
           </Animated.View>
         </Animated.View>
       ) : scene === 'upload' ? (
@@ -92,13 +92,13 @@ function Stage({ scene }: { scene: Scene }) {
           <Sheet icon="file-text" />
           <Sheet icon="percent" />
           <Sheet icon="globe" />
-          <Animated.View style={{ position: 'absolute', top: 30, left: -8, width: 56, height: 56, borderRadius: 28, borderWidth: 4, borderColor: t.primario, backgroundColor: 'rgba(255,255,255,0.35)', transform: [{ translateX: at([0, 1], [0, 160]) }] }} />
+          <Animated.View style={{ position: 'absolute', top: 30, left: -8, width: 56, height: 56, borderRadius: 28, borderWidth: 4, borderColor: t.primario, backgroundColor: tint.white(0.35), transform: [{ translateX: at([0, 1], [0, 160]) }] }} />
         </View>
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 22 }}>
           <Sheet icon="users" />
           <Animated.View style={{ width: 84, height: 84, borderRadius: 42, backgroundColor: t.primario, alignItems: 'center', justifyContent: 'center', transform: [{ scale: at([0, 0.3, 0.55, 0.7, 1], [0.3, 0.3, 1.12, 1, 1]) }], opacity: at([0, 0.3, 0.45, 1], [0, 0, 1, 1]) }}>
-            <Icono nombre="check" tamano="xl" color="#FFFFFF" />
+            <Icono nombre="check" tamano="xl" color={swatch.white} />
           </Animated.View>
         </View>
       )}
@@ -132,8 +132,8 @@ export function Tour() {
   const last = step === SLIDES.length - 1;
   return (
     <Modal transparent visible animationType="fade" onRequestClose={close}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: espacio.md, backgroundColor: 'rgba(15,23,42,0.34)', ...soloWeb({ backdropFilter: 'blur(10px)' }) }}>
-        <View accessibilityViewIsModal style={{ width: '100%', maxWidth: 520, backgroundColor: '#FFFFFF', borderRadius: radio.panel, padding: espacio.lg, gap: espacio.md }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: espacio.md, backgroundColor: tint.navy(0.34), ...soloWeb({ backdropFilter: 'blur(10px)' }) }}>
+        <View accessibilityViewIsModal style={{ width: '100%', maxWidth: 520, backgroundColor: swatch.white, borderRadius: radio.panel, padding: espacio.lg, gap: espacio.md }}>
           <Stage key={slide.scene} scene={slide.scene} />
           <View accessibilityLiveRegion="polite" style={{ gap: espacio.xs, minHeight: 96 }}>
             <Texto variante="subtitulo" accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold' }}>
@@ -144,7 +144,7 @@ export function Tour() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: espacio.md }}>
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {SLIDES.map((s, i) => (
-                <Pressable key={s.scene} accessibilityRole="button" accessibilityLabel={`Ir al paso ${i + 1}`} hitSlop={10} onPress={() => setStep(i)} style={{ width: i === step ? 24 : 8, height: 8, borderRadius: 4, backgroundColor: i === step ? t.accentStrong : '#D5DBE3', ...soloWeb({ transitionProperty: 'width', transitionDuration: '280ms' }) }} />
+                <Pressable key={s.scene} accessibilityRole="button" accessibilityLabel={`Ir al paso ${i + 1}`} hitSlop={10} onPress={() => setStep(i)} style={{ width: i === step ? 24 : 8, height: 8, borderRadius: 4, backgroundColor: i === step ? t.accentStrong : swatch.gray250, ...soloWeb({ transitionProperty: 'width', transitionDuration: '280ms' }) }} />
               ))}
             </View>
             <View style={{ flexDirection: 'row', gap: espacio.sm }}>

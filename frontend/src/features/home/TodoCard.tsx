@@ -5,9 +5,9 @@ import { Boton, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { soloWeb } from '@/design/efectos';
 import { innerSurface, Panel } from '@/design/Panel';
 import { RollingLabel } from '@/design/RollingLabel';
-import { useTema } from '@/design/tema';
+import { swatch, tint, useTema } from '@/design/tema';
 import { espacio, radio, texto } from '@/design/tokens';
-import { formatMoney } from '@/features/evaluations/format';
+import { formatMoney } from '@/core/evaluationFormat';
 
 import type { Task, TaskKind } from './tasks';
 import type { VerifiedProposal } from './verified';
@@ -39,7 +39,7 @@ function TaskRow({ task, onPress, last }: { task: Task; onPress: () => void; las
             </Texto>
           </View>
           <View style={{ minHeight: 32, justifyContent: 'center', paddingHorizontal: espacio.sm + 4, borderRadius: radio.pildora, backgroundColor: hovered ? t.primario : t.accent, ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '220ms' }) }}>
-            <RollingLabel text={task.action} active={Boolean(hovered)} style={{ ...texto.etiqueta, color: hovered ? '#FFFFFF' : t.onAccent }} />
+            <RollingLabel text={task.action} active={Boolean(hovered)} style={{ ...texto.etiqueta, color: hovered ? swatch.white : t.onAccent }} />
           </View>
         </>
       )}
@@ -98,9 +98,9 @@ function Tab({ label, selected, onPress }: { label: string; selected: boolean; o
       accessibilityState={{ selected }}
       aria-selected={selected}
       onPress={onPress}
-      style={(e: PressState) => ({ minHeight: 34, justifyContent: 'center', paddingHorizontal: espacio.sm + 4, borderRadius: radio.pildora, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: selected ? t.primario : e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.65)' })}
+      style={(e: PressState) => ({ minHeight: 34, justifyContent: 'center', paddingHorizontal: espacio.sm + 4, borderRadius: radio.pildora, borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: selected ? t.primario : e.hovered ? swatch.white : tint.white(0.65) })}
     >
-      <Texto variante="etiqueta" color={selected ? '#FFFFFF' : t.texto}>
+      <Texto variante="etiqueta" color={selected ? swatch.white : t.texto}>
         {label}
       </Texto>
     </Pressable>

@@ -13,7 +13,7 @@ import {
   type ManualRate,
   type ProjectEvaluation,
   registerManualRateApi,
-} from './api';
+} from '../../core/api/evaluations';
 
 export function useProjectEvaluation(projectId: string, canViewResults: boolean) {
   const { conSesion } = useSesion();

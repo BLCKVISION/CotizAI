@@ -12,10 +12,10 @@ import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { Lightbox } from '@/design/Lightbox';
 import { NewItemTile } from '@/design/NewItemTile';
 import { espacio } from '@/design/tokens';
-import { registrarProveedorApi } from '@/features/gestion/api';
-import { supplierDirectoryApi } from '@/features/history/api';
+import { registrarProveedorApi } from '@/core/api/management';
+import { supplierDirectoryApi } from '@/core/api/history';
 import { SupplierBackground } from '@/features/history/SupplierBackground';
-import { matchesSearch, type SupplierEntry } from '@/features/history/suppliers';
+import { matchesSearch, type SupplierEntry } from '@/core/suppliers';
 import { PROVIDER_CARD_HEIGHT, ProviderCard } from '@/features/projects/ProviderCard';
 
 const VACIO = { nombre: '', rif: '', ubicacion: '', contacto: '' };
