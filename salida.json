@@ -1,61 +1,61 @@
 {
   "reto": "propuesta_servicios",
   "repositorio": "blckvisions/cotizai",
-  "commit": "15089c6f4486fdcbd3d59a10432b49059b6c6484",
-  "inicio": "2026-11-27T16:21:44-04:00",
-  "fin": "2026-11-27T16:22:40-04:00",
+  "commit": "8462f1fe1d1d25a3093b63cf5c2e3342d1cfeaaa",
+  "inicio": "2026-11-27T16:34:53-04:00",
+  "fin": "2026-11-27T16:35:51-04:00",
   "procesados": [
     {
       "archivo": "Propuesta_147_Oficina_Basica_Tech_CA.png",
-      "hora": "2026-11-27T16:22:00-04:00"
+      "hora": "2026-11-27T16:35:10-04:00"
     },
     {
       "archivo": "Propuesta_195_Consorcio_Enterprise_Caracas_SA.pdf",
-      "hora": "2026-11-27T16:22:12-04:00"
+      "hora": "2026-11-27T16:35:22-04:00"
     },
     {
       "archivo": "Propuesta_284_Licencias__Hardware_Global_CA.pdf",
-      "hora": "2026-11-27T16:22:09-04:00"
+      "hora": "2026-11-27T16:35:18-04:00"
     },
     {
       "archivo": "Propuesta_376_Soluciones_Tecnologicas_Merida_CA.png",
-      "hora": "2026-11-27T16:21:57-04:00"
+      "hora": "2026-11-27T16:35:14-04:00"
     },
     {
       "archivo": "Propuesta_519_Saldos__Remates_TI_CA.png",
-      "hora": "2026-11-27T16:22:11-04:00"
+      "hora": "2026-11-27T16:35:20-04:00"
     },
     {
       "archivo": "Propuesta_628_DataCenter__Workstations_CA.xlsx",
-      "hora": "2026-11-27T16:22:19-04:00"
+      "hora": "2026-11-27T16:35:35-04:00"
     },
     {
       "archivo": "Propuesta_712_MegaPC_Directo_CA.jpg",
-      "hora": "2026-11-27T16:22:09-04:00"
+      "hora": "2026-11-27T16:35:26-04:00"
     },
     {
       "archivo": "Propuesta_761_NovaTech_Soluciones_Integrales_CA.png",
-      "hora": "2026-11-27T16:22:40-04:00"
+      "hora": "2026-11-27T16:35:51-04:00"
     },
     {
       "archivo": "Propuesta_853_Importadora_Relampago_Logistic_CA.xlsx",
-      "hora": "2026-11-27T16:22:30-04:00"
+      "hora": "2026-11-27T16:35:38-04:00"
     },
     {
       "archivo": "Propuesta_904_Vertice_Sistemas_Integrados_CA.jpg",
-      "hora": "2026-11-27T16:22:24-04:00"
+      "hora": "2026-11-27T16:35:37-04:00"
     }
   ],
   "ranking": [
-    "Propuesta_761_NovaTech_Soluciones_Integrales_CA",
     "Propuesta_628_DataCenter__Workstations_CA",
+    "Propuesta_761_NovaTech_Soluciones_Integrales_CA",
     "Propuesta_195_Consorcio_Enterprise_Caracas_SA",
-    "Propuesta_853_Importadora_Relampago_Logistic_CA",
-    "Propuesta_519_Saldos__Remates_TI_CA",
+    "Propuesta_376_Soluciones_Tecnologicas_Merida_CA",
+    "Propuesta_904_Vertice_Sistemas_Integrados_CA",
     "Propuesta_147_Oficina_Basica_Tech_CA",
     "Propuesta_284_Licencias__Hardware_Global_CA",
-    "Propuesta_376_Soluciones_Tecnologicas_Merida_CA",
+    "Propuesta_519_Saldos__Remates_TI_CA",
     "Propuesta_712_MegaPC_Directo_CA",
-    "Propuesta_904_Vertice_Sistemas_Integrados_CA"
+    "Propuesta_853_Importadora_Relampago_Logistic_CA"
   ]
 }
