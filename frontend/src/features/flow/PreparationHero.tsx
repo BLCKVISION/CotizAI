@@ -7,6 +7,12 @@ import { accentGradient, Entrada } from '@/design/efectos';
 import { useTema } from '@/design/tema';
 import { espacio } from '@/design/tokens';
 
+const HOW_IT_WORKS = [
+  { title: 'La IA lee', detail: 'cada documento y extrae montos, plazos y condiciones.' },
+  { title: 'Compara', detail: 'costo real, descartes y ranking, con evidencia.' },
+  { title: 'Usted decide', detail: 'verifica cada resultado con Sí o No.' },
+];
+
 type Props = {
   title: string;
   detail: string;
@@ -37,10 +43,23 @@ export function PreparationHero({ title, detail, blocker, canEvaluate, running, 
             </Texto>
           </View>
           <Texto suave>{detail}</Texto>
+          {/* What happens next, so nobody has to guess how to evaluate. */}
+          <View style={{ gap: espacio.sm }}>
+            {HOW_IT_WORKS.map((step, i) => (
+              <View key={step.title} style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
+                <View style={{ width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: t.superficieAlta }}>
+                  <Texto variante="pequeno" style={{ fontFamily: 'Urbanist_600SemiBold' }}>{i + 1}</Texto>
+                </View>
+                <Texto variante="pequeno" style={{ flex: 1 }}>
+                  <Texto variante="etiqueta">{step.title}</Texto>{` · ${step.detail}`}
+                </Texto>
+              </View>
+            ))}
+          </View>
           {running ? (
             <Boton large etiqueta={`Ver el proceso (${elapsed} s)`} icono="activity" onPress={onShowProcess} />
           ) : canEvaluate ? (
-            <Boton large etiqueta="Evaluar Propuestas de Servicios" icono="cpu" deshabilitado={blocker !== null} onPress={onEvaluate} />
+            <Boton large etiqueta="Evaluar ahora" icono="cpu" deshabilitado={blocker !== null} onPress={onEvaluate} />
           ) : null}
           {blocker && !running ? (
             <Texto variante="pequeno" color={t.aviso.texto}>

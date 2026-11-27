@@ -2,7 +2,8 @@
  * Inside a project: preparation (documents and one "evaluate" button) → AI analysis → human yes/no → final answer.
  * Steps are shown only while evaluating and verifying. The content scrolls; the action bar stays inside the window.
  */
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { can } from '@/core/auth/permissions';
@@ -37,8 +38,17 @@ import { VERDICT_TONE, VerdictSheet } from './VerdictSheet';
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 const EVALUATED_STATES = ['en_revision_del_comite', 'adjudicado', 'cerrado'];
 
+/** Runs `onRun` once when it appears: the evaluation that starts by itself after uploading from Home. */
+function RunOnMount({ onRun }: { onRun: () => void }) {
+  useEffect(onRun, []); // eslint-disable-line react-hooks/exhaustive-deps -- one shot on purpose
+  return null;
+}
+
 export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; onProjectChange: () => void }) {
   const t = useTema();
+  const router = useRouter();
+  const { evaluar } = useLocalSearchParams<{ evaluar?: string }>();
+  const [autoDone, setAutoDone] = useState(false);
   const { dispositivo } = useDispositivo();
   const { usuario, conSesion } = useSesion();
   const role = usuario?.rol;
@@ -155,11 +165,11 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   const preparing = step === 'proposals' || step === 'analysis';
   const showSteps = running; // while verifying, the steps are out of the way: the analysis is what matters
   const blocker = !canEvaluate ? (closed ? 'El proyecto está cerrado.' : 'Su rol no inicia evaluaciones.') : problem;
-  const heroTitle = list.length === 0 ? 'Agregue las propuestas' : hasEvaluation ? '¿Evaluar de nuevo?' : '¿Desea evaluar este proyecto?';
+  const heroTitle = list.length === 0 ? 'Evalúe con IA' : hasEvaluation ? 'Evaluar de nuevo' : 'Evalúe con IA';
   const heroDetail =
     list.length === 0
-      ? 'Cargue al menos un presupuesto. Después decidirá si quiere evaluarlo.'
-      : `${chosenCount === list.length ? (list.length === 1 ? 'Hay 1 propuesta lista' : `Hay ${list.length} propuestas listas`) : `Eligió ${chosenCount} de ${list.length} propuestas`}. La IA leerá cada documento, revisará cuentas y condiciones, y le explicará por qué sí o por qué no.`;
+      ? 'Suba las propuestas abajo (PDF, foto o Excel). En cuanto haya una, aquí podrá evaluarla.'
+      : `${chosenCount === list.length ? (list.length === 1 ? 'Hay 1 propuesta lista' : `Hay ${list.length} propuestas listas`) : `Eligió ${chosenCount} de ${list.length} propuestas`}. Marque a la izquierda cuáles leer y pulse el botón.`;
 
   // The preparation screen has its own large button, so only later screens use the bottom bar.
   let hint = '';
@@ -209,8 +219,19 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
     </View>
   );
 
+  const autoStart = evaluar === '1' && !autoDone && canEvaluate && list.length > 0 && !hasEvaluation && !running;
+
   return (
     <View style={{ flex: 1, minHeight: 0, gap: espacio.md }}>
+      {autoStart ? (
+        <RunOnMount
+          onRun={() => {
+            setAutoDone(true);
+            router.setParams({ evaluar: undefined });
+            void evaluate();
+          }}
+        />
+      ) : null}
       {showSteps ? <Stepper active="analysis" reached="analysis" onSelect={goTo} /> : null}
       {/* Top bar while verifying: where things stand, and the ways to add or analyse more. */}
       {step === 'verification' && !running ? (

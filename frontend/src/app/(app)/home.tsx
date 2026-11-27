@@ -77,11 +77,12 @@ export default function Home() {
     const dropped = picking ?? [];
     const upload = (files: File[]) => {
       setPicking(null);
-      // With something saved, the next decision (evaluate or not) is taken inside the project.
+      // With something saved, the project opens and the evaluation starts by itself.
       void flow.upload(project.id, files).then((saved) => {
         if (saved === 0) return; // stay: the dialog explains why each file was rejected
         flow.close();
-        router.push(`/proyectos/${project.id}` as Href);
+        // Evaluators start the AI analysis right away; the other roles only land in the project.
+        router.push(`/proyectos/${project.id}${can(usuario?.rol, 'evaluate') ? '?evaluar=1' : ''}` as Href);
       });
     };
     if (dropped.length > 0) upload(dropped);
