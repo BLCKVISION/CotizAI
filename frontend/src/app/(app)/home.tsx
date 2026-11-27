@@ -16,6 +16,7 @@ import { ProjectsCard } from '@/features/home/ProjectsCard';
 import { SummaryCard } from '@/features/home/SummaryCard';
 import { buildTasks, pickFocus } from '@/features/home/tasks';
 import { TodoCard } from '@/features/home/TodoCard';
+import { useLatestVerified } from '@/features/home/useLatestVerified';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
 import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
@@ -53,6 +54,8 @@ export default function Home() {
   const { usuario } = useSesion();
   const { datos, error, recargar } = useDatos(loadHome);
   const flow = useProposalUpload(recargar);
+  const canSeeResults = usuario !== null && usuario.rol !== 'cargador'; // UX only: the backend is the authority
+  const latest = useLatestVerified(canSeeResults);
   const [creating, setCreating] = useState(false);
   // "New project" opens over Home instead of leaving it.
   const go = (path: string) => (path === '/proyectos/nuevo' ? setCreating(true) : router.push(path as Href));
@@ -124,7 +127,7 @@ export default function Home() {
           </View>
           <View style={row(1)}>
             <Entrada indice={2} estilo={cell(0.56)}>
-              <TodoCard tasks={tasks} hasProjects={datos.projects.length > 0} canCreate={canEdit} onOpen={go} onCreate={() => setCreating(true)} />
+              <TodoCard key={role} tasks={tasks} verified={latest.datos} verifiedError={latest.error} canSeeResults={canSeeResults} hasProjects={datos.projects.length > 0} canCreate={canEdit} onOpen={go} onCreate={() => setCreating(true)} />
             </Entrada>
             <Entrada indice={3} estilo={cell(1)}>
               <SummaryCard stats={datos.stats} onOpen={() => go('/estadisticas')} />
