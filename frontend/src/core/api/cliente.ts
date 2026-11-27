@@ -15,12 +15,12 @@ export class ErrorApi extends Error {
 
 const nuevoTrackId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 
-type Opciones = { metodo?: 'GET' | 'POST' | 'DELETE'; cuerpo?: unknown; token?: string | null };
+type Opciones = { metodo?: 'GET' | 'POST' | 'DELETE'; cuerpo?: unknown; token?: string | null; timeoutMs?: number };
 
-export async function peticion<T>(ruta: string, { metodo = 'GET', cuerpo, token }: Opciones = {}): Promise<T> {
+export async function peticion<T>(ruta: string, { metodo = 'GET', cuerpo, token, timeoutMs = TIEMPO_MAXIMO_MS }: Opciones = {}): Promise<T> {
   const trackId = nuevoTrackId();
   const control = new AbortController();
-  const temporizador = setTimeout(() => control.abort(), TIEMPO_MAXIMO_MS);
+  const temporizador = setTimeout(() => control.abort(), timeoutMs);
   try {
     const respuesta = await fetch(`${API_URL}/api/v1${ruta}`, {
       method: metodo,

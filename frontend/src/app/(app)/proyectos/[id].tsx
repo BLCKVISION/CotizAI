@@ -127,6 +127,15 @@ export default function DetalleProyecto() {
     };
   }, [conSesion, id]);
 
+  // Refreshes the header after an evaluation without clearing the screen (which would discard the result shown).
+  const refresh = async () => {
+    try {
+      setProyecto(await conSesion(obtenerProyectoApi(String(id))));
+    } catch {
+      // The current data stays on screen; reopening the project loads it again.
+    }
+  };
+
   const volver = <Boton etiqueta="Proyectos" variante="fantasma" icono="arrow-left" onPress={() => router.replace('/proyectos')} />;
 
   if (error) {
@@ -175,7 +184,7 @@ export default function DetalleProyecto() {
         ))}
       </View>
 
-      {pestana === 'propuestas' ? <Expediente proyecto={proyecto} /> : null}
+      {pestana === 'propuestas' ? <Expediente proyecto={proyecto} onCambio={() => void refresh()} /> : null}
       {pestana === 'revision' ? <Revision proyecto={proyecto} onCambio={setProyecto} /> : null}
 
       {pestana === 'ficha' ? (

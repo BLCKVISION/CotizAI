@@ -1,4 +1,4 @@
-import { type Href, useRouter } from 'expo-router';
+import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
@@ -9,10 +9,12 @@ import { Boton, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/desi
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb } from '@/design/efectos';
 import { FixedPage } from '@/design/layout';
+import { NewItemTile } from '@/design/NewItemTile';
 import { useTema } from '@/design/tema';
 import { espacio, radio, texto } from '@/design/tokens';
 import { estadisticasApi } from '@/features/gestion/api';
-import { FolderCard } from '@/features/projects/FolderCard';
+import { FOLDER_HEIGHT, FolderCard } from '@/features/projects/FolderCard';
+import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
 import { type EstadoProyecto, listarProyectosApi } from '@/features/proyectos/api';
 import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
@@ -63,7 +65,14 @@ export default function Projects() {
   const [showFilters, setShowFilters] = useState(false);
   const [query, setQuery] = useState('');
   const canCreate = usuario?.rol === 'cargador'; // UX only: the backend is the authority
-  const create = () => router.push('/proyectos/nuevo' as Href);
+  const params = useLocalSearchParams<{ new?: string }>();
+  const [creating, setCreating] = useState(false);
+  const dialogOpen = canCreate && (creating || params.new === '1');
+  const create = () => setCreating(true);
+  const closeDialog = () => {
+    setCreating(false);
+    if (params.new) router.setParams({ new: undefined });
+  };
 
   const q = query.trim().toLowerCase();
   const visible = (datos?.projects ?? []).filter(
@@ -80,7 +89,6 @@ export default function Projects() {
           </Texto>
           <Texto suave>Cada carpeta reúne las propuestas de un proceso de compra.</Texto>
         </View>
-        {canCreate ? <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={create} /> : null}
       </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.md }}>
@@ -117,10 +125,24 @@ export default function Projects() {
           descripcion={canCreate ? 'Cree el primer proyecto para reunir sus propuestas.' : 'Cuando su organización cree proyectos, aparecerán aquí.'}
           accion={canCreate ? <Boton etiqueta="Nuevo proyecto" icono="plus" onPress={create} /> : undefined}
         />
-      ) : visible.length === 0 ? (
+      ) : visible.length === 0 && !canCreate ? (
         <EstadoVacio icono="filter" titulo="Sin resultados" descripcion="Ningún proyecto coincide con la búsqueda o el filtro." />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -12, paddingTop: 8 }}>
+          {canCreate ? (
+            <View style={{ width: `${100 / columns}%`, padding: 12 }}>
+              <Entrada>
+                <View style={{ height: FOLDER_HEIGHT }}>
+                  <NewItemTile label="Nuevo proyecto" icon="folder-plus" onPress={create} />
+                </View>
+              </Entrada>
+            </View>
+          ) : null}
+          {visible.length === 0 ? (
+            <View style={{ width: '100%', padding: 12 }}>
+              <Texto suave>Ningún proyecto coincide con la búsqueda o el filtro.</Texto>
+            </View>
+          ) : null}
           {visible.map((p, i) => {
             const n = datos.counts[p.id] ?? 0;
             return (
@@ -139,6 +161,7 @@ export default function Projects() {
           })}
         </ScrollView>
       )}
+      <NewProjectDialog visible={dialogOpen} onClose={closeDialog} />
     </FixedPage>
   );
 }

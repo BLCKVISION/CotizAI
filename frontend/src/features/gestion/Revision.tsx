@@ -20,6 +20,8 @@ export function Revision({ proyecto, onCambio }: { proyecto: Proyecto; onCambio:
   const [texto, setTexto] = useState('');
   const [motivo, setMotivo] = useState('');
   const [fallo, setFallo] = useState<string | null>(null);
+  const [confirmAward, setConfirmAward] = useState(false);
+  const canAward = usuario?.rol === 'aprobador' && proyecto.estado === 'en_revision_del_comite';
   const puedeAnotar = usuario?.rol === 'evaluador' || usuario?.rol === 'aprobador';
   const puedeCerrar = usuario?.rol === 'aprobador' && proyecto.estado !== 'cerrado' && proyecto.estado !== 'en_evaluacion';
 
@@ -49,6 +51,18 @@ export function Revision({ proyecto, onCambio }: { proyecto: Proyecto; onCambio:
         {notas.datos?.length === 0 ? <Texto suave>Todavía no hay notas.</Texto> : null}
         {notas.datos?.map((n) => <Fila key={n.id} icono="message-circle" titulo={n.texto} detalle={`${n.autor} · ${formatoFechaHora(n.creado)}`} />)}
       </CollapsibleCard>
+
+      {canAward ? (
+        <CollapsibleCard title="Adjudicar el proyecto" detail="La decisión es del comité: revise antes el ranking y la evidencia.">
+          <Boton etiqueta={confirmAward ? 'Confirmar adjudicación' : 'Marcar como adjudicado'} icono="award"
+            onPress={() => {
+              if (!confirmAward) return setConfirmAward(true);
+              setConfirmAward(false);
+              void ejecutar(async () => onCambio(await conSesion(transicionarProyectoApi(proyecto.id, 'adjudicado', null))));
+            }} />
+          <Texto variante="pequeno" suave>Para indicar el proveedor elegido y el motivo, agregue una nota del comité.</Texto>
+        </CollapsibleCard>
+      ) : null}
 
       {puedeCerrar ? (
         <CollapsibleCard title="Cerrar el proceso" detail={proyecto.estado === 'adjudicado' ? 'El proceso ya fue adjudicado.' : 'Cerrar sin adjudicar exige un motivo.'}>

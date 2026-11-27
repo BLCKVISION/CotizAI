@@ -13,17 +13,15 @@ import { useState } from 'react';
 import { SesionProvider, useSesion } from '@/core/sesion/SesionProvider';
 import { Fondo } from '@/design/efectos';
 import { Splash, SplashGate } from '@/design/Splash';
+import { isSplashDue } from '@/design/splashStore';
 
-function Raiz() {
-  const { listo, token } = useSesion();
-  // Show the logo while the session is restored and again right after signing in (not when signing out).
-  const [entries, setEntries] = useState({ count: 0, signedIn: false });
-  if (listo && entries.signedIn !== Boolean(token)) setEntries({ count: entries.count + (token ? 1 : 0), signedIn: Boolean(token) });
+function Raiz({ showSplash }: { showSplash: boolean }) {
+  const { listo } = useSesion();
   return (
     <Fondo>
       <StatusBar style="dark" />
       <Slot />
-      <SplashGate ready={listo} trigger={`entry-${entries.count}`} />
+      {showSplash ? <SplashGate ready={listo} /> : null}
     </Fondo>
   );
 }
@@ -36,10 +34,12 @@ export default function LayoutRaiz() {
     Urbanist_600SemiBold,
     Urbanist_700Bold,
   });
-  if (!listas && !errorDeFuentes) return <Splash />; // si fallan las fuentes se usa la del sistema en vez de dejar la pantalla en blanco
+  // Decided once per load, so signing in never brings the loading screen back.
+  const [showSplash] = useState(isSplashDue);
+  if (!listas && !errorDeFuentes) return showSplash ? <Splash /> : null; // si fallan las fuentes se usa la del sistema en vez de dejar la pantalla en blanco
   return (
     <SesionProvider>
-      <Raiz />
+      <Raiz showSplash={showSplash} />
     </SesionProvider>
   );
 }

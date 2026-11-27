@@ -17,9 +17,15 @@ describe('buildJourney', () => {
     assert.equal(j.steps[1].state, 'current');
     assert.match(j.steps[1].detail, /2 de 3/);
   });
-  it('cargador with 3 proposals: evaluation is shown but locked', () => {
+  it('cargador with 3 proposals: evaluating is the next step', () => {
     const j = buildJourney('cargador', [project('a')], { a: 3 });
-    assert.deepEqual(j.steps.map((s) => s.state), ['done', 'done', 'blocked']);
+    assert.deepEqual(j.steps.map((s) => s.state), ['done', 'done', 'current']);
+    assert.equal(j.cta?.label, 'Evaluar propuestas');
+  });
+  it('after the evaluation the committee reviews the results', () => {
+    const projects = [project('a', 'en_revision_del_comite')];
+    assert.deepEqual(buildJourney('cargador', projects, { a: 3 }).steps.map((s) => s.state), ['done', 'done', 'done']);
+    assert.equal(buildJourney('evaluador', projects, { a: 3 }).steps[1].state, 'current');
   });
   it('focus is the newest project still in reception', () => {
     const j = buildJourney('evaluador', [project('x', 'cerrado'), project('y')], {});

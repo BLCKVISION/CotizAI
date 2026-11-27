@@ -1,4 +1,5 @@
 import { type Href, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 
 import { ACCEPT_DOCUMENTS, ACCEPT_PHOTOS, pickFiles } from '@/core/files';
@@ -12,11 +13,12 @@ import { FixedPage, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
 import { estadisticasApi, type Estadisticas } from '@/features/gestion/api';
 import { ActivityCard } from '@/features/home/ActivityCard';
-import { AssistantCard } from '@/features/home/AssistantCard';
-import { buildJourney } from '@/features/home/journey';
+import { buildJourney, type Step } from '@/features/home/journey';
+import { ProjectsCard } from '@/features/home/ProjectsCard';
 import { SummaryCard } from '@/features/home/SummaryCard';
 import { TodoCard } from '@/features/home/TodoCard';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
+import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
 import { listarProyectosApi, type Proyecto } from '@/features/proyectos/api';
 
 type HomeData = { stats: Estadisticas; projects: Proyecto[] };
@@ -51,7 +53,9 @@ export default function Home() {
   const { usuario } = useSesion();
   const { datos, error, recargar } = useDatos(loadHome);
   const { status, upload } = useProposalUpload(recargar);
-  const go = (path: string) => router.push(path as Href);
+  const [creating, setCreating] = useState(false);
+  // "New project" opens over Home instead of leaving it.
+  const go = (path: string) => (path === '/proyectos/nuevo' ? setCreating(true) : router.push(path as Href));
   const wide = dispositivo === 'escritorio';
   const Container = wide ? FixedPage : Pagina;
 
@@ -65,6 +69,14 @@ export default function Home() {
   const canUpload = canEdit && focus?.estado === 'en_recepcion' && Platform.OS === 'web';
   const sendFiles = (files: File[]) => {
     if (focus) void upload(focus.id, files);
+  };
+
+  const runStep = (step: Step) => {
+    if (step.target === 'audit') return go('/auditoria');
+    if (canEdit && !focus) return setCreating(true);
+    if (canEdit && step.target === 'create' && focus?.estado !== 'en_recepcion') return setCreating(true);
+    if (step.target === 'upload' && canUpload) return pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, sendFiles);
+    go(focus ? `/proyectos/${focus.id}` : '/proyectos');
   };
 
   const cell = (flex: number): ViewStyle => (wide ? { flex, minWidth: 0, minHeight: 0 } : { minHeight: 340 });
@@ -101,14 +113,12 @@ export default function Home() {
         <View style={wide ? { flex: 1, gap: 20, minHeight: 0 } : { gap: espacio.md }}>
           <View style={row(1.36)}>
             <Entrada indice={0} estilo={cell(0.56)}>
-              <AssistantCard
-                journey={journey}
-                userName={name || 'equipo'}
+              <ProjectsCard
                 projects={datos.projects}
                 counts={datos.stats.propuestas_por_proyecto}
                 canCreate={canEdit}
+                onCreate={() => setCreating(true)}
                 onNavigate={go}
-                onAttach={canUpload ? () => pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, sendFiles) : undefined}
               />
             </Entrada>
             <Entrada indice={1} estilo={cell(1)}>
@@ -123,7 +133,7 @@ export default function Home() {
           </View>
           <View style={row(1)}>
             <Entrada indice={2} estilo={cell(0.56)}>
-              <TodoCard journey={journey} onNavigate={go} />
+              <TodoCard journey={journey} onSelect={runStep} />
             </Entrada>
             <Entrada indice={3} estilo={cell(1)}>
               <SummaryCard stats={datos.stats} onOpen={() => go('/estadisticas')} />
@@ -131,6 +141,13 @@ export default function Home() {
           </View>
         </View>
       )}
+      <NewProjectDialog
+        visible={canEdit && creating}
+        onClose={() => {
+          setCreating(false);
+          recargar();
+        }}
+      />
     </Container>
   );
 }

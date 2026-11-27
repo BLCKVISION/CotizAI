@@ -6,32 +6,68 @@ import { ACCEPT_DOCUMENTS, ACCEPT_PHOTOS, pickFiles } from '@/core/files';
 import { Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { accentGradient, soloWeb, useReducirMovimiento } from '@/design/efectos';
 import { innerSurface, Panel, RoundButton } from '@/design/Panel';
+import { RollingLabel } from '@/design/RollingLabel';
 import { useTema } from '@/design/tema';
-import { espacio, radio } from '@/design/tokens';
+import { espacio, radio, texto as tipografia } from '@/design/tokens';
 import type { Proyecto } from '@/features/proyectos/api';
 
 import type { UploadStatus } from './useProposalUpload';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
-/** Gentle floating icon; stays still when the user asks for reduced motion. */
-function FloatingIcon({ icon }: { icon: NombreIcono }) {
+/** Loop from 0 to 1; stays at 0 when the user asks for reduced motion. */
+function useCycle(duration: number, delay = 0) {
   const reduce = useReducirMovimiento();
-  const [offset] = useState(() => new Animated.Value(0));
+  const [value] = useState(() => new Animated.Value(0));
   useEffect(() => {
     if (reduce) return;
-    const step = (toValue: number) => Animated.timing(offset, { toValue, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true });
-    const loop = Animated.loop(Animated.sequence([step(-5), step(0)]));
-    loop.start();
-    return () => loop.stop();
-  }, [offset, reduce]);
-  const t = useTema();
+    const loop = Animated.loop(Animated.timing(value, { toValue: 1, duration, easing: Easing.linear, useNativeDriver: true }));
+    const start = setTimeout(() => loop.start(), delay);
+    return () => {
+      clearTimeout(start);
+      loop.stop();
+    };
+  }, [value, reduce, duration, delay]);
+  return value;
+}
+
+/** A ring that grows out of the icon and fades, like a radar pulse. */
+function Ring({ delay }: { delay: number }) {
+  const p = useCycle(2400, delay);
   return (
-    <Animated.View style={{ transform: [{ translateY: offset }] }}>
-      <View style={{ width: 60, height: 60, borderRadius: radio.pildora, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#0E8FA8', shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 } }}>
-        <Icono nombre={icon} tamano="lg" color={t.onAccent} />
-      </View>
-    </Animated.View>
+    <Animated.View
+      pointerEvents="none"
+      style={{ position: 'absolute', width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: '#FFFFFF', opacity: p.interpolate({ inputRange: [0, 0.1, 1], outputRange: [0, 0.95, 0] }), transform: [{ scale: p.interpolate({ inputRange: [0, 1], outputRange: [1, 2.2] }) }] }}
+    />
+  );
+}
+
+/** Light band that crosses the action surface every few seconds. */
+function Shine() {
+  const p = useCycle(3600);
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, overflow: 'hidden', borderRadius: radio.panel }}>
+      <Animated.View style={{ position: 'absolute', top: -40, bottom: -40, width: 150, left: '-30%', transform: [{ translateX: p.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 1500, 1500] }) }, { rotate: '16deg' }] }}>
+        <View style={{ flex: 1, ...soloWeb({ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.65) 50%, rgba(255,255,255,0) 100%)' }) }} />
+      </Animated.View>
+    </View>
+  );
+}
+
+/** Bouncing icon with pulse rings, so the main action is easy to notice. */
+function PulsingIcon({ icon, hovered }: { icon: NombreIcono; hovered: boolean }) {
+  const t = useTema();
+  const p = useCycle(1800);
+  return (
+    <View style={{ width: 84, height: 84, alignItems: 'center', justifyContent: 'center' }}>
+      <Ring delay={0} />
+      <Ring delay={1200} />
+      <Animated.View style={{ transform: [{ translateY: p.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -10, 0, -3, 0] }) }] }}>
+        <View style={{ width: 68, height: 68, borderRadius: radio.pildora, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', shadowColor: '#0E8FA8', shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, ...soloWeb({ transitionProperty: 'transform', transitionDuration: '420ms', transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)', transform: hovered ? 'scale(1.16) rotate(-8deg)' : 'scale(1) rotate(0deg)' }) }}>
+          <Icono nombre={icon} tamano="lg" color={t.onAccent} />
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -133,13 +169,16 @@ export function ActivityCard({ focus, canEdit, status, onFiles, onNavigate }: Pr
             }),
           })}
         >
-          <FloatingIcon icon={action.icon} />
-          <Texto variante="subtitulo" color={t.onAccent} style={{ fontFamily: 'Urbanist_600SemiBold' }}>
-            {status.busy ? 'Cargando…' : action.title}
-          </Texto>
-          <Texto variante="pequeno" color={t.onAccent} numberOfLines={1}>
-            {action.detail}
-          </Texto>
+          {({ hovered }: PressState) => (
+            <>
+              <Shine />
+              <PulsingIcon icon={action.icon} hovered={Boolean(hovered)} />
+              <RollingLabel text={status.busy ? 'Cargando…' : action.title} active={Boolean(hovered)} style={{ ...tipografia.subtitulo, lineHeight: 26, color: t.onAccent, fontFamily: 'Urbanist_600SemiBold' }} />
+              <Texto variante="pequeno" color={t.onAccent} numberOfLines={1}>
+                {action.detail}
+              </Texto>
+            </>
+          )}
         </Pressable>
         {feedback ? (
           <Texto variante="pequeno" color={status.errors.length ? t.error.texto : t.textoSuave} numberOfLines={2} accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>

@@ -3,10 +3,12 @@ import { View } from 'react-native';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
-import { Aviso, Cargando, Columna, ErrorConReintento, Rejilla, TituloDeSeccion } from '@/design/bloques';
+import { Aviso, Cargando, Columna, ErrorConReintento, Rejilla } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
-import { Boton, CampoDeTexto, EstadoVacio, Tarjeta, Texto } from '@/design/componentes';
+import { Boton, CampoDeTexto, EstadoVacio, Texto } from '@/design/componentes';
 import { EncabezadoDePagina, Pagina } from '@/design/layout';
+import { Lightbox } from '@/design/Lightbox';
+import { NewItemTile } from '@/design/NewItemTile';
 import { espacio } from '@/design/tokens';
 import { proveedoresApi, registrarProveedorApi } from '@/features/gestion/api';
 
@@ -39,39 +41,39 @@ export default function Proveedores() {
     }
   };
 
+  const canCreate = usuario?.rol === 'cargador'; // UX only: the backend is the authority
+  const cerrar = () => {
+    setAbierto(false);
+    setFallo(null);
+  };
+
   const q = busqueda.trim().toLowerCase();
   const visibles = (datos ?? []).filter((p) => `${p.nombre} ${p.rif} ${p.ubicacion}`.toLowerCase().includes(q));
 
   return (
     <Pagina>
-      <EncabezadoDePagina
-        sobretitulo="Proveedores"
-        titulo="Directorio de proveedores"
-        descripcion="Datos básicos de quienes participan en los procesos de compra."
-        accion={usuario?.rol === 'cargador' ? <Boton etiqueta={abierto ? 'Cerrar formulario' : 'Nuevo proveedor'} icono={abierto ? 'x' : 'plus'} onPress={() => setAbierto((v) => !v)} /> : undefined}
-      />
-      {abierto ? (
-        <Tarjeta>
-          <TituloDeSeccion titulo="Nuevo proveedor" />
-          <View style={{ gap: espacio.md }}>
-            <CampoDeTexto etiqueta="Nombre o razón social" icono="briefcase" {...campo('nombre')} />
-            <CampoDeTexto etiqueta="RIF" icono="hash" {...campo('rif')} />
-            <CampoDeTexto etiqueta="Ubicación" icono="map-pin" {...campo('ubicacion')} />
-            <CampoDeTexto etiqueta="Contacto" icono="phone" {...campo('contacto')} />
-            {fallo ? <Aviso texto={fallo} /> : null}
-            <Boton etiqueta="Guardar proveedor" icono="check" onPress={guardar} cargando={guardando} />
-          </View>
-        </Tarjeta>
-      ) : null}
+      <EncabezadoDePagina sobretitulo="Proveedores" titulo="Directorio de proveedores" descripcion="Las empresas que participan en sus procesos de compra, con sus datos de contacto." />
       {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
       {!datos ? (
         error ? null : <Cargando />
       ) : datos.length === 0 ? (
-        <EstadoVacio icono="briefcase" titulo="Sin proveedores registrados" descripcion="Un usuario con rol Cargador puede registrarlos." />
+        <EstadoVacio
+          icono="briefcase"
+          titulo="Sin proveedores registrados"
+          descripcion={canCreate ? 'Registre el primer proveedor para llevar su ficha.' : 'Un usuario con rol Cargador puede registrarlos.'}
+          accion={canCreate ? <Boton etiqueta="Nuevo proveedor" icono="plus" onPress={() => setAbierto(true)} /> : undefined}
+        />
       ) : (
         <View style={{ gap: espacio.md }}>
           <CampoDeTexto etiqueta="Buscar" icono="search" value={busqueda} onChangeText={setBusqueda} />
           <Rejilla>
+            {canCreate ? (
+              <Columna minimo={320}>
+                <View style={{ minHeight: 148 }}>
+                  <NewItemTile label="Nuevo proveedor" icon="plus" minHeight={148} onPress={() => setAbierto(true)} />
+                </View>
+              </Columna>
+            ) : null}
             {visibles.map((p) => (
               <Columna key={p.id} minimo={320}>
                 <CollapsibleCard title={p.nombre} detail={p.rif}>
@@ -82,9 +84,20 @@ export default function Proveedores() {
             ))}
           </Rejilla>
           {visibles.length === 0 ? <Texto suave>Sin coincidencias.</Texto> : null}
-          <Aviso tono="info" texto="El historial de participaciones y las alertas de descartes previos dependen del motor de evaluación, que aún no está conectado." />
+          <Aviso tono="info" texto="Al evaluar un proyecto se avisa si un proveedor ya fue descartado en una evaluación anterior." />
         </View>
       )}
+      <Lightbox visible={abierto} title="Nuevo proveedor" description="Datos básicos de la ficha." onClose={cerrar}>
+        <CampoDeTexto etiqueta="Nombre o razón social" icono="briefcase" {...campo('nombre')} />
+        <CampoDeTexto etiqueta="RIF" icono="hash" ayuda="Ejemplo: J-12345678-9" {...campo('rif')} />
+        <CampoDeTexto etiqueta="Ubicación" icono="map-pin" {...campo('ubicacion')} />
+        <CampoDeTexto etiqueta="Contacto" icono="phone" {...campo('contacto')} />
+        {fallo ? <Aviso texto={fallo} /> : null}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: espacio.sm }}>
+          <Boton etiqueta="Cancelar" variante="secundario" onPress={cerrar} deshabilitado={guardando} />
+          <Boton etiqueta="Guardar proveedor" icono="check" onPress={guardar} cargando={guardando} />
+        </View>
+      </Lightbox>
     </Pagina>
   );
 }

@@ -3,7 +3,7 @@ import { ScrollView, useWindowDimensions, View } from 'react-native';
 
 import { Icono, type NombreIcono, Texto } from './componentes';
 import { useDispositivo } from './dispositivo';
-import { accentGradient, Escalonado, useContador, vidrio } from './efectos';
+import { Escalonado, soloWeb, useContador, vidrio } from './efectos';
 import { useTema } from './tema';
 import { anchoMaximoContenido, espacio, radio } from './tokens';
 
@@ -74,6 +74,27 @@ export function EncabezadoDePagina({
   );
 }
 
+/** Blue frosted glass: translucent gradient, bright edge and soft light spots behind the content. */
+const BLUE_GLASS = {
+  backgroundColor: 'rgba(125,211,252,0.55)',
+  borderColor: 'rgba(255,255,255,0.85)',
+  ...soloWeb({
+    backgroundImage: 'linear-gradient(135deg, rgba(96,190,250,0.78) 0%, rgba(147,221,249,0.58) 55%, rgba(186,230,253,0.72) 100%)',
+    backdropFilter: 'blur(26px) saturate(1.5)',
+    WebkitBackdropFilter: 'blur(26px) saturate(1.5)',
+    boxShadow: '0 20px 40px -24px rgba(29,78,216,0.55), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 28px rgba(255,255,255,0.35)',
+  }),
+};
+
+function GlassLights() {
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, overflow: 'hidden' }}>
+      <View style={{ position: 'absolute', width: 150, height: 150, borderRadius: 75, top: -70, right: -30, backgroundColor: 'rgba(255,255,255,0.45)', ...soloWeb({ filter: 'blur(18px)' }) }} />
+      <View style={{ position: 'absolute', width: 120, height: 120, borderRadius: 60, bottom: -70, left: '30%', backgroundColor: 'rgba(29,78,216,0.28)', ...soloWeb({ filter: 'blur(22px)' }) }} />
+    </View>
+  );
+}
+
 /** Tarjeta de métrica: cifra display ligera que cuenta hasta su valor, etiqueta e icono en disco blanco. */
 export function Metrica({ etiqueta, valor, icono, destacada = false }: { etiqueta: string; valor: number; icono: NombreIcono; destacada?: boolean }) {
   const t = useTema();
@@ -84,13 +105,15 @@ export function Metrica({ etiqueta, valor, icono, destacada = false }: { etiquet
       accessibilityLabel={`${etiqueta}: ${valor}`}
       style={{
         ...vidrio({ radio: radio.xl }),
-        ...(destacada ? accentGradient(120) : null),
+        ...(destacada ? BLUE_GLASS : null),
+        overflow: 'hidden',
         flexGrow: 1,
         flexBasis: 170,
         padding: espacio.lg,
         gap: espacio.sm,
       }}
     >
+      {destacada ? <GlassLights /> : null}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <Texto variante="etiqueta" suave={!destacada} color={destacada ? t.onAccent : undefined}>
           {etiqueta}
@@ -100,9 +123,9 @@ export function Metrica({ etiqueta, valor, icono, destacada = false }: { etiquet
             width: 36,
             height: 36,
             borderRadius: radio.pildora,
-            backgroundColor: '#FFFFFF',
+            backgroundColor: destacada ? 'rgba(255,255,255,0.72)' : '#FFFFFF',
             borderWidth: 1,
-            borderColor: 'rgba(15,23,42,0.08)',
+            borderColor: destacada ? '#FFFFFF' : 'rgba(15,23,42,0.08)',
             alignItems: 'center',
             justifyContent: 'center',
           }}

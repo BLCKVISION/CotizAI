@@ -1,51 +1,96 @@
+import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, Columna, ErrorConReintento, Rejilla } from '@/design/bloques';
-import { CollapsibleCard } from '@/design/Collapsible';
-import { Texto } from '@/design/componentes';
+import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
 import { TarjetaDeGrafico } from '@/design/graficos';
 import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
-import { espacio } from '@/design/tokens';
+import { useTema } from '@/design/tema';
+import { espacio, radio } from '@/design/tokens';
 import { estadisticasApi } from '@/features/gestion/api';
 import { porEstado, porFormato, porMes, porUbicacion } from '@/features/gestion/datosDeGraficos';
-import { formatoDinero } from '@/features/proyectos/estados';
+import { SAMPLE_STATS } from '@/features/gestion/sampleStats';
+import { formatoMonto } from '@/features/proyectos/estados';
 
-export default function EstadisticasPantalla() {
-  const { datos: e, error, recargar } = useDatos(estadisticasApi);
+const CURRENCY_NAME: Record<string, string> = { USD: 'Dólares (USD)', VES: 'Bolívares (VES)' };
+
+function Budgets({ budgets }: { budgets: Record<string, string> }) {
+  const t = useTema();
+  const entries = Object.entries(budgets);
+  return (
+    <Tarjeta>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
+        <View style={{ width: 36, height: 36, borderRadius: radio.pildora, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
+          <Icono nombre="dollar-sign" color={t.onAccent} />
+        </View>
+        <Texto variante="cuerpoMedio" accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold' }}>
+          Presupuesto referencial registrado
+        </Texto>
+      </View>
+      {entries.length === 0 ? (
+        <Texto suave>Sin presupuestos registrados.</Texto>
+      ) : (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md }}>
+          {entries.map(([currency, amount]) => (
+            <View key={currency} style={{ flexGrow: 1, flexBasis: 240, padding: espacio.md, borderRadius: radio.lg, backgroundColor: t.superficieAlta }}>
+              <Texto variante="pequeno" suave>
+                {CURRENCY_NAME[currency] ?? currency}
+              </Texto>
+              <Texto variante="titulo">
+                {currency === 'VES' ? 'Bs.' : 'USD'} {formatoMonto(amount)}
+              </Texto>
+            </View>
+          ))}
+        </View>
+      )}
+      <Texto variante="pequeno" suave>
+        Cada moneda se suma por separado.
+      </Texto>
+    </Tarjeta>
+  );
+}
+
+export default function StatisticsScreen() {
+  const { datos, error, recargar } = useDatos(estadisticasApi);
+  const [sample, setSample] = useState(false);
+  const e = sample ? SAMPLE_STATS : datos;
   return (
     <Pagina>
-      <EncabezadoDePagina sobretitulo="Estadísticas" titulo="Estadísticas" descripcion="Calculadas con los datos registrados por su organización." />
-      {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
+      <EncabezadoDePagina
+        sobretitulo="Estadísticas"
+        titulo="Estadísticas"
+        descripcion="Calculadas con los datos registrados por su organización."
+        accion={<Boton etiqueta={sample ? 'Ver mis datos' : 'Ver con datos de ejemplo'} variante="secundario" icono={sample ? 'arrow-left' : 'eye'} onPress={() => setSample((v) => !v)} />}
+      />
+      {sample ? <Aviso tono="aviso" texto="Datos de ejemplo: son cifras inventadas para previsualizar la pantalla. No corresponden a su organización." /> : null}
+      {error && !sample ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
       {!e ? (
         error ? null : <Cargando />
       ) : (
-        <View style={{ gap: espacio.xl }}>
+        // The key restarts counters and charts when switching between real and sample data.
+        <View key={sample ? 'sample' : 'real'} style={{ gap: espacio.lg }}>
           <Rejilla>
             <Metrica destacada etiqueta="Proyectos" valor={e.total_proyectos} icono="folder" />
             <Metrica etiqueta="Propuestas" valor={e.total_propuestas} icono="file-text" />
             <Metrica etiqueta="Proveedores" valor={e.total_proveedores} icono="briefcase" />
           </Rejilla>
-          <CollapsibleCard title="Presupuesto referencial registrado" detail={Object.keys(e.presupuestos).length === 0 ? 'Sin presupuestos registrados' : Object.entries(e.presupuestos).map(([m, v]) => formatoDinero(v, m)).join(' · ')}>
-            <Texto variante="pequeno" suave>
-              Cada moneda se suma por separado; aún no hay conversión con la tasa BCV.
-            </Texto>
-          </CollapsibleCard>
+          <Budgets budgets={e.presupuestos} />
           <Rejilla>
             <Columna>
-              <TarjetaDeGrafico titulo="Proyectos por estado" unidad="proyectos" datos={porEstado(e)} />
+              <TarjetaDeGrafico abierta titulo="Proyectos por estado" unidad="proyectos" datos={porEstado(e)} />
             </Columna>
             <Columna>
-              <TarjetaDeGrafico titulo="Proyectos creados por mes" unidad="proyectos" forma="columnas" datos={porMes(e)} />
+              <TarjetaDeGrafico abierta titulo="Proyectos creados por mes" unidad="proyectos" forma="columnas" datos={porMes(e)} />
             </Columna>
             <Columna>
-              <TarjetaDeGrafico titulo="Proyectos por ubicación" unidad="proyectos" datos={porUbicacion(e)} />
+              <TarjetaDeGrafico abierta titulo="Proyectos por ubicación" unidad="proyectos" datos={porUbicacion(e)} />
             </Columna>
             <Columna>
-              <TarjetaDeGrafico titulo="Propuestas por formato" unidad="propuestas" forma="columnas" datos={porFormato(e)} />
+              <TarjetaDeGrafico abierta titulo="Propuestas por formato" unidad="propuestas" forma="columnas" datos={porFormato(e)} />
             </Columna>
           </Rejilla>
-          <Aviso tono="info" texto="Las estadísticas de propuestas válidas, descartes, costo real y ahorro aparecerán cuando el motor de evaluación esté conectado." />
+          <Aviso tono="info" texto="Los resultados de cada evaluación (válidas, descartes y costo real) se consultan dentro de su proyecto." />
         </View>
       )}
     </Pagina>

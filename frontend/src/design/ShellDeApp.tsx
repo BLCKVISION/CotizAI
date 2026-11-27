@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
+import { NotificationsBell } from '@/features/notifications/NotificationsBell';
 import { Tour } from '@/features/onboarding/Tour';
 
 import { BrandRow, Isotype } from './Brand';
@@ -11,7 +12,6 @@ import { BotonIcono, Chip, Insignia, Texto } from './componentes';
 import { useDispositivo } from './dispositivo';
 import { soloWeb, vidrio } from './efectos';
 import { LineIcon, type LineIconName } from './LineIcon';
-import { SearchOverlay } from './SearchOverlay';
 import { useTema } from './tema';
 import { UserBubble } from './UserBubble';
 import { espacio, margenFlotante, radio } from './tokens';
@@ -88,14 +88,12 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
   const ruta = usePathname();
   const { dispositivo } = useDispositivo();
   const { usuario, cerrarSesion } = useSesion();
-  const t = useTema();
   const esEscritorio = dispositivo === 'escritorio';
   const categorias = NAVEGACION.map((c) => ({ ...c, items: c.items.filter((i) => !i.soloRol || i.soloRol === usuario?.rol) })).filter(
     (c) => c.items.length > 0,
   );
   const ir = (destino: string) => router.push(destino as Href);
   const [expanded, setExpanded] = useState(readExpanded);
-  const [searching, setSearching] = useState(false);
   const toggleSidebar = () =>
     setExpanded((v) => {
       try {
@@ -110,21 +108,14 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
     const items = categorias.flatMap((c) => c.items);
     return (
       <View style={{ flex: 1 }}>
-        {/* Top bar: only the isotype, search and the account bubble. */}
+        {/* Top bar: only the isotype, notifications and the account bubble. */}
         <View style={{ height: 76, flexDirection: 'row', alignItems: 'center', paddingLeft: margenFlotante, paddingRight: espacio.lg, zIndex: 30 }}>
           <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => ir('/home')} style={{ width: RAIL_COLLAPSED, alignItems: 'center' }}>
             <Isotype size={48} />
           </Pressable>
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Buscar proyectos"
-              onPress={() => setSearching(true)}
-              style={(e: RailState) => ({ width: CIRCLE, height: CIRCLE, borderRadius: radio.pildora, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: e.hovered || e.pressed ? '#FFFFFF' : 'rgba(255,255,255,0.62)' })}
-            >
-              <LineIcon name="search" />
-            </Pressable>
+            <NotificationsBell />
             <UserBubble name={usuario?.display_name || usuario?.correo || '??'} role={usuario ? ETIQUETA_ROL[usuario.rol] : ''} onSignOut={cerrarSesion} />
           </View>
         </View>
@@ -153,7 +144,6 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
         </View>
-        <SearchOverlay visible={searching} onClose={() => setSearching(false)} />
         <Tour />
       </View>
     );
@@ -171,6 +161,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           marginTop: espacio.sm,
           paddingHorizontal: espacio.md,
           paddingVertical: espacio.sm,
+          zIndex: 30,
         }}
       >
         <Pressable accessibilityRole="link" accessibilityLabel="Ir a Home" onPress={() => ir('/home')}>
@@ -182,6 +173,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
               <Insignia tono="neutro" etiqueta={ETIQUETA_ROL[usuario.rol]} icono="user" />
             </View>
           ) : null}
+          <NotificationsBell />
           <BotonIcono nombre="log-out" etiqueta="Cerrar sesión" onPress={cerrarSesion} />
         </View>
       </View>

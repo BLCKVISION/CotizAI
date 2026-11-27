@@ -23,12 +23,14 @@ export function TarjetaDeGrafico({
   datos,
   forma = 'barras',
   vacio = 'Aún no hay datos.',
+  abierta = false,
 }: {
   titulo: string;
   unidad: string;
   datos: Dato[];
   forma?: 'barras' | 'columnas';
   vacio?: string;
+  abierta?: boolean;
 }) {
   const t = useTema();
   const [tabla, setTabla] = useState(false);
@@ -40,7 +42,7 @@ export function TarjetaDeGrafico({
   const eventos = (i: number) => ({ onHoverIn: () => setActivo(i), onHoverOut: () => setActivo(null), onPress: () => setActivo(i) });
 
   return (
-    <CollapsibleCard title={titulo} detail={total > 0 ? detalle : vacio}>
+    <CollapsibleCard title={titulo} detail={total > 0 ? detalle : vacio} defaultOpen={abierta}>
       {total > 0 ? (
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
           <Chip etiqueta={tabla ? 'Ver gráfico' : 'Ver tabla'} seleccionado={false} onPress={() => setTabla((v) => !v)} />

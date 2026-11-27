@@ -50,5 +50,8 @@ export const ACCIONES: Record<string, string> = {
   login_exitoso: 'Inició sesión',
   login_fallido: 'Intento de inicio de sesión fallido',
   logout: 'Cerró sesión',
+  evaluation_completed: 'Evaluó las propuestas de un proyecto',
+  tasa_registrada: 'Registró una tasa de cambio manual',
+  project_question_asked: 'Consultó sobre un proyecto evaluado',
 };
 export const etiquetaDeAccion = (a: string) => ACCIONES[a] ?? a.replace(/_/g, ' ');

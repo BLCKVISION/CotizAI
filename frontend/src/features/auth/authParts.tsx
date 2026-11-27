@@ -1,0 +1,183 @@
+/** Shared pieces of the sign-in, sign-up and password recovery forms. */
+import { type ReactNode, useState } from 'react';
+import { ActivityIndicator, Linking, Platform, Pressable, Text, TextInput, type TextInputProps, View } from 'react-native';
+
+import { ErrorApi } from '@/core/api/cliente';
+import { Icono, Texto } from '@/design/componentes';
+import { accentGradient, soloWeb } from '@/design/efectos';
+import { FieldHint, useHover } from '@/design/FieldHint';
+import { RollingLabel } from '@/design/RollingLabel';
+import { espacio, radio, texto } from '@/design/tokens';
+
+import { GOOGLE_AUTH_URL } from './api';
+
+export const authColor = {
+  backdrop: '#E9EBEF',
+  panel: '#FFFFFF',
+  text: '#0B1220',
+  soft: '#556070',
+  underline: '#8591A3',
+  focus: '#0369A1',
+  error: '#B91C1C',
+  onAccent: '#06283D',
+} as const;
+
+export type AuthMode = 'login' | 'register' | 'forgot';
+export type Notice = { tone: 'error' | 'info' | 'success'; text: string } | null;
+type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
+
+/** A missing route means the server has not enabled the feature yet. */
+export const accountErrorNotice = (e: unknown): Notice => {
+  if (e instanceof ErrorApi && (e.estado === 404 || e.estado === 405)) {
+    return { tone: 'info', text: 'Esta función estará disponible cuando se active en el servidor.' };
+  }
+  return { tone: 'error', text: e instanceof ErrorApi ? e.message : 'Error inesperado.' };
+};
+
+export function LineField({ label, error, secret = false, hint, ...props }: TextInputProps & { label: string; error?: string; secret?: boolean; hint?: ReactNode }) {
+  const [focused, setFocused] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const { hovered, hoverProps } = useHover();
+  const showHint = Boolean(hint) && (hovered || focused);
+  return (
+    <View {...hoverProps} style={{ width: '100%', gap: 2, zIndex: showHint ? 20 : 0 }}>
+      <Texto variante="etiqueta" color={authColor.text}>
+        {label}
+      </Texto>
+      <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: focused ? 2 : 1, paddingBottom: focused ? 0 : 1, borderBottomColor: error ? authColor.error : focused ? authColor.focus : authColor.underline }}>
+        <TextInput
+          {...props}
+          accessibilityLabel={label}
+          accessibilityHint={error}
+          aria-invalid={Boolean(error)}
+          secureTextEntry={secret && !visible}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={[{ ...texto.cuerpo, fontSize: 16, flex: 1, minWidth: 0, minHeight: 42, color: authColor.text }, soloWeb({ outlineStyle: 'none', backgroundColor: 'transparent' })]}
+        />
+        {secret ? (
+          <Pressable accessibilityRole="button" accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'} onPress={() => setVisible((v) => !v)} style={{ width: 44, height: 42, alignItems: 'center', justifyContent: 'center' }}>
+            <Icono nombre={visible ? 'eye-off' : 'eye'} tamano="sm" color={authColor.soft} />
+          </Pressable>
+        ) : null}
+      </View>
+      {error ? (
+        <Texto variante="pequeno" color={authColor.error} accessibilityLiveRegion="polite">
+          {error}
+        </Texto>
+      ) : null}
+      {hint ? <FieldHint visible={showHint}>{hint}</FieldHint> : null}
+    </View>
+  );
+}
+
+export function TextLink({ label, onPress, strong = false }: { label: string; onPress: () => void; strong?: boolean }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={(e: PressState) => ({ minHeight: 44, justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: e.focused ? authColor.focus : 'transparent' })}
+    >
+      {({ hovered }: PressState) => (
+        <Texto variante={strong ? 'etiqueta' : 'pequeno'} color={strong || hovered ? authColor.focus : authColor.soft} style={hovered ? { textDecorationLine: 'underline' } : undefined}>
+          {label}
+        </Texto>
+      )}
+    </Pressable>
+  );
+}
+
+export function SubmitButton({ label, busy, onPress }: { label: string; busy: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: busy, busy }}
+      disabled={busy}
+      onPress={onPress}
+      style={(e: PressState) => ({
+        alignSelf: 'stretch',
+        height: 48,
+        flexDirection: 'row',
+        gap: espacio.sm,
+        borderRadius: radio.pildora,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: e.focused ? authColor.focus : 'transparent',
+        ...accentGradient(100),
+        ...soloWeb({ transitionProperty: 'transform, box-shadow', transitionDuration: '260ms', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)', ...(e.hovered ? { transform: 'translateY(-2px)', boxShadow: '0 14px 28px -16px rgba(14,143,168,0.65)' } : null) }),
+      })}
+    >
+      {({ hovered }: PressState) =>
+        busy ? (
+          <ActivityIndicator color={authColor.onAccent} />
+        ) : (
+          <>
+            <RollingLabel text={label} active={Boolean(hovered)} style={{ ...texto.etiqueta, fontSize: 14, color: authColor.onAccent }} />
+            <Icono nombre="arrow-right" tamano="sm" color={authColor.onAccent} />
+          </>
+        )
+      }
+    </Pressable>
+  );
+}
+
+export function GoogleButton({ onUnavailable }: { onUnavailable: () => void }) {
+  const start = () => {
+    if (!GOOGLE_AUTH_URL) return onUnavailable();
+    if (Platform.OS === 'web') window.location.assign(GOOGLE_AUTH_URL);
+    else void Linking.openURL(GOOGLE_AUTH_URL);
+  };
+  return (
+    <View style={{ gap: espacio.sm }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15,23,42,0.12)' }} />
+        <Texto variante="pequeno" color={authColor.soft}>
+          o
+        </Texto>
+        <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15,23,42,0.12)' }} />
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Continuar con Google"
+        onPress={start}
+        style={(e: PressState) => ({ height: 48, flexDirection: 'row', gap: espacio.sm + 2, alignItems: 'center', justifyContent: 'center', borderRadius: radio.pildora, borderWidth: e.focused ? 2 : 1, borderColor: e.focused ? authColor.focus : 'rgba(15,23,42,0.16)', backgroundColor: e.hovered ? '#F8FAFC' : '#FFFFFF', ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '220ms' }) })}
+      >
+        {({ hovered }: PressState) => (
+          <>
+            <Text aria-hidden style={{ ...texto.etiqueta, fontSize: 18, lineHeight: 20, color: '#1A73E8' }}>
+              G
+            </Text>
+            <RollingLabel text="Continuar con Google" active={Boolean(hovered)} style={{ ...texto.etiqueta, fontSize: 14, color: authColor.text }} />
+          </>
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+export function NoticeBox({ notice }: { notice: Notice }) {
+  if (!notice) return null;
+  const tone = notice.tone === 'error' ? { text: authColor.error, background: '#FEE2E2', icon: 'alert-triangle' as const } : notice.tone === 'success' ? { text: '#166534', background: '#DCFCE7', icon: 'check-circle' as const } : { text: '#1E40AF', background: '#DBEAFE', icon: 'info' as const };
+  return (
+    <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center', padding: espacio.sm + 4, borderRadius: radio.nav, backgroundColor: tone.background }}>
+      <Icono nombre={tone.icon} tamano="sm" color={tone.text} />
+      <Texto variante="pequeno" color={tone.text} style={{ flex: 1 }}>
+        {notice.text}
+      </Texto>
+    </View>
+  );
+}
+
+export function FormHeading({ title, detail }: { title: string; detail: string }) {
+  return (
+    <View style={{ gap: espacio.xs, alignItems: 'flex-start' }}>
+      <Texto accessibilityRole="header" color={authColor.text} style={{ fontFamily: 'Urbanist_400Regular', fontSize: 36, lineHeight: 42, letterSpacing: -1.2 }}>
+        {title}
+      </Texto>
+      <Texto color={authColor.soft}>{detail}</Texto>
+    </View>
+  );
+}

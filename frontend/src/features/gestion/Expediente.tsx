@@ -9,6 +9,7 @@ import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, BotonIcono, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
+import { EvaluationResults } from '@/features/evaluations/EvaluationResults';
 import type { Proyecto } from '@/features/proyectos/api';
 
 import { cargarPropuestaApi, descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from './api';
@@ -126,6 +127,8 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
   const n = datos?.length ?? 0;
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'flex-start' }}>
+      {/* Without anything to show, this column is not rendered so the proposal list takes the full width. */}
+      {editable || proyecto.estado === 'en_recepcion' || progreso || fallos.length > 0 ? (
       <View style={{ flexGrow: 1, flexBasis: 360, gap: espacio.md }}>
       {editable && Platform.OS === 'web' ? <ZonaDeCarga onArchivos={subir} ocupado={progreso !== null} /> : null}
       {editable && Platform.OS !== 'web' ? <Aviso tono="info" texto="La carga de archivos está disponible en la versión web." /> : null}
@@ -133,6 +136,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
       {progreso ? <Aviso tono="info" texto={progreso} /> : null}
       {fallos.map((f) => <Aviso key={f} texto={f} />)}
       </View>
+      ) : null}
       <View style={{ flexGrow: 1.3, flexBasis: 420, gap: espacio.md }}>
       {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
       {!datos ? (
@@ -154,11 +158,17 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
           ))}
         </CollapsibleCard>
       )}
-      <CollapsibleCard title="Evaluación del agente" detail="Aún no disponible: falta conectar el motor">
-        <Texto variante="pequeno" suave>Lectura de documentos, precios en internet, costo real y ranking.</Texto>
-        <Aviso tono="aviso" texto="Todavía no disponible: falta conectar el servicio de IA y construir el motor de evaluación. No se muestran resultados simulados." />
-        <Boton etiqueta="Evaluar Propuestas de Servicios" icono="cpu" onPress={() => undefined} deshabilitado />
-      </CollapsibleCard>
+      </View>
+      <View style={{ flexBasis: '100%', flexGrow: 1 }}>
+        <EvaluationResults
+          project={proyecto}
+          proposalCount={n}
+          minimumProposals={MINIMO}
+          onEvaluated={() => {
+            recargar();
+            onCambio?.();
+          }}
+        />
       </View>
     </View>
   );

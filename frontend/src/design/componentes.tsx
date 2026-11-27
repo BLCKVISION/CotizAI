@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { type ComponentProps, type ReactNode, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   type PressableStateCallbackType,
   Text,
@@ -14,6 +15,10 @@ import {
 
 import { BrandRow } from './Brand';
 import { accentGradient, soloWeb, vidrio } from './efectos';
+import { FieldHint, useHover } from './FieldHint';
+import { hasSvgIcon } from './icons/paths';
+import { SvgIcon } from './icons/SvgIcon';
+import { RollingLabel } from './RollingLabel';
 import { useTema } from './tema';
 import { espacio, icono as tamanoIcono, radio, tamanoTactil, texto } from './tokens';
 
@@ -34,6 +39,10 @@ export function Icono({
   etiqueta?: string;
 }) {
   const t = useTema();
+  if (Platform.OS === 'web' && hasSvgIcon(nombre)) {
+    const svg = <SvgIcon name={nombre} size={tamanoIcono[tamano]} color={color ?? t.texto} />;
+    return etiqueta ? <View accessibilityRole="image" accessibilityLabel={etiqueta}>{svg}</View> : svg;
+  }
   return (
     <Feather
       name={nombre}
@@ -125,14 +134,16 @@ export function Boton({
         }),
       })}
     >
-      {cargando ? (
-        <ActivityIndicator color={colorTexto} />
-      ) : (
-        <>
-          {icono ? <Icono nombre={icono} color={colorTexto} /> : null}
-          <Text style={{ ...texto.etiqueta, fontSize: 14, color: colorTexto }}>{etiqueta}</Text>
-        </>
-      )}
+      {({ hovered }: EstadoPressable) =>
+        cargando ? (
+          <ActivityIndicator color={colorTexto} />
+        ) : (
+          <>
+            {icono ? <Icono nombre={icono} color={colorTexto} /> : null}
+            <RollingLabel text={etiqueta} active={Boolean(hovered) && !inactivo} style={{ ...texto.etiqueta, fontSize: 14, color: colorTexto }} />
+          </>
+        )
+      }
     </Pressable>
   );
 }
@@ -170,10 +181,12 @@ export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, m
   const [enfocado, setEnfocado] = useState(false);
   const [visible, setVisible] = useState(false);
   const esSecreto = Boolean(secureTextEntry);
+  const { hovered, hoverProps } = useHover();
+  const showHint = Boolean(ayuda) && !error && (hovered || enfocado);
   const colorBorde = error ? t.error.texto : enfocado ? t.foco : t.bordeControl;
 
   return (
-    <View style={{ gap: espacio.xs }}>
+    <View {...hoverProps} style={{ gap: espacio.xs, zIndex: showHint ? 20 : 0 }}>
       <Texto variante="etiqueta">{etiqueta}</Texto>
       <View
         style={{
@@ -238,10 +251,13 @@ export function CampoDeTexto({ etiqueta, error, ayuda, icono, secureTextEntry, m
             {error}
           </Texto>
         </View>
-      ) : ayuda ? (
-        <Texto variante="pequeno" suave>
-          {ayuda}
-        </Texto>
+      ) : null}
+      {ayuda ? (
+        <FieldHint visible={showHint}>
+          <Texto variante="pequeno" suave>
+            {ayuda}
+          </Texto>
+        </FieldHint>
       ) : null}
     </View>
   );
