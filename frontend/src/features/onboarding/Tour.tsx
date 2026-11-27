@@ -13,7 +13,7 @@ import { hasSeenTour, markTourSeen, onOpenTour } from './tourStore';
 type Scene = 'create' | 'upload' | 'review' | 'decide';
 const SLIDES: { scene: Scene; title: string; text: string }[] = [
   { scene: 'create', title: '1. Cree su proyecto', text: 'Pulse «Nuevo proyecto» y describa qué va a comprar y dónde. Cada proyecto es una carpeta.' },
-  { scene: 'upload', title: '2. Suba las propuestas', text: 'Arrastre de 3 a 20 archivos sobre «Agregar propuestas»: fotos, PDF o Excel. Se guardan cifrados.' },
+  { scene: 'upload', title: '2. Suba las propuestas', text: 'Suba desde 1 archivo (se analizan hasta 5 por tanda) con «Agregar propuestas»: fotos, PDF o Excel. Se guardan cifrados.' },
   { scene: 'review', title: '3. Evalúe', text: 'El agente revisará cálculos, costos ocultos y condiciones, citando la evidencia.' },
   { scene: 'decide', title: '4. El comité decide', text: 'Evaluadores y aprobadores dejan notas y cierran el proceso. Cada acción queda registrada.' },
 ];

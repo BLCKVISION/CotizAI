@@ -7,13 +7,13 @@ const project = (id: string, estado = 'en_recepcion', creado = '2026-11-27T10:00
 
 describe('buildTasks', () => {
   it('cargador is asked for the missing proposals of each project', () => {
-    const [task] = buildTasks('cargador', [project('a')], { a: 2 });
-    assert.equal(task.title, 'Subir 1 propuesta más');
+    const [task] = buildTasks('cargador', [project('a')], {});
+    assert.equal(task.title, 'Subir propuestas');
     assert.equal(task.path, '/proyectos/a');
     assert.match(task.detail, /P-a/);
   });
   it('a project with enough proposals is ready to evaluate and goes before uploads', () => {
-    const tasks = buildTasks('cargador', [project('new', 'en_recepcion', '2026-11-28'), project('ready', 'en_recepcion', '2026-11-01')], { ready: 3 });
+    const tasks = buildTasks('cargador', [project('new', 'en_recepcion', '2026-11-28'), project('ready', 'en_recepcion', '2026-11-01')], { ready: 1 });
     assert.deepEqual(tasks.map((t) => [t.projectId, t.kind]), [['ready', 'evaluate'], ['new', 'upload']]);
   });
   it('cargador has no task while the committee decides', () => {

@@ -27,7 +27,7 @@ import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
 import { AnalysisStep } from './AnalysisStep';
-import { currentStep, defaultSelection, MIN_PROPOSALS, pendingVerification, selectionProblem, type StepId, STEPS } from './flow';
+import { currentStep, defaultSelection, MAX_PER_RUN, MIN_PROPOSALS, pendingVerification, selectionProblem, type StepId, STEPS } from './flow';
 import { ResultStep } from './ResultStep';
 import { Stepper } from './Stepper';
 import { VERDICT_TONE, VerdictSheet } from './VerdictSheet';
@@ -73,7 +73,9 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   const reached: StepId = !seesResults && hasEvaluation ? 'verification' : currentStep({ proposalCount: list.length, hasEvaluation, items, decisions });
   const step: StepId = chosenStep ?? reached;
   const selected = selection ?? new Set(defaultSelection(list.map((p) => p.id), [...evaluated]));
-  const problem = selectionProblem([...selected].filter((id) => list.some((p) => p.id === id)).length, list.length, hasEvaluation);
+  const chosenCount = [...selected].filter((id) => list.some((p) => p.id === id)).length;
+  const problem = selectionProblem(chosenCount, list.length);
+  const unanalysed = results ? list.filter((p) => !evaluated.has(p.id)).length : 0;
   const pending = pendingVerification(items, decisions);
   const open = items.find((i) => i.proposal_id === openId) ?? pending[0] ?? items[0] ?? null;
   const decisionFor = (id: string) => decisions.find((d) => d.proposal_id === id);
@@ -132,12 +134,23 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   const addButton = canUpload ? (
     <Boton etiqueta="Agregar propuestas" icono="plus" variante="secundario" onPress={() => pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, (files) => void upload.upload(project.id, files))} />
   ) : null;
-  const evaluateOthers = canEvaluate && hasEvaluation ? <Boton etiqueta="Evaluar de nuevo o elegir otras" icono="cpu" variante="secundario" onPress={() => goTo('analysis')} /> : null;
+  const nextBatch = Math.min(unanalysed, MAX_PER_RUN);
+  const evaluateOthers = canEvaluate && hasEvaluation ? (
+    <Boton
+      etiqueta={nextBatch > 0 ? `Analizar ${nextBatch === 1 ? 'la que falta' : `las siguientes ${nextBatch}`}` : 'Evaluar de nuevo o elegir otras'}
+      icono="cpu"
+      variante="secundario"
+      onPress={() => {
+        setSelection(null); // back to the default batch: what has not been analysed yet
+        goTo('analysis');
+      }}
+    />
+  ) : null;
 
   let hint = '';
   let actions = null;
   if (step === 'proposals') {
-    hint = list.length < MIN_PROPOSALS ? `Faltan ${MIN_PROPOSALS - list.length} propuestas para continuar.` : `${list.length} propuestas listas.`;
+    hint = list.length < MIN_PROPOSALS ? 'Agregue al menos una propuesta para continuar.' : `${list.length} ${list.length === 1 ? 'propuesta lista' : 'propuestas listas'}.`;
     actions = (
       <>
         {addButton}
@@ -145,19 +158,19 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       </>
     );
   } else if (step === 'analysis') {
-    hint = !canEvaluate ? (closed ? 'El proyecto está cerrado.' : 'Su rol no inicia evaluaciones.') : (problem ?? `${selected.size} de ${list.length} elegidas.`);
+    hint = !canEvaluate ? (closed ? 'El proyecto está cerrado.' : 'Su rol no inicia evaluaciones.') : (problem ?? `${chosenCount} de ${list.length} elegidas · máximo ${MAX_PER_RUN} por tanda.`);
     actions = (
       <>
         {addButton}
         {running ? (
           <Boton etiqueta={`Ver el proceso (${elapsed} s)`} icono="activity" onPress={() => setShowProcess(true)} />
         ) : (
-          <Boton etiqueta={selected.size === list.length ? 'Evaluar todas' : `Evaluar ${selected.size} ${selected.size === 1 ? 'elegida' : 'elegidas'}`} icono="cpu" deshabilitado={!canEvaluate || problem !== null} onPress={() => void evaluate()} />
+          <Boton etiqueta={chosenCount === list.length && list.length > 1 ? 'Evaluar todas' : `Evaluar ${chosenCount} ${chosenCount === 1 ? 'propuesta' : 'propuestas'}`} icono="cpu" deshabilitado={!canEvaluate || problem !== null} onPress={() => void evaluate()} />
         )}
       </>
     );
   } else if (step === 'verification') {
-    hint = seesResults ? `${items.length - pending.length} de ${items.length} verificadas.` : 'La IA terminó. El comité está verificando.';
+    hint = seesResults ? `${items.length - pending.length} de ${items.length} verificadas${unanalysed > 0 ? ` · ${unanalysed} sin analizar` : ''}.` : 'La IA terminó. El comité está verificando.';
     actions = (
       <>
         {addButton}
@@ -166,7 +179,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       </>
     );
   } else {
-    hint = 'Puede agregar propuestas o evaluar de nuevo cuando quiera.';
+    hint = unanalysed > 0 ? `Quedan ${unanalysed} sin analizar: el resultado todavía no las incluye.` : 'Puede agregar propuestas o evaluar de nuevo cuando quiera.';
     actions = (
       <>
         {addButton}

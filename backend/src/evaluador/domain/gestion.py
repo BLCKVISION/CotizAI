@@ -9,7 +9,9 @@ from datetime import datetime
 from .errores import DatoInvalido
 
 MAX_PROPUESTAS = 20
-MIN_PROPUESTAS = 3
+MIN_PROPUESTAS = 1
+# The platform analyses small batches: easier to verify, faster and cheaper. The batch CLI has no such limit.
+MAX_PROPOSALS_PER_RUN = 5
 MAX_BYTES_DOCUMENTO = 10 * 1024 * 1024
 _NOMBRE_VALIDO = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,150}$")
 # extensión -> firmas válidas al inicio del archivo (el contenido manda, no solo el nombre)

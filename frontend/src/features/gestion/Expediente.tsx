@@ -18,7 +18,7 @@ import { UploadFlow } from '@/features/uploads/UploadFlow';
 import { descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from './api';
 
 const ICONOS: Record<string, NombreIcono> = { pdf: 'file-text', jpg: 'image', png: 'message-square', xlsx: 'grid' };
-const MINIMO = 3;
+const MINIMO = 1;
 const MAXIMO = 20;
 const tamano = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
@@ -137,7 +137,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
       {!datos ? (
         error ? null : <Cargando />
       ) : (
-        <CollapsibleCard title={`Propuestas (${n} de ${MAXIMO})`} detail={n < MINIMO ? `Faltan ${MINIMO - n} para el mínimo de ${MINIMO}.` : 'El expediente alcanzó el mínimo requerido.'} defaultOpen={n > 0 && n <= 3}>
+        <CollapsibleCard title={`Propuestas (${n} de ${MAXIMO})`} detail={n < MINIMO ? 'Agregue al menos una para analizar.' : 'Se analizan hasta 5 por tanda.'} defaultOpen={n > 0 && n <= 3}>
           <View style={{ height: 10, borderRadius: radio.pildora, backgroundColor: t.superficieAlta, overflow: 'hidden' }}>
             <View style={{ height: 10, width: `${Math.min(100, (n / MINIMO) * 100)}%`, backgroundColor: t.primario }} />
           </View>

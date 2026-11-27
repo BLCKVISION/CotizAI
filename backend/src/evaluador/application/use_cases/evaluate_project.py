@@ -28,7 +28,7 @@ from evaluador.domain.errores import (
     TransicionInvalida,
 )
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, ResultadoEvaluacion, Severidad, Veredicto
-from evaluador.domain.gestion import MIN_PROPUESTAS, Propuesta
+from evaluador.domain.gestion import MAX_PROPOSALS_PER_RUN, MIN_PROPUESTAS, Propuesta
 from evaluador.domain.identidad import Permiso, Usuario
 from evaluador.domain.moneda import TasaDeCambio, convertir
 from evaluador.domain.project_evaluation import (
@@ -152,8 +152,6 @@ class EvaluateProject:
             raise NoEncontrado("Una de las propuestas elegidas no pertenece a este proyecto.")
         previous = self._evaluations.por_id(tenant_id, project_id)
         if previous is None:
-            if len(wanted) < MIN_PROPUESTAS:
-                raise DatoInvalido(f"La primera evaluación necesita al menos {MIN_PROPUESTAS} propuestas.")
             return [p for p in proposals if p.id in wanted], (), ()
         stored = {p.id for p in proposals}
         kept = tuple(i for i in previous.items if i.proposal_id in stored and i.proposal_id not in wanted)
@@ -165,8 +163,10 @@ class EvaluateProject:
             raise TransicionInvalida("Un proyecto adjudicado o cerrado no se puede volver a evaluar.")
         proposals = self._gestion.propuestas_de(actor, project_id)
         if len(proposals) < MIN_PROPUESTAS:
-            raise DatoInvalido(f"Cargue al menos {MIN_PROPUESTAS} propuestas antes de evaluar.")
+            raise DatoInvalido("Cargue al menos una propuesta antes de evaluar.")
         chosen, kept, kept_rates = self._selection(actor.tenant_id, project_id, proposals, selected)
+        if len(chosen) > MAX_PROPOSALS_PER_RUN:
+            raise DatoInvalido(f"Elija como máximo {MAX_PROPOSALS_PER_RUN} propuestas por tanda.")
         services = self._services()  # fails here, before touching the project, if the AI is not configured
 
         previous = project.estado

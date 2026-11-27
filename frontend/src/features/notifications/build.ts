@@ -1,5 +1,5 @@
 // Dependency-free on purpose so it runs in the plain-Node unit tests.
-const MIN_PROPOSALS = 3;
+const MIN_PROPOSALS = 1;
 
 type ProjectLike = { id: string; nombre: string; estado: string; creado: string };
 export type NotificationTone = 'action' | 'ready' | 'info';
@@ -16,9 +16,8 @@ export function buildNotifications(projects: ProjectLike[], proposalsByProject: 
       const count = proposalsByProject[p.id] ?? 0;
       const notice = (key: string, title: string, detail: string, tone: NotificationTone) => [{ id: `${p.id}:${key}`, projectId: p.id, title, detail: `${p.nombre} · ${detail}`, tone }];
       if (p.estado === 'en_recepcion') {
-        if (count >= MIN_PROPOSALS) return notice(`ready:${count}`, 'Listo para evaluar', `${count} propuestas cargadas`, 'ready');
-        const missing = MIN_PROPOSALS - count;
-        return notice(`missing:${count}`, 'Faltan propuestas', `${missing === 1 ? 'falta 1' : `faltan ${missing}`} para evaluar`, 'action');
+        if (count >= MIN_PROPOSALS) return notice(`ready:${count}`, 'Listo para evaluar', `${count} ${count === 1 ? 'propuesta cargada' : 'propuestas cargadas'}`, 'ready');
+        return notice(`missing:${count}`, 'Faltan propuestas', 'agregue al menos una para evaluar', 'action');
       }
       if (p.estado === 'en_evaluacion') return notice(p.estado, 'Evaluación en curso', 'el agente está analizando', 'info');
       if (p.estado === 'en_revision_del_comite') return notice(p.estado, 'Pendiente del comité', 'los resultados esperan revisión', 'action');

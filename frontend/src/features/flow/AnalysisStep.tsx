@@ -5,7 +5,10 @@ import { Aviso } from '@/design/bloques';
 import { Chip, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
+import { showToast } from '@/design/toastStore';
 import type { Propuesta } from '@/features/gestion/api';
+
+import { MAX_PER_RUN } from './flow';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
@@ -21,8 +24,16 @@ export function AnalysisStep({ proposals, selected, evaluated, onChange }: Props
   const fresh = proposals.filter((p) => !evaluated.has(p.id));
   const toggle = (id: string) => {
     const next = new Set(selected);
-    if (!next.delete(id)) next.add(id);
+    if (!next.delete(id)) {
+      if (next.size >= MAX_PER_RUN) return showToast({ tone: 'info', title: `Máximo ${MAX_PER_RUN} por tanda`, detail: 'Quite una para elegir otra' });
+      next.add(id);
+    }
     onChange(next);
+  };
+  const batch = (list: Propuesta[]) => new Set(list.slice(0, MAX_PER_RUN).map((p) => p.id));
+  const isBatch = (list: Propuesta[]) => {
+    const wanted = batch(list);
+    return wanted.size === selected.size && [...wanted].every((id) => selected.has(id));
   };
   return (
     <Tarjeta>
@@ -30,10 +41,14 @@ export function AnalysisStep({ proposals, selected, evaluated, onChange }: Props
         ¿Cuáles propuestas va a evaluar?
       </Texto>
       <Texto suave>La IA lee cada documento, revisa las cuentas y las condiciones, y le explica por qué sí o por qué no.</Texto>
+      <Texto variante="etiqueta">
+        {selected.size} de {MAX_PER_RUN} posibles en esta tanda
+        {fresh.length > 0 && evaluated.size > 0 ? ` · ${fresh.length} sin analizar` : ''}
+      </Texto>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
-        <Chip etiqueta="Todas" seleccionado={selected.size === proposals.length} onPress={() => onChange(new Set(proposals.map((p) => p.id)))} />
+        <Chip etiqueta={proposals.length > MAX_PER_RUN ? `Primeras ${MAX_PER_RUN}` : 'Todas'} seleccionado={isBatch(proposals)} onPress={() => onChange(batch(proposals))} />
         {evaluated.size > 0 && fresh.length > 0 ? (
-          <Chip etiqueta={`Solo las nuevas (${fresh.length})`} seleccionado={selected.size === fresh.length && fresh.every((p) => selected.has(p.id))} onPress={() => onChange(new Set(fresh.map((p) => p.id)))} />
+          <Chip etiqueta={`Sin analizar (${Math.min(fresh.length, MAX_PER_RUN)})`} seleccionado={isBatch(fresh)} onPress={() => onChange(batch(fresh))} />
         ) : null}
         <Chip etiqueta="Ninguna" seleccionado={selected.size === 0} onPress={() => onChange(new Set())} />
       </View>

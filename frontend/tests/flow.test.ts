@@ -11,7 +11,7 @@ describe('currentStep', () => {
   const base = { proposalCount: 0, hasEvaluation: false, items: [], decisions: [] };
   it('walks through the path the first time', () => {
     assert.equal(currentStep(base), 'proposals');
-    assert.equal(currentStep({ ...base, proposalCount: 3 }), 'analysis');
+    assert.equal(currentStep({ ...base, proposalCount: 1 }), 'analysis');
   });
   it('asks for verification until every proposal has a yes or no', () => {
     const items = [item('a'), item('b')];
@@ -42,15 +42,19 @@ describe('template', () => {
 });
 
 describe('selection', () => {
-  it('selects everything the first time and only the new ones afterwards', () => {
+  const ids = (n: number) => Array.from({ length: n }, (_, i) => `p${i}`);
+  it('selects at most five, starting with what has not been analysed', () => {
     assert.deepEqual(defaultSelection(['a', 'b'], []), ['a', 'b']);
-    assert.deepEqual(defaultSelection(['a', 'b', 'c'], ['a', 'b']), ['c']);
+    assert.equal(defaultSelection(ids(12), []).length, 5);
+    assert.deepEqual(defaultSelection(ids(7), ids(5)), ['p5', 'p6']);
     assert.deepEqual(defaultSelection(['a'], ['a']), ['a']);
   });
-  it('explains why it cannot evaluate yet', () => {
-    assert.match(selectionProblem(2, 2, false) ?? '', /al menos 3/);
-    assert.match(selectionProblem(2, 5, false) ?? '', /primera evaluación/);
-    assert.equal(selectionProblem(1, 5, true), null);
+  it('allows from one to five per batch', () => {
+    assert.equal(selectionProblem(1, 1), null);
+    assert.equal(selectionProblem(5, 20), null);
+    assert.match(selectionProblem(6, 20) ?? '', /Máximo 5/);
+    assert.match(selectionProblem(0, 3) ?? '', /al menos una/);
+    assert.match(selectionProblem(0, 0) ?? '', /al menos una propuesta/);
   });
 });
 

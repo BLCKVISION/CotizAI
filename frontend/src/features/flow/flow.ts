@@ -1,6 +1,8 @@
 // Dependency-free on purpose so it runs in the plain-Node unit tests.
 /** The guided path of a purchase and the fixed "why yes / why no" template. Only the information changes. */
-export const MIN_PROPOSALS = 3;
+export const MIN_PROPOSALS = 1;
+/** The server rejects larger batches. */
+export const MAX_PER_RUN = 5;
 
 export const STEPS = [
   { id: 'project', label: 'Proyecto' },
@@ -81,16 +83,16 @@ export function outcomes<I extends ItemLike>(items: I[], decisions: DecisionLike
 /** Items come ranked from the server, so the recommendation is the first one the person approved. */
 export const recommendation = <I extends ItemLike>(list: Outcome<I>[]) => list.find((o) => o.approved) ?? null;
 
-/** What gets selected by default: everything the first time, only the new proposals afterwards. */
+/** Default batch: the proposals not analysed yet (all of them the first time), up to the limit. */
 export function defaultSelection(proposalIds: string[], evaluatedIds: string[]): string[] {
   const done = new Set(evaluatedIds);
   const fresh = proposalIds.filter((id) => !done.has(id));
-  return done.size === 0 || fresh.length === 0 ? proposalIds : fresh;
+  return (fresh.length > 0 ? fresh : proposalIds).slice(0, MAX_PER_RUN);
 }
 
-export function selectionProblem(selected: number, total: number, hasEvaluation: boolean): string | null {
-  if (total < MIN_PROPOSALS) return `Agregue al menos ${MIN_PROPOSALS} propuestas (tiene ${total}).`;
+export function selectionProblem(selected: number, total: number): string | null {
+  if (total < MIN_PROPOSALS) return 'Agregue al menos una propuesta.';
   if (selected === 0) return 'Elija al menos una propuesta.';
-  if (!hasEvaluation && selected < MIN_PROPOSALS) return `La primera evaluación necesita al menos ${MIN_PROPOSALS}.`;
+  if (selected > MAX_PER_RUN) return `Máximo ${MAX_PER_RUN} propuestas por tanda.`;
   return null;
 }

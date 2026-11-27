@@ -248,10 +248,14 @@ def test_ai_outage_saves_nothing_and_restores_reception(app_client, model):
     assert app_client.get(f"/api/v1/proyectos/{pid}/evaluations", headers=headers).status_code == 404
 
 
-def test_needs_three_proposals(app_client):
-    pid = _project(app_client, {"alfa.pdf": DEFAULT_FILES["alfa.pdf"]})
-    assert _evaluate(app_client, pid).status_code == 422
-    assert _state(app_client, pid) == "en_recepcion"
+def test_one_proposal_is_enough_and_none_is_not(app_client):
+    _register_rate(app_client)
+    empty = _project(app_client, {}, name="Vacio")
+    assert _evaluate(app_client, empty).status_code == 422
+    single = _project(app_client, {"alfa.pdf": DEFAULT_FILES["alfa.pdf"]}, name="Uno")
+    r = _evaluate(app_client, single)
+    assert r.status_code == 201, r.text
+    assert [i["filename"] for i in r.json()["items"]] == ["alfa.pdf"]
 
 
 def test_reevaluation_is_allowed_in_review_but_not_after_closing(app_client):

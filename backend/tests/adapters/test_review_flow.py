@@ -34,14 +34,25 @@ def _reviews(client, project_id):
     return client.get(f"/api/v1/proyectos/{project_id}/reviews", headers=cabecera(client, rol="evaluador")).json()
 
 
-def test_first_selective_run_needs_three_and_reads_only_the_chosen(app_client):
+def test_first_run_reads_only_the_chosen_even_a_single_one(app_client):
     _register_rate(app_client)
     pid = _project(app_client, FOUR)
-    ids = _ids(app_client, pid)
-    assert _run(app_client, pid, [ids["alfa.pdf"]]).status_code == 422
-    r = _run(app_client, pid, [ids["alfa.pdf"], ids["beta.pdf"], ids["gamma.pdf"]])
+    r = _run(app_client, pid, [_ids(app_client, pid)["alfa.pdf"]])
     assert r.status_code == 201, r.text
-    assert sorted(i["filename"] for i in r.json()["items"]) == ["alfa.pdf", "beta.pdf", "gamma.pdf"]
+    assert [i["filename"] for i in r.json()["items"]] == ["alfa.pdf"]
+
+
+def test_a_batch_takes_at_most_five_and_later_batches_complete_the_ranking(app_client):
+    _register_rate(app_client)
+    files = {f"oferta{n}.pdf": f"SUPPLIER=Prov{n} CURRENCY=USD instalacion garantia soporte lote {n}" for n in range(7)}
+    pid = _project(app_client, files)
+    ids = list(_ids(app_client, pid).values())
+    for too_many in (ids[:6], ids):
+        r = _run(app_client, pid, too_many)
+        assert r.status_code == 422 and "máximo 5" in r.json()["mensaje"]
+    assert _evaluate(app_client, pid).status_code == 422  # "all" is also a batch, and there are seven
+    assert len(_run(app_client, pid, ids[:5]).json()["items"]) == 5
+    assert len(_run(app_client, pid, ids[5:]).json()["items"]) == 7
 
 
 def test_a_later_selective_run_keeps_the_others_and_ranks_everything(app_client):

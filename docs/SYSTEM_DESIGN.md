@@ -182,3 +182,4 @@ Una sola base de código para web, iOS y Android con **Expo Router**. Capas: `ap
 - `GET`/`POST /proyectos/{id}/reviews`: una persona responde sí o no por propuesta. Si difiere de la IA debe justificarlo. Queda en la auditoría y caduca si la propuesta se vuelve a leer.
 - Se admiten propuestas nuevas hasta que el proyecto se adjudica o se cierra; borrar evidencia ya evaluada sigue prohibido.
 - Rol `coordinador`: carga, evalúa, ve resultados y verifica. No adjudica ni ve la auditoría.
+- **Tandas:** cada análisis en la plataforma toma de 1 a 5 propuestas (`MAX_PROPOSALS_PER_RUN`); el proyecto admite hasta 20. El modo lote no tiene este límite.

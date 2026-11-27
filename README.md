@@ -37,7 +37,8 @@ válidas. La decisión final es del comité.
 **Implementado**
 
 - Proyectos con estados, usuarios con cuatro roles, directorio de proveedores y auditoría con huellas encadenadas.
-- Carga de 3 a 20 propuestas, cifradas con AES-256-GCM.
+- Carga de hasta 20 propuestas por proyecto, cifradas con AES-256-GCM. En la plataforma se analizan por tandas de 1 a 5
+  (los resultados se acumulan y se ordenan juntos); el modo lote procesa todos los archivos.
 - Lectura de PDF, PDF escaneado, imágenes y XLSX (incluye contenido oculto).
 - Reglas de descarte: alcance, compatibilidad, capacidad, calidad, costos abusivos, aritmética y manipulación.
 - Costo real paso a paso, tasa del BCV o manual, ranking, antecedentes de descarte del proveedor.

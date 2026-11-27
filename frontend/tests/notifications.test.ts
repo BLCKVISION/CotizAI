@@ -6,16 +6,16 @@ import { buildNotifications } from '../src/features/notifications/build';
 const project = (id: string, estado: string, creado = '2026-11-27T10:00:00Z') => ({ id, nombre: `P-${id}`, estado, creado });
 
 describe('buildNotifications', () => {
-  it('says how many proposals are missing', () => {
-    const [n] = buildNotifications([project('a', 'en_recepcion')], { a: 2 });
+  it('asks for a first proposal', () => {
+    const [n] = buildNotifications([project('a', 'en_recepcion')], {});
     assert.equal(n.title, 'Faltan propuestas');
-    assert.match(n.detail, /falta 1 para evaluar/);
+    assert.match(n.detail, /al menos una/);
   });
   it('announces a project that is ready to evaluate', () => {
     assert.equal(buildNotifications([project('a', 'en_recepcion')], { a: 3 })[0].tone, 'ready');
   });
   it('changes the id when the situation changes', () => {
-    const before = buildNotifications([project('a', 'en_recepcion')], { a: 1 })[0].id;
+    const before = buildNotifications([project('a', 'en_recepcion')], {})[0].id;
     assert.notEqual(buildNotifications([project('a', 'en_recepcion')], { a: 2 })[0].id, before);
   });
   it('lists the newest project first and skips closed ones', () => {
