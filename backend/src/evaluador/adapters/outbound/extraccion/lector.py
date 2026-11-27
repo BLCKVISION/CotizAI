@@ -37,6 +37,16 @@ def extensiones_admitidas() -> frozenset[str]:
     return frozenset(_EXTENSIONES)
 
 
+def image_mime(filename: str, data: bytes) -> str:
+    """MIME type of an image. The content decides the type and the extension must agree with it."""
+    kind = _tipo_por_contenido(data)
+    if kind not in _MIME:
+        raise DatoInvalido("Solo se admiten imágenes PNG, JPG o WebP.")
+    if _EXTENSIONES.get(PurePath(filename).suffix.lower()) != kind:
+        raise DatoInvalido("El contenido del archivo no corresponde a su extensión.")
+    return _MIME[kind]
+
+
 def leer_documento(nombre: str, datos: bytes, vision: ModeloConVision | None = None) -> ContenidoLeido:
     esperado = _EXTENSIONES.get(PurePath(nombre).suffix.lower())
     if esperado is None:

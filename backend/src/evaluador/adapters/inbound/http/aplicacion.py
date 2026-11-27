@@ -8,7 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from evaluador.adapters.inbound.http.errores_http import registrar_manejadores
 from evaluador.adapters.inbound.http.guards import LimitadorDeVentana
 from evaluador.adapters.inbound.http.interceptores import InterceptorDeSeguridad, InterceptorDeTrazabilidad
-from evaluador.adapters.inbound.http.routers import evaluations, exchange_rates, gestion, proyectos, sesiones
+from evaluador.adapters.inbound.http.routers import (
+    evaluations,
+    exchange_rates,
+    gestion,
+    proyectos,
+    sesiones,
+    transcriptions,
+)
 from evaluador.composition.configuracion import Configuracion
 from evaluador.composition.contenedor import Contenedor, construir_contenedor
 from evaluador.composition.semillas import sembrar_demo
@@ -50,6 +57,7 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
     api.include_router(gestion.router)
     api.include_router(evaluations.router)
     api.include_router(exchange_rates.router)
+    api.include_router(transcriptions.router)
 
     @api.get("/salud", tags=["sistema"])
     def salud() -> dict[str, str]:

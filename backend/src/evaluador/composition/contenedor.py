@@ -18,6 +18,7 @@ from evaluador.adapters.outbound.persistence.coleccion_postgres import Coleccion
 from evaluador.adapters.outbound.persistence.exchange_rate_collection import CollectionExchangeRates, RateRecord
 from evaluador.adapters.outbound.security.argon2_hasheador import Argon2Hasheador
 from evaluador.adapters.outbound.security.tokens import IdsUuid, JwtTokens, RelojSistema
+from evaluador.application.ports.agente import ModeloConVision
 from evaluador.application.ports.exchange_rates import ExchangeRateSource
 from evaluador.application.use_cases.autenticacion import AutenticarToken, CerrarSesion, IniciarSesion
 from evaluador.application.use_cases.evaluate_project import (
@@ -35,8 +36,10 @@ from evaluador.application.use_cases.proyectos import (
     TransicionarProyecto,
 )
 from evaluador.application.use_cases.review_proposals import ReviewProposals
+from evaluador.application.use_cases.transcription import TranscribeImage
 from evaluador.composition.ai import lazy_services
 from evaluador.composition.configuracion import Configuracion
+from evaluador.composition.transcription import lazy_transcriber
 from evaluador.domain.gestion import Evento, Nota, Propuesta, Proveedor
 from evaluador.domain.identidad import PoliticaDeSesion
 from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
@@ -59,6 +62,7 @@ class Contenedor:
     ask_project: AskProject
     resolve_rates: ResolveRates
     register_manual_rate: RegisterManualRate
+    transcribe_image: TranscribeImage
     # Expuestos para scripts de semillas y pruebas
     tenants: TenantsEnMemoria
     usuarios: UsuariosEnMemoria
@@ -97,6 +101,7 @@ def construir_contenedor(
     *,
     ai_services: Callable[[], EvaluationServices] | None = None,
     rate_source: ExchangeRateSource | None = None,
+    vision_model: ModeloConVision | None = None,
 ) -> Contenedor:
     politica = politica or PoliticaDeSesion()
     reloj, ids, tokens, hasheador = RelojSistema(), IdsUuid(), _session_tokens(config), Argon2Hasheador()
@@ -142,6 +147,7 @@ def construir_contenedor(
         ask_project=AskProject(get_evaluation, ai_services, auditoria),
         resolve_rates=resolve_rates,
         register_manual_rate=RegisterManualRate(rates, reloj, auditoria),
+        transcribe_image=TranscribeImage(lazy_transcriber(config, vision_model)),
         tenants=tenants,
         usuarios=usuarios,
         hasheador=hasheador,

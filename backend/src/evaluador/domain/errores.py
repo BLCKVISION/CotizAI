@@ -39,3 +39,7 @@ class TasaNoDisponible(ErrorDeDominio):
 
 class ServicioNoDisponible(ErrorDeDominio):
     codigo = "servicio_no_disponible"
+
+
+class PayloadTooLarge(ErrorDeDominio):
+    codigo = "payload_demasiado_grande"

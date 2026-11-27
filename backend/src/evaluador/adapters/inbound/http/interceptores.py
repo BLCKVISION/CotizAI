@@ -13,6 +13,7 @@ from starlette.datastructures import Headers, MutableHeaders
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from evaluador.application.use_cases.transcription import MAX_IMAGE_BYTES
 from evaluador.domain.gestion import MAX_BYTES_DOCUMENTO
 from evaluador.observabilidad import contexto
 from evaluador.observabilidad.censura import censurar, censurar_cabeceras
@@ -20,6 +21,7 @@ from evaluador.observabilidad.censura import censurar, censurar_cabeceras
 _log = logging.getLogger("evaluador.http")
 _TRACK_ID_VALIDO = re.compile(r"^[A-Za-z0-9-]{8,64}$")
 _RUTA_DE_CARGA = re.compile(r"^/api/v1/proyectos/[0-9a-fA-F-]{36}/propuestas$")
+_TRANSCRIPTION_PATH = "/api/v1/transcriptions"
 _RUTAS_DE_DOCUMENTACION = ("/api/docs", "/api/openapi.json")
 
 
@@ -65,9 +67,10 @@ class InterceptorDeTrazabilidad:
         contexto.iniciar(track_id=track_id, ip=self._ip(scope, cab))
 
         inicio = time.perf_counter()
-        # Solo la carga de documentos admite cuerpos grandes; su contenido nunca se registra.
-        es_carga = scope["method"] == "POST" and bool(_RUTA_DE_CARGA.match(scope["path"]))
-        max_bytes = MAX_BYTES_DOCUMENTO if es_carga else self._max_bytes
+        # Solo las cargas de archivos admiten cuerpos grandes; su contenido nunca se registra.
+        upload_limit = self._upload_limit(scope)
+        es_carga = upload_limit is not None
+        max_bytes = upload_limit or self._max_bytes
         cuerpo = bytearray()
         estado = 500
         excedido = False
@@ -115,6 +118,14 @@ class InterceptorDeTrazabilidad:
                     "cuerpo": "<documento>" if es_carga else self._cuerpo_censurado(bytes(cuerpo), excedido),
                 },
             )
+
+    @staticmethod
+    def _upload_limit(scope: Scope) -> int | None:
+        if scope["method"] != "POST":
+            return None
+        if scope["path"] == _TRANSCRIPTION_PATH:
+            return MAX_IMAGE_BYTES
+        return MAX_BYTES_DOCUMENTO if _RUTA_DE_CARGA.match(scope["path"]) else None
 
     def _ip(self, scope: Scope, cab: Headers) -> str:
         if self._confiar_en_proxy:

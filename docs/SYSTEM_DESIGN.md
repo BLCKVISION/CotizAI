@@ -127,6 +127,7 @@ La IP solo se toma de `X-Forwarded-For` si `EVALUADOR_CONFIAR_EN_PROXY=true` (Ca
 | `GET, POST /proyectos` | Listar / crear | ver_estado / crear_proyecto |
 | `GET /proyectos/{id}` | Detalle | ver_estado |
 | `POST /proyectos/{id}/transiciones` | Cambiar de estado | según destino |
+| `POST /transcriptions?archivo=` | Foto de un presupuesto (PNG, JPG, WebP; 25 MiB) a Markdown. No guarda la imagen | cargar_documentos |
 | `GET /salud` | Liveness | público |
 
 Convenciones: verbos HTTP semánticos, sin verbos en la ruta, ids UUID validados por patrón, errores `{codigo, mensaje, track_id}`, 401 sin sesión, 403 sin permiso, 404 también para otro tenant, 409 transición inválida, 422 payload inválido. Previstas: `/proyectos/{id}/propuestas`, `/evaluaciones`, `/evaluaciones/{id}/eventos`, `/evaluaciones/{id}/exportar`, `/evaluaciones/{id}/chat`, `/auditoria`, `/tasas`.

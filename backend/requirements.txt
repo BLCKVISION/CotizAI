@@ -10,6 +10,7 @@ numpy==2.5.5
 openpyxl==3.1.5
 pdfplumber==0.11.11
 pgvector==0.5.1
+pillow==13.0.0
 psycopg-binary==3.3.9
 psycopg==3.3.9
 pydantic-settings==2.16.3
