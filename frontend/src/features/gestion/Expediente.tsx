@@ -8,11 +8,14 @@ import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, BotonIcono, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { useTema } from '@/design/tema';
+import { showToast } from '@/design/toastStore';
 import { espacio, radio } from '@/design/tokens';
 import { EvaluationResults } from '@/features/evaluations/EvaluationResults';
+import { useProposalUpload } from '@/features/home/useProposalUpload';
 import type { Proyecto } from '@/features/proyectos/api';
+import { UploadFlow } from '@/features/uploads/UploadFlow';
 
-import { cargarPropuestaApi, descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from './api';
+import { descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from './api';
 
 const ICONOS: Record<string, NombreIcono> = { pdf: 'file-text', jpg: 'image', png: 'message-square', xlsx: 'grid' };
 const MINIMO = 3;
@@ -41,10 +44,15 @@ function ZonaDeCarga({ onArchivos, ocupado }: { onArchivos: (a: File[]) => void;
       setEncima(false);
       entregar.current(Array.from(e.dataTransfer?.files ?? []));
     };
+    const keepBrowserFromOpening = (e: DragEvent) => e.preventDefault();
+    window.addEventListener('dragover', keepBrowserFromOpening);
+    window.addEventListener('drop', keepBrowserFromOpening);
     el.addEventListener('dragover', sobre);
     el.addEventListener('dragleave', fuera);
     el.addEventListener('drop', soltar);
     return () => {
+      window.removeEventListener('dragover', keepBrowserFromOpening);
+      window.removeEventListener('drop', keepBrowserFromOpening);
       el.removeEventListener('dragover', sobre);
       el.removeEventListener('dragleave', fuera);
       el.removeEventListener('drop', soltar);
@@ -76,27 +84,13 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
   const t = useTema();
   const { usuario, conSesion } = useSesion();
   const { datos, error, recargar } = useDatos(propuestasApi(proyecto.id), proyecto.id);
-  const [progreso, setProgreso] = useState<string | null>(null);
-  const [fallos, setFallos] = useState<string[]>([]);
-  const [porEliminar, setPorEliminar] = useState<string | null>(null);
-  const editable = usuario?.rol === 'cargador' && proyecto.estado === 'en_recepcion';
-
-  const subir = async (archivos: File[]) => {
-    if (progreso || archivos.length === 0) return;
-    const errores: string[] = [];
-    for (const [i, a] of archivos.entries()) {
-      setProgreso(`Cargando ${i + 1} de ${archivos.length}: ${a.name}`);
-      try {
-        await conSesion(cargarPropuestaApi(proyecto.id, a.name, a));
-      } catch (e) {
-        errores.push(`${a.name}: ${mensajeDeError(e)}`);
-      }
-    }
-    setProgreso(null);
-    setFallos(errores);
+  const flow = useProposalUpload(() => {
     recargar();
     onCambio?.();
-  };
+  });
+  const subir = (archivos: File[]) => void flow.upload(proyecto.id, archivos);
+  const [porEliminar, setPorEliminar] = useState<string | null>(null);
+  const editable = usuario?.rol === 'cargador' && proyecto.estado === 'en_recepcion';
 
   const descargar = async (p: Propuesta) => {
     try {
@@ -108,7 +102,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
       enlace.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setFallos([mensajeDeError(e)]);
+      showToast({ tone: 'error', title: mensajeDeError(e), detail: p.archivo });
     }
   };
 
@@ -119,7 +113,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
       recargar();
       onCambio?.();
     } catch (e) {
-      setFallos([mensajeDeError(e)]);
+      showToast({ tone: 'error', title: mensajeDeError(e), detail: p.archivo });
     }
     setPorEliminar(null);
   };
@@ -128,13 +122,12 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'flex-start' }}>
       {/* Without anything to show, this column is not rendered so the proposal list takes the full width. */}
-      {editable || proyecto.estado === 'en_recepcion' || progreso || fallos.length > 0 ? (
+      {editable || proyecto.estado === 'en_recepcion' ? (
       <View style={{ flexGrow: 1, flexBasis: 360, gap: espacio.md }}>
-      {editable && Platform.OS === 'web' ? <ZonaDeCarga onArchivos={subir} ocupado={progreso !== null} /> : null}
+      {editable && Platform.OS === 'web' ? <ZonaDeCarga onArchivos={subir} ocupado={flow.busy} /> : null}
       {editable && Platform.OS !== 'web' ? <Aviso tono="info" texto="La carga de archivos está disponible en la versión web." /> : null}
       {!editable && proyecto.estado === 'en_recepcion' ? <Aviso tono="info" texto="Solo el rol Cargador puede agregar o quitar propuestas." /> : null}
-      {progreso ? <Aviso tono="info" texto={progreso} /> : null}
-      {fallos.map((f) => <Aviso key={f} texto={f} />)}
+      {flow.busy && !flow.visible ? <Aviso tono="info" texto="La carga continúa en segundo plano." /> : null}
       </View>
       ) : null}
       <View style={{ flexGrow: 1.3, flexBasis: 420, gap: espacio.md }}>
@@ -159,6 +152,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
         </CollapsibleCard>
       )}
       </View>
+      <UploadFlow visible={flow.visible} items={flow.items} busy={flow.busy} onClose={flow.close} />
       <View style={{ flexBasis: '100%', flexGrow: 1 }}>
         <EvaluationResults
           project={proyecto}

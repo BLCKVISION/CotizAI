@@ -11,8 +11,6 @@ import { useTema } from '@/design/tema';
 import { espacio, radio, texto as tipografia } from '@/design/tokens';
 import type { Proyecto } from '@/features/proyectos/api';
 
-import type { UploadStatus } from './useProposalUpload';
-
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
 /** Loop from 0 to 1; stays at 0 when the user asks for reduced motion. */
@@ -86,12 +84,12 @@ function ColumnGuides() {
 type Props = {
   focus: Proyecto | null;
   canEdit: boolean;
-  status: UploadStatus;
+  busy: boolean;
   onFiles: (files: File[]) => void;
   onNavigate: (path: string) => void;
 };
 
-export function ActivityCard({ focus, canEdit, status, onFiles, onNavigate }: Props) {
+export function ActivityCard({ focus, canEdit, busy, onFiles, onNavigate }: Props) {
   const t = useTema();
   const [dragging, setDragging] = useState(false);
   const zone = useRef<ComponentRef<typeof View>>(null);
@@ -128,11 +126,10 @@ export function ActivityCard({ focus, canEdit, status, onFiles, onNavigate }: Pr
   const openFocus = () => onNavigate(focus ? `/proyectos/${focus.id}` : '/proyectos');
   const creating = canEdit && !focus;
   const action = canUpload
-    ? { icon: 'plus' as const, title: 'Agregar propuestas', detail: 'Suba o arrastre fotos, PDF o Excel', run: () => !status.busy && pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, onFiles) }
+    ? { icon: 'plus' as const, title: 'Agregar propuestas', detail: 'Suba o arrastre fotos, PDF o Excel', run: () => !busy && pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, onFiles) }
     : creating
       ? { icon: 'folder-plus' as const, title: 'Agregar proyecto', detail: 'Empiece con el requerimiento y la ubicación', run: () => onNavigate('/proyectos/nuevo') }
       : { icon: 'folder' as const, title: focus ? 'Abrir proyecto' : 'Ver proyectos', detail: focus ? focus.nombre : 'Todavía no hay proyectos', run: openFocus };
-  const feedback = status.errors[0] ?? status.message;
 
   return (
     <Panel
@@ -145,7 +142,7 @@ export function ActivityCard({ focus, canEdit, status, onFiles, onNavigate }: Pr
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${action.title}. ${action.detail}`}
-          accessibilityState={{ busy: status.busy }}
+          accessibilityState={{ busy }}
           onPress={action.run}
           style={(e: PressState) => ({
             flex: 1,
@@ -173,18 +170,13 @@ export function ActivityCard({ focus, canEdit, status, onFiles, onNavigate }: Pr
             <>
               <Shine />
               <PulsingIcon icon={action.icon} hovered={Boolean(hovered)} />
-              <RollingLabel text={status.busy ? 'Cargando…' : action.title} active={Boolean(hovered)} style={{ ...tipografia.subtitulo, lineHeight: 26, color: t.onAccent, fontFamily: 'Urbanist_600SemiBold' }} />
+              <RollingLabel text={busy ? 'Cargando…' : action.title} active={Boolean(hovered)} style={{ ...tipografia.subtitulo, lineHeight: 26, color: t.onAccent, fontFamily: 'Urbanist_600SemiBold' }} />
               <Texto variante="pequeno" color={t.onAccent} numberOfLines={1}>
                 {action.detail}
               </Texto>
             </>
           )}
         </Pressable>
-        {feedback ? (
-          <Texto variante="pequeno" color={status.errors.length ? t.error.texto : t.textoSuave} numberOfLines={2} accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>
-            {feedback}
-          </Texto>
-        ) : null}
       </View>
     </Panel>
   );

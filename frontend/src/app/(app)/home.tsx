@@ -18,6 +18,7 @@ import { buildTasks, pickFocus } from '@/features/home/tasks';
 import { TodoCard } from '@/features/home/TodoCard';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
 import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
+import { UploadFlow } from '@/features/uploads/UploadFlow';
 import { listarProyectosApi, type Proyecto } from '@/features/proyectos/api';
 
 type HomeData = { stats: Estadisticas; projects: Proyecto[] };
@@ -51,7 +52,7 @@ export default function Home() {
   const { dispositivo } = useDispositivo();
   const { usuario } = useSesion();
   const { datos, error, recargar } = useDatos(loadHome);
-  const { status, upload } = useProposalUpload(recargar);
+  const flow = useProposalUpload(recargar);
   const [creating, setCreating] = useState(false);
   // "New project" opens over Home instead of leaving it.
   const go = (path: string) => (path === '/proyectos/nuevo' ? setCreating(true) : router.push(path as Href));
@@ -66,7 +67,7 @@ export default function Home() {
   const tasks = datos ? buildTasks(role, datos.projects, datos.stats.propuestas_por_proyecto) : [];
   const focus = datos ? pickFocus(datos.projects) : null;
   const sendFiles = (files: File[]) => {
-    if (focus) void upload(focus.id, files);
+    if (focus) void flow.upload(focus.id, files);
   };
 
   const cell = (flex: number): ViewStyle => (wide ? { flex, minWidth: 0, minHeight: 0 } : { minHeight: 340 });
@@ -115,7 +116,7 @@ export default function Home() {
               <ActivityCard
                 focus={focus}
                 canEdit={canEdit}
-                status={status}
+                busy={flow.busy}
                 onFiles={sendFiles}
                 onNavigate={go}
               />
@@ -131,6 +132,7 @@ export default function Home() {
           </View>
         </View>
       )}
+      <UploadFlow visible={flow.visible} items={flow.items} busy={flow.busy} onClose={flow.close} />
       <NewProjectDialog
         visible={canEdit && creating}
         onClose={() => {

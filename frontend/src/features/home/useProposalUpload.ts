@@ -1,31 +1,52 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
+import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
-import { mensajeDeError } from '@/core/useDatos';
+import { showToast } from '@/design/toastStore';
 import { cargarPropuestaApi } from '@/features/gestion/api';
 
-export type UploadStatus = { busy: boolean; message: string | null; errors: string[] };
+export type UploadState = 'waiting' | 'uploading' | 'saved' | 'rejected';
+export type UploadItem = { key: string; name: string; size: number; state: UploadState; reason?: string };
 
-/** Uploads files one by one into a project and reports progress. */
+const MAX_REJECTION_TOASTS = 3;
+
+/** Uploads files one by one into a project. Each item reports what the server really answered. */
 export function useProposalUpload(onDone: () => void) {
   const { conSesion } = useSesion();
-  const [status, setStatus] = useState<UploadStatus>({ busy: false, message: null, errors: [] });
+  const [items, setItems] = useState<UploadItem[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const running = useRef(false); // a ref: a second drop can arrive before the state updates
 
   const upload = async (projectId: string, files: File[]) => {
-    if (status.busy || files.length === 0) return;
-    const errors: string[] = [];
+    if (files.length === 0) return;
+    if (running.current) return showToast({ tone: 'info', title: 'Espere a que termine la carga actual' });
+    running.current = true;
+    setBusy(true);
+    setVisible(true);
+    const batch: UploadItem[] = files.map((f, i) => ({ key: `${i}-${f.name}`, name: f.name, size: f.size, state: 'waiting' }));
+    setItems(batch);
+    const update = (index: number, change: Partial<UploadItem>) => setItems((list) => list.map((item, i) => (i === index ? { ...item, ...change } : item)));
+
+    const rejected: { name: string; reason: string }[] = [];
     for (const [i, file] of files.entries()) {
-      setStatus({ busy: true, message: `Cargando ${i + 1} de ${files.length}: ${file.name}`, errors: [] });
+      update(i, { state: 'uploading' });
       try {
         await conSesion(cargarPropuestaApi(projectId, file.name, file));
+        update(i, { state: 'saved' });
       } catch (e) {
-        errors.push(`${file.name}: ${mensajeDeError(e)}`);
+        const reason = e instanceof ErrorApi ? e.message : 'No se pudo cargar el archivo.';
+        rejected.push({ name: file.name, reason });
+        update(i, { state: 'rejected', reason });
+        if (rejected.length <= MAX_REJECTION_TOASTS) showToast({ tone: 'error', title: reason, detail: file.name });
       }
     }
-    const ok = files.length - errors.length;
-    setStatus({ busy: false, message: ok > 0 ? `${ok} archivo(s) cargado(s).` : null, errors });
+    const saved = files.length - rejected.length;
+    if (saved > 0) showToast({ tone: 'success', title: saved === 1 ? '1 propuesta guardada' : `${saved} propuestas guardadas`, detail: 'Cifradas con AES-256' });
+    running.current = false;
+    setBusy(false);
     onDone();
   };
 
-  return { status, upload };
+  return { items, busy, visible, close: () => setVisible(false), upload };
 }
