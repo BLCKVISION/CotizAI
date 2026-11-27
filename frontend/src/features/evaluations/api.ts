@@ -68,8 +68,14 @@ export type ReportFormat = 'md' | 'csv';
 
 const evaluationsPath = (projectId: string) => `/proyectos/${projectId}/evaluations`;
 
-export const evaluateProjectApi = (projectId: string) => (token: string) =>
-  peticion<ProjectEvaluation>(evaluationsPath(projectId), { metodo: 'POST', token, timeoutMs: EVALUATION_TIMEOUT_MS });
+/** Without `proposalIds` every proposal is evaluated; with them, only those (the rest keep their result). */
+export const evaluateProjectApi = (projectId: string, proposalIds?: string[]) => (token: string) =>
+  peticion<ProjectEvaluation>(evaluationsPath(projectId), {
+    metodo: 'POST',
+    cuerpo: proposalIds ? { proposal_ids: proposalIds } : undefined,
+    token,
+    timeoutMs: EVALUATION_TIMEOUT_MS,
+  });
 
 export const getEvaluationApi = (projectId: string) => (token: string) =>
   peticion<ProjectEvaluation>(evaluationsPath(projectId), { token });
@@ -90,3 +96,10 @@ export const askProjectApi = (projectId: string, question: string) => (token: st
     token,
     timeoutMs: QUESTION_TIMEOUT_MS,
   });
+
+/** A person's yes or no on the AI's result for one proposal. */
+export type ReviewDecision = { proposal_id: string; approved: boolean; comment: string; decided_by: string; decided_at: string };
+
+export const getReviewsApi = (projectId: string) => (token: string) => peticion<ReviewDecision[]>(`/proyectos/${projectId}/reviews`, { token });
+export const sendReviewApi = (projectId: string, proposalId: string, approved: boolean, comment: string) => (token: string) =>
+  peticion<ReviewDecision>(`/proyectos/${projectId}/reviews`, { metodo: 'POST', cuerpo: { proposal_id: proposalId, approved, comment }, token });

@@ -2,15 +2,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
+import { can } from '@/core/auth/permissions';
 import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
-import { EncabezadoDePagina, Pagina } from '@/design/layout';
+import { EncabezadoDePagina, FixedPage, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import { Expediente } from '@/features/gestion/Expediente';
+import { ProjectFlow } from '@/features/flow/ProjectFlow';
 import { Revision } from '@/features/gestion/Revision';
 import { obtenerProyectoApi, type Proyecto } from '@/features/proyectos/api';
 import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
@@ -98,20 +99,21 @@ export default function DetalleProyecto() {
   const [pestana, setPestana] = useState<'propuestas' | 'ficha' | 'revision'>(tab === 'revision' ? 'revision' : 'propuestas');
   const { usuario } = useSesion();
   const pestanas = [
-    { id: 'propuestas', etiqueta: 'Propuestas' },
+      { id: 'propuestas', etiqueta: 'Proceso' },
     { id: 'ficha', etiqueta: 'Ficha y avance' },
     // El rol Cargador no ve notas ni historial (el backend también lo impide).
-    ...(usuario && usuario.rol !== 'cargador' ? [{ id: 'revision', etiqueta: 'Revisión del comité' } as const] : []),
+    ...(can(usuario?.rol, 'seeResults') ? [{ id: 'revision', etiqueta: 'Revisión del comité' } as const] : []),
   ] as const;
 
   useEffect(() => {
     let vigente = true;
-    setProyecto(null);
-    setError(null);
     (async () => {
       try {
         const datos = await conSesion(obtenerProyectoApi(String(id)));
-        if (vigente) setProyecto(datos);
+        if (vigente) {
+          setProyecto(datos);
+          setError(null);
+        }
       } catch (e) {
         if (!vigente) return;
         setError(
@@ -169,23 +171,43 @@ export default function DetalleProyecto() {
   }
 
   const e = infoEstado(proyecto.estado);
+  const heading = (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
+      <View style={{ flexShrink: 1, gap: 2 }}>
+        <Texto variante="subtitulo" accessibilityRole="header" numberOfLines={1} style={{ fontFamily: 'Urbanist_600SemiBold', fontSize: 22, lineHeight: 28 }}>
+          {proyecto.nombre}
+        </Texto>
+        <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Insignia etiqueta={e.etiqueta} tono={e.tono} icono={e.icono} />
+          <Texto variante="pequeno" suave>
+            {proyecto.ubicacion}
+          </Texto>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: espacio.sm }}>
+        <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
+          {pestanas.map((x) => (
+            <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => setPestana(x.id)} />
+          ))}
+        </View>
+        {volver}
+      </View>
+    </View>
+  );
+
+  // The guided flow fills the window, so its action bar is always on screen.
+  if (pestana === 'propuestas') {
+    return (
+      <FixedPage>
+        {heading}
+        <ProjectFlow key={proyecto.id} project={proyecto} onProjectChange={() => void refresh()} />
+      </FixedPage>
+    );
+  }
+
   return (
     <Pagina>
-      <EncabezadoDePagina sobretitulo="Proyecto" titulo={proyecto.nombre} accion={volver} />
-      <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Insignia etiqueta={e.etiqueta} tono={e.tono} icono={e.icono} />
-        <Texto variante="pequeno" suave>
-          {e.descripcion}
-        </Texto>
-      </View>
-
-      <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
-        {pestanas.map((x) => (
-          <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => setPestana(x.id)} />
-        ))}
-      </View>
-
-      {pestana === 'propuestas' ? <Expediente proyecto={proyecto} onCambio={() => void refresh()} /> : null}
+      {heading}
       {pestana === 'revision' ? <Revision proyecto={proyecto} onCambio={setProyecto} /> : null}
 
       {pestana === 'ficha' ? (

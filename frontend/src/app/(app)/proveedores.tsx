@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { can } from '@/core/auth/permissions';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
@@ -46,7 +47,7 @@ export default function Proveedores() {
     }
   };
 
-  const canCreate = usuario?.rol === 'cargador'; // UX only: the backend is the authority
+  const canCreate = can(usuario?.rol, 'createProject'); // UX only: the backend is the authority
   const cerrar = () => {
     setAbierto(false);
     setFallo(null);

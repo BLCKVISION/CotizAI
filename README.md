@@ -166,3 +166,12 @@ Las versiones exactas están en [`backend/requirements.txt`](backend/requirement
 
 - Claude Code (modelos Claude de Anthropic): código, pruebas y documentación.
 - [COMPLETAR: otras herramientas de IA, *plugins* o generadores de diseño que haya usado el equipo.]
+
+## Flujo guiado
+
+Cada proyecto avanza en 5 pasos: **datos → propuestas → análisis de la IA → verificación de una persona → resultado**. En la
+verificación, cada propuesta muestra la misma plantilla (por qué sí o por qué no, siete preguntas de control, citas y
+costo paso a paso) y la persona responde sí o no; si contradice a la IA debe justificarlo. Después se pueden agregar
+propuestas y volver a evaluar solo las elegidas. El rol `coordinador` recorre todo el flujo; adjudicar sigue siendo del
+aprobador.
+

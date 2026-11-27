@@ -23,7 +23,7 @@ type Props = {
 export function ProjectPicker({ visible, projects, counts, pendingFiles, onPick, onCreate, onClose }: Props) {
   const t = useTema();
   // Only projects still collecting offers accept new files.
-  const open = projects.filter((p) => p.estado === 'en_recepcion').sort((a, b) => b.creado.localeCompare(a.creado));
+  const open = projects.filter((p) => p.estado === 'en_recepcion' || p.estado === 'en_revision_del_comite').sort((a, b) => b.creado.localeCompare(a.creado));
   const description = pendingFiles > 0 ? `Tiene ${pendingFiles} ${pendingFiles === 1 ? 'archivo' : 'archivos'} por cargar. Elija el proyecto.` : 'Paso 1 de 2: elija el proyecto. Después seleccione los archivos.';
   return (
     <Lightbox visible={visible} title="¿A cuál proyecto va a agregar propuestas?" description={description} onClose={onClose} maxWidth={560}>

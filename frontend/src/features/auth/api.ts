@@ -1,6 +1,6 @@
 import { peticion } from '@/core/api/cliente';
 
-export type Rol = 'cargador' | 'evaluador' | 'aprobador' | 'auditor';
+export type Rol = 'cargador' | 'evaluador' | 'aprobador' | 'auditor' | 'coordinador';
 export type Usuario = { id: string; correo: string; rol: Rol; organizacion_id: string; display_name?: string };
 export type SesionRespuesta = { token_acceso: string; tipo_token: string; expira: string; usuario: Usuario };
 

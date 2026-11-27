@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { can } from '@/core/auth/permissions';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
@@ -22,7 +23,7 @@ export function Revision({ proyecto, onCambio }: { proyecto: Proyecto; onCambio:
   const [fallo, setFallo] = useState<string | null>(null);
   const [confirmAward, setConfirmAward] = useState(false);
   const canAward = usuario?.rol === 'aprobador' && proyecto.estado === 'en_revision_del_comite';
-  const puedeAnotar = usuario?.rol === 'evaluador' || usuario?.rol === 'aprobador';
+  const puedeAnotar = can(usuario?.rol, 'review');
   const puedeCerrar = usuario?.rol === 'aprobador' && proyecto.estado !== 'cerrado' && proyecto.estado !== 'en_evaluacion';
 
   const ejecutar = async (accion: () => Promise<void>) => {

@@ -1,0 +1,67 @@
+/** Step 3: choose which proposals the AI reads. */
+import { Pressable, View } from 'react-native';
+
+import { Aviso } from '@/design/bloques';
+import { Chip, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
+import { useTema } from '@/design/tema';
+import { espacio, radio } from '@/design/tokens';
+import type { Propuesta } from '@/features/gestion/api';
+
+type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
+
+type Props = {
+  proposals: Propuesta[];
+  selected: Set<string>;
+  evaluated: Set<string>;
+  onChange: (next: Set<string>) => void;
+};
+
+export function AnalysisStep({ proposals, selected, evaluated, onChange }: Props) {
+  const t = useTema();
+  const fresh = proposals.filter((p) => !evaluated.has(p.id));
+  const toggle = (id: string) => {
+    const next = new Set(selected);
+    if (!next.delete(id)) next.add(id);
+    onChange(next);
+  };
+  return (
+    <Tarjeta>
+      <Texto variante="subtitulo" accessibilityRole="header">
+        ¿Cuáles propuestas va a evaluar?
+      </Texto>
+      <Texto suave>La IA lee cada documento, revisa las cuentas y las condiciones, y le explica por qué sí o por qué no.</Texto>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
+        <Chip etiqueta="Todas" seleccionado={selected.size === proposals.length} onPress={() => onChange(new Set(proposals.map((p) => p.id)))} />
+        {evaluated.size > 0 && fresh.length > 0 ? (
+          <Chip etiqueta={`Solo las nuevas (${fresh.length})`} seleccionado={selected.size === fresh.length && fresh.every((p) => selected.has(p.id))} onPress={() => onChange(new Set(fresh.map((p) => p.id)))} />
+        ) : null}
+        <Chip etiqueta="Ninguna" seleccionado={selected.size === 0} onPress={() => onChange(new Set())} />
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
+        {proposals.map((p) => {
+          const on = selected.has(p.id);
+          return (
+            <Pressable
+              key={p.id}
+              accessibilityRole="checkbox"
+              accessibilityLabel={p.archivo}
+              accessibilityState={{ checked: on }}
+              aria-checked={on}
+              onPress={() => toggle(p.id)}
+              style={(e: PressState) => ({ flexGrow: 1, flexBasis: 300, flexDirection: 'row', alignItems: 'center', gap: espacio.sm + 2, padding: espacio.sm + 4, borderRadius: radio.lg, borderWidth: 2, borderColor: e.focused ? t.foco : on ? t.accentStrong : t.borde, backgroundColor: on ? '#F0FBFE' : e.hovered ? t.superficieAlta : '#FFFFFF' })}
+            >
+              <View style={{ width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 0 : 2, borderColor: t.bordeControl, backgroundColor: on ? t.accent : 'transparent' }}>
+                {on ? <Icono nombre="check" tamano="sm" color={t.onAccent} /> : null}
+              </View>
+              <Texto variante="etiqueta" numberOfLines={1} style={{ flex: 1 }}>
+                {p.archivo}
+              </Texto>
+              {evaluated.has(p.id) ? <Insignia etiqueta="Ya evaluada" tono="neutro" /> : evaluated.size > 0 ? <Insignia etiqueta="Nueva" tono="info" /> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+      {evaluated.size > 0 ? <Aviso tono="info" texto="Las que no elija conservan su resultado. Las que vuelva a evaluar tendrá que verificarlas otra vez." /> : null}
+    </Tarjeta>
+  );
+}

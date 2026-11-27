@@ -2,6 +2,7 @@ import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 
+import { can } from '@/core/auth/permissions';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
@@ -64,7 +65,7 @@ export default function Projects() {
   const [filter, setFilter] = useState<Filter>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [query, setQuery] = useState('');
-  const canCreate = usuario?.rol === 'cargador'; // UX only: the backend is the authority
+  const canCreate = can(usuario?.rol, 'createProject'); // UX only: the backend is the authority
   const params = useLocalSearchParams<{ new?: string }>();
   const [creating, setCreating] = useState(false);
   const dialogOpen = canCreate && (creating || params.new === '1');

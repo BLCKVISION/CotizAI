@@ -51,8 +51,12 @@ export function useProjectEvaluation(projectId: string, canViewResults: boolean)
   }, [canViewResults, conSesion, projectId]);
 
   useEffect(() => {
-    void loadRates();
-    void loadEvaluation();
+    // Deferred so the effect itself never sets state while rendering.
+    const start = setTimeout(() => {
+      void loadRates();
+      void loadEvaluation();
+    }, 0);
+    return () => clearTimeout(start);
   }, [loadRates, loadEvaluation]);
 
   useEffect(() => {
@@ -62,14 +66,14 @@ export function useProjectEvaluation(projectId: string, canViewResults: boolean)
     return () => clearInterval(timer);
   }, [running]);
 
-  const run = async (): Promise<boolean> => {
+  const run = async (proposalIds?: string[]): Promise<boolean> => {
     if (busy.current) return false; // a ref: a double tap arrives before the state updates
     busy.current = true;
     setElapsed(0);
     setRunning(true);
     setError(null);
     try {
-      setEvaluation(await conSesion(evaluateProjectApi(projectId)));
+      setEvaluation(await conSesion(evaluateProjectApi(projectId, proposalIds)));
       void loadRates();
       return true;
     } catch (e) {

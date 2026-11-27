@@ -25,7 +25,7 @@ const readExpanded = () => {
   }
 };
 
-const ETIQUETA_ROL = { cargador: 'Cargador', evaluador: 'Evaluador', aprobador: 'Aprobador', auditor: 'Auditor' } as const;
+const ETIQUETA_ROL = { cargador: 'Cargador', evaluador: 'Evaluador', aprobador: 'Aprobador', auditor: 'Auditor', coordinador: 'Coordinador' } as const;
 
 type Item = { ruta: string; etiqueta: string; icono: LineIconName; soloRol?: 'auditor' };
 const NAVEGACION: { categoria: string; items: Item[] }[] = [

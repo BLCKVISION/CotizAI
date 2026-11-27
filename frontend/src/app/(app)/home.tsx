@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 
 import { ACCEPT_DOCUMENTS, ACCEPT_PHOTOS, pickFiles } from '@/core/files';
+import { can } from '@/core/auth/permissions';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
@@ -56,7 +57,7 @@ export default function Home() {
   const { usuario } = useSesion();
   const { datos, error, recargar } = useDatos(loadHome);
   const flow = useProposalUpload(recargar);
-  const canSeeResults = usuario !== null && usuario.rol !== 'cargador'; // UX only: the backend is the authority
+  const canSeeResults = can(usuario?.rol, 'seeResults'); // UX only: the backend is the authority
   const latest = useLatestVerified(canSeeResults);
   const [creating, setCreating] = useState(false);
   /** Open while choosing the destination; holds any files already dropped. */
@@ -67,7 +68,7 @@ export default function Home() {
   const Container = wide ? FixedPage : Pagina;
 
   const role = usuario?.rol ?? 'auditor';
-  const canEdit = usuario?.rol === 'cargador';
+  const canEdit = can(usuario?.rol, 'upload');
   const userName = usuario?.display_name || (usuario?.correo ?? '').split('@')[0];
   const name = userName ? userName.charAt(0).toUpperCase() + userName.slice(1) : '';
 

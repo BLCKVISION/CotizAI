@@ -1,7 +1,7 @@
 // Dependency-free on purpose so it runs in the plain-Node unit tests.
 export const MIN_PROPOSALS = 3;
 
-type Role = 'cargador' | 'evaluador' | 'aprobador' | 'auditor';
+type Role = 'cargador' | 'evaluador' | 'aprobador' | 'auditor' | 'coordinador';
 type ProjectLike = { id: string; nombre: string; estado: string; creado: string };
 
 export type TaskKind = 'upload' | 'evaluate' | 'review' | 'decide' | 'close' | 'consult';
@@ -33,11 +33,11 @@ function taskFor(role: Role, p: ProjectLike, count: number): Task | null {
 
   if (p.estado === 'en_recepcion') {
     const missing = Math.max(0, MIN_PROPOSALS - count);
-    if (missing > 0) return role === 'cargador' ? make('upload', missing === 1 ? 'Subir 1 propuesta más' : `Subir ${missing} propuestas más`, 'Subir') : null;
-    return role === 'cargador' || role === 'evaluador' ? make('evaluate', 'Evaluar las propuestas', 'Evaluar', `${count} cargadas`) : null;
+    if (missing > 0) return role === 'cargador' || role === 'coordinador' ? make('upload', missing === 1 ? 'Subir 1 propuesta más' : `Subir ${missing} propuestas más`, 'Subir') : null;
+    return role === 'cargador' || role === 'evaluador' || role === 'coordinador' ? make('evaluate', 'Evaluar las propuestas', 'Evaluar', `${count} cargadas`) : null;
   }
   if (p.estado === 'en_revision_del_comite') {
-    if (role === 'evaluador') return make('review', 'Revisar el resultado', 'Revisar');
+    if (role === 'evaluador' || role === 'coordinador') return make('review', 'Revisar el resultado', 'Revisar');
     if (role === 'aprobador') return make('decide', 'Decidir la adjudicación', 'Decidir', '', 'revision');
     return role === 'auditor' ? make('consult', 'Consultar la revisión', 'Consultar', '', 'revision') : null;
   }

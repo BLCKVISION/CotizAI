@@ -2,6 +2,7 @@
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 
+import { can } from '@/core/auth/permissions';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
@@ -10,7 +11,6 @@ import { Boton, BotonIcono, Icono, type NombreIcono, Texto } from '@/design/comp
 import { useTema } from '@/design/tema';
 import { showToast } from '@/design/toastStore';
 import { espacio, radio } from '@/design/tokens';
-import { EvaluationResults } from '@/features/evaluations/EvaluationResults';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
 import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
@@ -90,7 +90,9 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
   });
   const subir = (archivos: File[]) => void flow.upload(proyecto.id, archivos);
   const [porEliminar, setPorEliminar] = useState<string | null>(null);
-  const editable = usuario?.rol === 'cargador' && proyecto.estado === 'en_recepcion';
+  // New offers are accepted until the project is awarded or closed; evaluated evidence cannot be deleted.
+  const editable = can(usuario?.rol, 'upload') && (proyecto.estado === 'en_recepcion' || proyecto.estado === 'en_revision_del_comite');
+  const removable = editable && proyecto.estado === 'en_recepcion';
 
   const descargar = async (p: Propuesta) => {
     try {
@@ -126,7 +128,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
       <View style={{ flexGrow: 1, flexBasis: 360, gap: espacio.md }}>
       {editable && Platform.OS === 'web' ? <ZonaDeCarga onArchivos={subir} ocupado={flow.busy} /> : null}
       {editable && Platform.OS !== 'web' ? <Aviso tono="info" texto="La carga de archivos está disponible en la versión web." /> : null}
-      {!editable && proyecto.estado === 'en_recepcion' ? <Aviso tono="info" texto="Solo el rol Cargador puede agregar o quitar propuestas." /> : null}
+      {!editable && proyecto.estado === 'en_recepcion' ? <Aviso tono="info" texto="Su rol no agrega ni quita propuestas." /> : null}
       {flow.busy && !flow.visible ? <Aviso tono="info" texto="La carga continúa en segundo plano." /> : null}
       </View>
       ) : null}
@@ -145,7 +147,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
               derecha={
                 <View style={{ flexDirection: 'row' }}>
                   {usuario && Platform.OS === 'web' ? <BotonIcono nombre="download" etiqueta={`Descargar ${p.archivo}`} onPress={() => descargar(p)} /> : null}
-                  {editable ? <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.archivo}`} onPress={() => eliminar(p)} /> : null}
+                  {removable ? <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.archivo}`} onPress={() => eliminar(p)} /> : null}
                 </View>
               } />
           ))}
@@ -153,18 +155,6 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
       )}
       </View>
       <UploadFlow visible={flow.visible} items={flow.items} busy={flow.busy} onClose={flow.close} />
-      <View style={{ flexBasis: '100%', flexGrow: 1 }}>
-        <EvaluationResults
-          project={proyecto}
-          proposalCount={n}
-          proposalNames={datos?.map((p) => p.archivo) ?? []}
-          minimumProposals={MINIMO}
-          onEvaluated={() => {
-            recargar();
-            onCambio?.();
-          }}
-        />
-      </View>
     </View>
   );
 }
