@@ -10,19 +10,13 @@ from __future__ import annotations
 
 import base64
 import binascii
-import hashlib
 import os
 import tempfile
 from pathlib import Path
 
-from cryptography.exceptions import InvalidTag
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-
 from evaluador.domain.errors import InvalidData, NotFound
 
-KEY_BYTES = 32
-_NONCE_BYTES = 12
-_TAG_BYTES = 16
+from .sealing import KEY_BYTES, Sealer
 
 
 def load_key(value: str) -> bytes:
@@ -36,24 +30,9 @@ def load_key(value: str) -> bytes:
     return key
 
 
-def _digest(*parts: str) -> str:
-    h = hashlib.sha256()
-    for part in parts:
-        raw = part.encode("utf-8", errors="surrogatepass")
-        h.update(len(raw).to_bytes(4, "big"))  # prefijo de longitud: ("a","bc") != ("ab","c")
-        h.update(raw)
-    return h.hexdigest()
-
-
-def _aad(tenant_id: str, key: str) -> bytes:
-    return bytes.fromhex(_digest(tenant_id, key))
-
-
 class EncryptedFileStore:
     def __init__(self, root: Path | str, key: bytes) -> None:
-        if len(key) != KEY_BYTES:
-            raise InvalidData(f"La clave de cifrado debe tener {KEY_BYTES} bytes.")
-        self._aes = AESGCM(key)
+        self._sealer = Sealer(key)  # valida el tamaño de la clave
         self._root = Path(root)
         self._make_dir(self._root)
 
@@ -63,13 +42,12 @@ class EncryptedFileStore:
         path.chmod(0o700)  # mkdir respeta el umask; esto fija el modo exacto
 
     def _path(self, tenant_id: str, key: str) -> Path:
-        return self._root / _digest("tenant", tenant_id)[:32] / _digest("file", tenant_id, key)
+        return self._root / self._sealer.object_name(tenant_id, key)
 
     def put(self, tenant_id: str, key: str, data: bytes) -> None:
         path = self._path(tenant_id, key)
         self._make_dir(path.parent)
-        nonce = os.urandom(_NONCE_BYTES)
-        blob = nonce + self._aes.encrypt(nonce, data, _aad(tenant_id, key))
+        blob = self._sealer.seal(tenant_id, key, data)
         fd, tmp = tempfile.mkstemp(prefix=".tmp-", dir=path.parent)
         try:
             with os.fdopen(fd, "wb") as f:
@@ -88,12 +66,7 @@ class EncryptedFileStore:
             blob = path.read_bytes()
         except FileNotFoundError:
             raise NotFound("Archivo no encontrado.") from None
-        if len(blob) < _NONCE_BYTES + _TAG_BYTES:
-            raise InvalidData("El archivo almacenado está dañado o fue alterado.")
-        try:
-            return self._aes.decrypt(blob[:_NONCE_BYTES], blob[_NONCE_BYTES:], _aad(tenant_id, key))
-        except InvalidTag:
-            raise InvalidData("El archivo almacenado está dañado o fue alterado.") from None
+        return self._sealer.open(tenant_id, key, blob)
 
     def delete(self, tenant_id: str, key: str) -> None:
         self._path(tenant_id, key).unlink(missing_ok=True)
