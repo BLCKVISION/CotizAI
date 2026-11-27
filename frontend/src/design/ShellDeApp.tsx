@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
+import { CotiChat } from '@/features/coti/CotiChat';
 import { NotificationsBell } from '@/features/notifications/NotificationsBell';
 import { Tour } from '@/features/onboarding/Tour';
 
@@ -163,6 +164,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
         </View>
         <Tour />
+        <CotiChat />
         {signOutDialog}
       </View>
     );
@@ -203,6 +205,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
       </ScrollView>
       <View style={{ flex: 1 }}>{children}</View>
       <Tour />
+      <CotiChat />
       {signOutDialog}
     </SafeAreaView>
   );
