@@ -20,6 +20,8 @@ import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
 import { type EstadoProyecto, listarProyectosApi } from '@/features/proyectos/api';
 import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
+const FIRST_PAGE = 7;
+
 type Filter = 'all' | EstadoProyecto;
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
@@ -66,6 +68,7 @@ export default function Projects() {
   const [filter, setFilter] = useState<Filter>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [query, setQuery] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const canCreate = can(usuario?.rol, 'createProject'); // UX only: the backend is the authority
   const params = useLocalSearchParams<{ new?: string }>();
   const [creating, setCreating] = useState(false);
@@ -80,6 +83,8 @@ export default function Projects() {
   const visible = (datos?.projects ?? []).filter(
     (p) => (filter === 'all' || p.estado === filter) && `${p.nombre} ${p.ubicacion}`.toLowerCase().includes(q),
   );
+  const searching = q !== '' || filter !== 'all';
+  const shown = showAll || searching ? visible : visible.slice(0, FIRST_PAGE);
   const columns = dispositivo === 'movil' ? 1 : ancho < 1024 ? 2 : ancho < 1600 ? 4 : 5;
 
   return (
@@ -134,21 +139,12 @@ export default function Projects() {
         <EstadoVacio icono="filter" titulo="Sin resultados" descripcion="Ningún proyecto coincide con la búsqueda o el filtro." />
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -12, paddingTop: 8 }}>
-          {canCreate ? (
-            <View style={{ width: `${100 / columns}%`, padding: 12 }}>
-              <Entrada>
-                <View style={{ height: FOLDER_HEIGHT }}>
-                  <NewItemTile label="Nuevo proyecto" icon="folder-plus" onPress={create} />
-                </View>
-              </Entrada>
-            </View>
-          ) : null}
           {visible.length === 0 ? (
             <View style={{ width: '100%', padding: 12 }}>
               <Texto suave>Ningún proyecto coincide con la búsqueda o el filtro.</Texto>
             </View>
           ) : null}
-          {visible.map((p, i) => {
+          {shown.map((p, i) => {
             const n = datos.counts[p.id] ?? 0;
             return (
               <View key={p.id} style={{ width: `${100 / columns}%`, padding: 12 }}>
@@ -165,6 +161,20 @@ export default function Projects() {
               </View>
             );
           })}
+          {canCreate ? (
+            <View style={{ width: `${100 / columns}%`, padding: 12 }}>
+              <Entrada>
+                <View style={{ height: FOLDER_HEIGHT }}>
+                  <NewItemTile label="Crear proyecto nuevo" icon="folder-plus" onPress={create} />
+                </View>
+              </Entrada>
+            </View>
+          ) : null}
+          {visible.length > FIRST_PAGE && !searching ? (
+            <View style={{ width: '100%', alignItems: 'center', padding: 12 }}>
+              <Boton etiqueta={showAll ? 'Ver menos' : `Ver más (${visible.length - FIRST_PAGE})`} icono={showAll ? 'chevron-up' : 'chevron-down'} variante="secundario" onPress={() => setShowAll((v) => !v)} />
+            </View>
+          ) : null}
         </ScrollView>
       )}
       <NewProjectDialog visible={dialogOpen} onClose={closeDialog} />

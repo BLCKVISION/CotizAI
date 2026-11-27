@@ -26,7 +26,7 @@ const MAXIMO = 20;
 const tamano = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
 /** Zona de arrastrar y soltar (solo web: usa elementos del navegador). */
-function ZonaDeCarga({ onArchivos, ocupado, compact = false }: { onArchivos: (a: File[]) => void; ocupado: boolean; compact?: boolean }) {
+export function ZonaDeCarga({ onArchivos, ocupado, compact = false }: { onArchivos: (a: File[]) => void; ocupado: boolean; compact?: boolean }) {
   const t = useTema();
   const [encima, setEncima] = useState(false);
   const zona = useRef<ComponentRef<typeof View>>(null);
@@ -94,7 +94,7 @@ function ProposalsCard({ n, selecting, children }: { n: number; selecting: boole
     );
   }
   return (
-    <Tarjeta>
+    <Tarjeta style={{ flex: 1 }}>
       <Texto variante="subtitulo" accessibilityRole="header">{title}</Texto>
       <Texto variante="pequeno" suave>{n < MINIMO ? 'Agregue al menos una para analizar.' : 'Marque las que la IA va a leer. Se analizan hasta 20 a la vez.'}</Texto>
       {children}
@@ -153,9 +153,9 @@ export function Expediente({ proyecto, onCambio, selection }: { proyecto: Proyec
 
   const n = datos?.length ?? 0;
   return (
-    <View style={{ flexDirection: selection ? 'column' : 'row', flexWrap: selection ? 'nowrap' : 'wrap', gap: espacio.md, alignItems: selection ? 'stretch' : 'flex-start' }}>
-      {/* Without anything to show, this column is not rendered so the proposal list takes the full width. */}
-      {editable || proyecto.estado === 'en_recepcion' ? (
+    <View style={{ flex: selection ? 1 : undefined, flexDirection: selection ? 'column' : 'row', flexWrap: selection ? 'nowrap' : 'wrap', gap: espacio.md, alignItems: selection ? 'stretch' : 'flex-start' }}>
+      {/* In a project the upload zone lives in ProjectFlow, under both panels. Elsewhere it sits beside the list. */}
+      {!selection && (editable || proyecto.estado === 'en_recepcion') ? (
       <View style={{ flexGrow: 1, flexBasis: selection ? undefined : 360, gap: espacio.md }}>
       {editable && Platform.OS === 'web' ? <ZonaDeCarga onArchivos={subir} ocupado={flow.busy} compact={selection !== undefined && n > 0} /> : null}
       {editable && Platform.OS !== 'web' ? <Aviso tono="info" texto="La carga de archivos está disponible en la versión web." /> : null}
@@ -163,7 +163,7 @@ export function Expediente({ proyecto, onCambio, selection }: { proyecto: Proyec
       {flow.busy && !flow.visible ? <Aviso tono="info" texto="La carga continúa en segundo plano." /> : null}
       </View>
       ) : null}
-      <View style={{ flexGrow: 1.3, flexBasis: selection ? undefined : 420, gap: espacio.md }}>
+      <View style={{ flexGrow: selection ? 1 : 1.3, flexBasis: selection ? undefined : 420, gap: espacio.md }}>
       {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
       {!datos ? (
         error ? null : <Cargando />

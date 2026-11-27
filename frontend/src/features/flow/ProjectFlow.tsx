@@ -21,7 +21,7 @@ import { EvaluationProcess } from '@/features/evaluations/EvaluationProcess';
 import { RatePanel } from '@/features/evaluations/RatePanel';
 import { useProjectEvaluation } from '@/features/evaluations/useProjectEvaluation';
 import { propuestasApi } from '@/features/gestion/api';
-import { Expediente } from '@/features/gestion/Expediente';
+import { Expediente, ZonaDeCarga } from '@/features/gestion/Expediente';
 import { MarkdownDialog } from '@/features/gestion/MarkdownDialog';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
 import type { Proyecto } from '@/features/proyectos/api';
@@ -283,31 +283,35 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       ) : (
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
           {preparing ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'flex-start' }}>
-              {/* Left: the proposals and which of them to evaluate. Right: what happens next and the context. */}
-              <View style={{ flexGrow: 3, flexBasis: 420, minWidth: 0, gap: espacio.md }}>
-                <Expediente
-                  proyecto={project}
-                  selection={list.length > 0 ? { selected, evaluated, onChange: setSelection } : undefined}
-                  onCambio={() => { proposals.recargar(); if (seesResults) void reload(); onProjectChange(); }}
-                />
+            <View style={{ gap: espacio.md }}>
+              {/* Two panels of the same size: proposals on the left, the evaluation on the right. */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'stretch' }}>
+                <View style={{ flex: 1, flexBasis: 380, minWidth: 0 }}>
+                  <Expediente
+                    proyecto={project}
+                    selection={{ selected, evaluated, onChange: setSelection }}
+                    onCambio={() => { proposals.recargar(); if (seesResults) void reload(); onProjectChange(); }}
+                  />
+                </View>
+                <View style={{ flex: 1, flexBasis: 380, minWidth: 0, gap: espacio.md }}>
+                  <PreparationHero
+                    title={heroTitle}
+                    detail={heroDetail}
+                    blocker={list.length === 0 && canEvaluate ? 'Agregue al menos una propuesta para poder evaluar.' : blocker}
+                    canEvaluate={canEvaluate}
+                    running={running}
+                    elapsed={elapsed}
+                    onEvaluate={() => void evaluate()}
+                    onShowProcess={() => setShowProcess(true)}
+                    onBackToResult={hasEvaluation ? () => goTo(null) : undefined}
+                  >
+                    <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
+                  </PreparationHero>
+                  {error ? <ErrorConReintento texto={error} onReintentar={() => void (seesResults ? reload() : evaluate())} /> : null}
+                </View>
               </View>
-              <View style={{ flexGrow: 2, flexBasis: 320, minWidth: 0, gap: espacio.md }}>
-                <PreparationHero
-                  title={heroTitle}
-                  detail={heroDetail}
-                  blocker={list.length === 0 && canEvaluate ? 'Agregue al menos una propuesta para poder evaluar.' : blocker}
-                  canEvaluate={canEvaluate}
-                  running={running}
-                  elapsed={elapsed}
-                  onEvaluate={() => void evaluate()}
-                  onShowProcess={() => setShowProcess(true)}
-                  onBackToResult={hasEvaluation ? () => goTo(null) : undefined}
-                >
-                  <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
-                </PreparationHero>
-                {error ? <ErrorConReintento texto={error} onReintentar={() => void (seesResults ? reload() : evaluate())} /> : null}
-              </View>
+              {/* The upload zone spans the full width, under both panels. */}
+              {canUpload && !closed ? <ZonaDeCarga onArchivos={(files) => void upload.upload(project.id, files)} ocupado={upload.busy} compact={list.length > 0} /> : null}
             </View>
           ) : null}
           {step === 'verification' && !seesResults ? (

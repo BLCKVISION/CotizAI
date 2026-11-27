@@ -61,7 +61,7 @@ export function CotiChat() {
   const [progress] = useState(() => new Animated.Value(0));
   useEffect(() => {
     if (open) setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- mount first so the animation has something to move
-    Animated.timing(progress, { toValue: open ? 1 : 0, duration: open ? 320 : 220, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start(({ finished }) => {
+    Animated.timing(progress, { toValue: open ? 1 : 0, duration: open ? 480 : 360, easing: Easing.bezier(0.33, 1, 0.68, 1), useNativeDriver: true }).start(({ finished }) => {
       if (finished && !open) setMounted(false);
     });
   }, [open, progress]);
@@ -132,7 +132,7 @@ export function CotiChat() {
             height: panelHeight,
             overflow: 'hidden',
             opacity: progress,
-            transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [32, 0] }) }, { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }],
+            transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [48, 0] }) }, { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }],
             ...soloWeb({ transformOrigin: 'right bottom' }),
           }}
         >

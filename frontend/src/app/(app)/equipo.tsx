@@ -13,7 +13,7 @@ import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { Lightbox } from '@/design/Lightbox';
 import { useTema } from '@/design/tema';
 import { showToast } from '@/design/toastStore';
-import { espacio } from '@/design/tokens';
+import { espacio, radio } from '@/design/tokens';
 import { checkPassword, isEmail, isStrongPassword } from '@/features/auth/passwordRules';
 import { addMemberApi, changeMemberApi, type Member, type NewMember, teamApi } from '@/features/team/api';
 import { permissionLabel, ROLE_INFO, ROLE_ORDER } from '@/features/team/roles';
@@ -36,25 +36,40 @@ function RolePicker({ value, onChange }: { value: Role; onChange: (role: Role) =
   );
 }
 
-/** Name and actions wrap onto separate lines when the screen is narrow. */
-function MemberRow({ member, canManage, onRole, onToggle }: { member: Member; canManage: boolean; onRole: () => void; onToggle: () => void }) {
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join('');
+
+/** One card per person: avatar, name, role and status on top, the actions at the bottom. */
+function MemberCard({ member, canManage, onRole, onToggle }: { member: Member; canManage: boolean; onRole: () => void; onToggle: () => void }) {
   const t = useTema();
+  const name = member.display_name || member.email.split('@')[0]!;
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm, paddingVertical: espacio.sm + 2, borderBottomWidth: 1, borderBottomColor: t.borde }}>
-      <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 240 }}>
-        <Texto variante="etiqueta">{member.display_name || member.email.split('@')[0]}</Texto>
-        <Texto variante="pequeno" suave>{`${member.email}${member.is_you ? ' · usted' : ''}`}</Texto>
+    <View style={{ flexGrow: 1, flexBasis: 300, minWidth: 0, gap: espacio.md, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: '#FFFFFF', opacity: member.active ? 1 : 0.7 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md }}>
+        <View style={{ width: 48, height: 48, borderRadius: radio.pildora, alignItems: 'center', justifyContent: 'center', backgroundColor: t.accent }}>
+          <Texto variante="cuerpoMedio" color={t.onAccent} style={{ fontFamily: 'Urbanist_600SemiBold' }}>{initials(name)}</Texto>
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Texto variante="cuerpoMedio" numberOfLines={1} style={{ fontFamily: 'Urbanist_600SemiBold' }}>{name}</Texto>
+          <Texto variante="pequeno" suave numberOfLines={1}>{member.email}</Texto>
+        </View>
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', flexShrink: 1, maxWidth: '100%', gap: espacio.sm }}>
-        {member.active ? null : <Insignia etiqueta="Desactivada" tono="aviso" />}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.xs }}>
         <Insignia etiqueta={ROLE_INFO[member.role]?.label ?? member.role} tono="info" />
-        {canManage ? (
-          <>
-            <Boton etiqueta="Cambiar rol" variante="fantasma" onPress={onRole} />
-            <Boton etiqueta={member.active ? 'Desactivar' : 'Activar'} variante="fantasma" onPress={onToggle} />
-          </>
-        ) : null}
+        <Insignia etiqueta={member.active ? 'Activa' : 'Desactivada'} tono={member.active ? 'exito' : 'aviso'} />
+        {member.is_you ? <Insignia etiqueta="Usted" tono="info" /> : null}
       </View>
+      {canManage ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm, paddingTop: espacio.sm, borderTopWidth: 1, borderTopColor: t.borde }}>
+          <Boton etiqueta="Cambiar rol" icono="user-check" variante="secundario" onPress={onRole} />
+          <Boton etiqueta={member.active ? 'Desactivar' : 'Activar'} icono={member.active ? 'x' : 'check'} variante="secundario" onPress={onToggle} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -128,9 +143,11 @@ export default function Equipo() {
         <View style={{ gap: espacio.md }}>
           {data.can_manage ? null : <Aviso tono="info" texto="Solo el rol Coordinador puede agregar personas o cambiar roles." />}
           <CollapsibleCard title="Personas" detail={`${data.members.length} en el equipo`} defaultOpen>
-            {data.members.map((m) => (
-              <MemberRow key={m.id} member={m} canManage={data.can_manage && !m.is_you} onRole={() => setEditing({ member: m, role: m.role })} onToggle={() => setToggling(m)} />
-            ))}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md }}>
+              {data.members.map((m) => (
+                <MemberCard key={m.id} member={m} canManage={data.can_manage && !m.is_you} onRole={() => setEditing({ member: m, role: m.role })} onToggle={() => setToggling(m)} />
+              ))}
+            </View>
           </CollapsibleCard>
           <CollapsibleCard title="Qué puede hacer cada rol" detail="El servidor aplica estos permisos">
             {ROLE_ORDER.map((role) => {

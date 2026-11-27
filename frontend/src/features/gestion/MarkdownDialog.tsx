@@ -1,5 +1,5 @@
 /** The text extracted from one proposal, as Markdown: rendered or raw, with copy and download. */
-import { useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { useSesion } from '@/core/sesion/SesionProvider';
@@ -12,9 +12,30 @@ import { espacio } from '@/design/tokens';
 import { bloquesDeMarkdown } from '@/features/transcripcion/markdown';
 import { BloqueVista } from '@/features/transcripcion/Vista';
 
-import { type Propuesta, proposalMarkdownApi } from './api';
+import { descargarPropuestaApi, type Propuesta, proposalMarkdownApi } from './api';
 
-function Content({ projectId, proposal }: { projectId: string; proposal: Propuesta }) {
+const IMAGE_TYPES: Record<string, string> = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
+
+/** The file itself, as the supplier sent it: a PDF in the browser viewer, a photo as an image. */
+function Original({ projectId, proposal }: { projectId: string; proposal: Propuesta }) {
+  const { datos, error, recargar } = useDatos(descargarPropuestaApi(projectId, proposal.id), proposal.id);
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!datos) return;
+    const type = proposal.formato === 'pdf' ? 'application/pdf' : (IMAGE_TYPES[proposal.formato] ?? datos.type);
+    const objectUrl = URL.createObjectURL(new Blob([datos], { type }));
+    setUrl(objectUrl); // eslint-disable-line react-hooks/set-state-in-effect -- the URL only exists once the file is downloaded
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [datos, proposal.formato]);
+  if (error) return <ErrorConReintento texto={error} onReintentar={recargar} />;
+  if (!url) return <Cargando />;
+  const frame = { width: '100%', height: '76vh', border: 'none', borderRadius: 16, background: '#FFFFFF' };
+  return proposal.formato === 'pdf'
+    ? createElement('iframe', { src: url, title: proposal.archivo, style: frame })
+    : createElement('img', { src: url, alt: proposal.archivo, style: { width: '100%', maxHeight: '76vh', objectFit: 'contain', borderRadius: 16, background: '#FFFFFF' } });
+}
+
+function TextView({ projectId, proposal }: { projectId: string; proposal: Propuesta }) {
   const { usuario } = useSesion();
   const { datos, error, recargar } = useDatos(proposalMarkdownApi(projectId, proposal.id), proposal.id);
   const [raw, setRaw] = useState(false);
@@ -71,9 +92,26 @@ function Content({ projectId, proposal }: { projectId: string; proposal: Propues
   );
 }
 
+/** Opens on the original document; the extracted text (what the AI reads) is one click away. Spreadsheets open as text. */
+function Content({ projectId, proposal }: { projectId: string; proposal: Propuesta }) {
+  const canShowOriginal = ['pdf', 'jpg', 'jpeg', 'png'].includes(proposal.formato);
+  const [showOriginal, setShowOriginal] = useState(canShowOriginal);
+  return (
+    <View style={{ gap: espacio.md }}>
+      {canShowOriginal ? (
+        <View style={{ flexDirection: 'row', gap: espacio.sm }}>
+          <Chip etiqueta="Documento original" seleccionado={showOriginal} onPress={() => setShowOriginal(true)} />
+          <Chip etiqueta="Texto extraído" seleccionado={!showOriginal} onPress={() => setShowOriginal(false)} />
+        </View>
+      ) : null}
+      {showOriginal ? <Original projectId={projectId} proposal={proposal} /> : <TextView projectId={projectId} proposal={proposal} />}
+    </View>
+  );
+}
+
 export function MarkdownDialog({ projectId, proposal, onClose }: { projectId: string; proposal: Propuesta | null; onClose: () => void }) {
   return (
-    <Lightbox visible={proposal !== null} title="Texto en Markdown" description={proposal?.archivo} onClose={onClose} maxWidth={1100}>
+    <Lightbox visible={proposal !== null} title="Documento" description={proposal?.archivo} onClose={onClose} maxWidth={1100}>
       {proposal ? <Content projectId={projectId} proposal={proposal} /> : null}
     </Lightbox>
   );

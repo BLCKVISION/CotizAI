@@ -25,8 +25,8 @@ type Props = {
 export function PreparationHero({ title, detail, blocker, canEvaluate, running, elapsed, onEvaluate, onShowProcess, onBackToResult, children }: Props) {
   const t = useTema();
   return (
-    <Entrada>
-      <Tarjeta>
+    <Entrada estilo={{ flex: 1 }}>
+      <Tarjeta style={{ flex: 1 }}>
         <View style={{ gap: espacio.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md }}>
             <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', ...accentGradient(135) }}>

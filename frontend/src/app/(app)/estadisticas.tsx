@@ -84,17 +84,16 @@ export default function StatisticsScreen() {
             <Metrica etiqueta="Proveedores" valor={e.total_proveedores} icono="briefcase" />
           </Rejilla>
           <Budgets budgets={e.presupuestos} />
-          {/* Folded by default: the numbers above already say the essentials. */}
-          <CollapsibleCard title="Gráficos" detail="Por estado, por mes, por ubicación y por formato">
-            {/* A real grid: equal widths in every row, never three on top and one stretched below. */}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -espacio.sm, rowGap: espacio.md }}>
-              {charts(e).map((chart) => (
-                <View key={chart.titulo} style={{ width: `${100 / chartColumns}%`, paddingHorizontal: espacio.sm }}>
+          {/* Four separate cards, each folded by default: the numbers above already say the essentials. */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -espacio.sm, rowGap: espacio.md, alignItems: 'flex-start' }}>
+            {charts(e).map((chart) => (
+              <View key={chart.titulo} style={{ width: `${100 / chartColumns}%`, paddingHorizontal: espacio.sm }}>
+                <CollapsibleCard title={chart.titulo} detail={`${chart.datos.length} ${chart.datos.length === 1 ? 'categoría' : 'categorías'}`}>
                   <TarjetaDeGrafico {...chart} />
-                </View>
-              ))}
-            </View>
-          </CollapsibleCard>
+                </CollapsibleCard>
+              </View>
+            ))}
+          </View>
           <Aviso tono="info" texto="Los resultados de cada evaluación (válidas, descartes y costo real) se consultan dentro de su proyecto." />
         </View>
       )}
