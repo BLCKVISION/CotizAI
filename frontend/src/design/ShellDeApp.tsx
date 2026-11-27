@@ -40,7 +40,7 @@ const NAVEGACION: { categoria: string; items: Item[] }[] = [
     { ruta: '/proveedores', etiqueta: 'Proveedores', icono: 'briefcase' },
     { ruta: '/transcribir', etiqueta: 'Transcribir', icono: 'file-text' },
   ] },
-  { categoria: 'CONTROL', items: [{ ruta: '/auditoria', etiqueta: 'Auditoría', icono: 'shield', soloRol: 'auditor' }] },
+  { categoria: 'CONTROL', items: [{ ruta: '/equipo', etiqueta: 'Equipo', icono: 'user' }, { ruta: '/auditoria', etiqueta: 'Auditoría', icono: 'shield', soloRol: 'auditor' }] },
 ];
 
 const RAIL_COLLAPSED = 72;
