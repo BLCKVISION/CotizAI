@@ -6,7 +6,7 @@ import { useSesion } from '@/core/sesion/SesionProvider';
 import { Icono, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
 
-import { type AuthMode, authColor, FormHeading, GoogleButton, LineField, type Notice, NoticeBox, SubmitButton, TextLink } from './authParts';
+import { type AuthMode, authColor, FormHeading, LineField, type Notice, NoticeBox, SubmitButton, TextLink } from './authParts';
 
 const USERNAME_KEY = 'cotizai.login.username';
 const IDENTIFIER = /^([^@\s]+@[^@\s]+\.[^@\s]+|[A-Za-z0-9._-]{3,64})$/;
@@ -94,7 +94,6 @@ export function LoginForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
       </View>
       <NoticeBox notice={notice} />
       <SubmitButton label="Entrar" busy={busy} onPress={submit} />
-      <GoogleButton onUnavailable={() => setNotice({ tone: 'info', text: 'El acceso con Google estará disponible cuando se configure en el servidor.' })} />
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: espacio.sm }}>
         <Texto variante="pequeno" color={authColor.soft}>
           ¿No tiene cuenta?

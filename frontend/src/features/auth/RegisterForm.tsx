@@ -5,7 +5,7 @@ import { Icono, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
 
 import { registerAccountApi } from './api';
-import { accountErrorNotice, type AuthMode, authColor, FormHeading, GoogleButton, LineField, type Notice, NoticeBox, SubmitButton, TextLink } from './authParts';
+import { accountErrorNotice, type AuthMode, authColor, FormHeading, LineField, type Notice, NoticeBox, SubmitButton, TextLink } from './authParts';
 import { checkPassword, isEmail, isStrongPassword } from './passwordRules';
 
 type Errors = { name?: string; email?: string; password?: string; confirmation?: string };
@@ -76,7 +76,6 @@ export function RegisterForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
       </View>
       <NoticeBox notice={notice} />
       <SubmitButton label="Crear cuenta" busy={busy} onPress={submit} />
-      <GoogleButton onUnavailable={() => setNotice({ tone: 'info', text: 'El acceso con Google estará disponible cuando se configure en el servidor.' })} />
       <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: espacio.sm }}>
         <Texto variante="pequeno" color={authColor.soft}>
           ¿Ya tiene cuenta?

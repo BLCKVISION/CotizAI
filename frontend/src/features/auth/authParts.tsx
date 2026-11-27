@@ -1,6 +1,6 @@
 /** Shared pieces of the sign-in, sign-up and password recovery forms. */
 import { type ReactNode, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, Text, TextInput, type TextInputProps, View } from 'react-native';
+import { ActivityIndicator, Pressable, TextInput, type TextInputProps, View } from 'react-native';
 
 import { ErrorApi } from '@/core/api/cliente';
 import { Icono, Texto } from '@/design/componentes';
@@ -8,8 +8,6 @@ import { accentGradient, soloWeb } from '@/design/efectos';
 import { FieldHint, useHover } from '@/design/FieldHint';
 import { RollingLabel } from '@/design/RollingLabel';
 import { espacio, radio, texto } from '@/design/tokens';
-
-import { GOOGLE_AUTH_URL } from './api';
 
 export const authColor = {
   backdrop: '#E9EBEF',
@@ -121,40 +119,6 @@ export function SubmitButton({ label, busy, onPress }: { label: string; busy: bo
         )
       }
     </Pressable>
-  );
-}
-
-export function GoogleButton({ onUnavailable }: { onUnavailable: () => void }) {
-  const start = () => {
-    if (!GOOGLE_AUTH_URL) return onUnavailable();
-    if (Platform.OS === 'web') window.location.assign(GOOGLE_AUTH_URL);
-    else void Linking.openURL(GOOGLE_AUTH_URL);
-  };
-  return (
-    <View style={{ gap: espacio.sm }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15,23,42,0.12)' }} />
-        <Texto variante="pequeno" color={authColor.soft}>
-          o
-        </Texto>
-        <View style={{ flex: 1, height: 1, backgroundColor: 'rgba(15,23,42,0.12)' }} />
-      </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Continuar con Google"
-        onPress={start}
-        style={(e: PressState) => ({ height: 48, flexDirection: 'row', gap: espacio.sm + 2, alignItems: 'center', justifyContent: 'center', borderRadius: radio.pildora, borderWidth: e.focused ? 2 : 1, borderColor: e.focused ? authColor.focus : 'rgba(15,23,42,0.16)', backgroundColor: e.hovered ? '#F8FAFC' : '#FFFFFF', ...soloWeb({ transitionProperty: 'background-color', transitionDuration: '220ms' }) })}
-      >
-        {({ hovered }: PressState) => (
-          <>
-            <Text aria-hidden style={{ ...texto.etiqueta, fontSize: 18, lineHeight: 20, color: '#1A73E8' }}>
-              G
-            </Text>
-            <RollingLabel text="Continuar con Google" active={Boolean(hovered)} style={{ ...texto.etiqueta, fontSize: 14, color: authColor.text }} />
-          </>
-        )}
-      </Pressable>
-    </View>
   );
 }
 

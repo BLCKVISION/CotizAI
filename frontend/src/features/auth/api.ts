@@ -14,5 +14,3 @@ export const usuarioActualApi = (token: string) => peticion<Usuario>('/usuarios/
 export const registerAccountApi = (displayName: string, email: string, password: string) =>
   peticion<void>('/registrations', { metodo: 'POST', cuerpo: { display_name: displayName, email, password } });
 export const requestPasswordResetApi = (email: string) => peticion<void>('/password-resets', { metodo: 'POST', cuerpo: { email } });
-/** Full URL where the server starts the Google sign-in. Empty while it is not configured. */
-export const GOOGLE_AUTH_URL = process.env.EXPO_PUBLIC_GOOGLE_AUTH_URL ?? '';
