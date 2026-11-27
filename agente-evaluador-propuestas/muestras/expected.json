@@ -1,0 +1,106 @@
+{
+  "challenge": "propuesta_servicios",
+  "delta": "3",
+  "samples": {
+    "Propuesta_101_Alfa_CA": {
+      "file": "Propuesta_101_Alfa_CA.xlsx",
+      "format": "xlsx",
+      "verdict": "valid",
+      "codes": [],
+      "score": "90.10",
+      "real_cost": "10230.00",
+      "note": "Válida y completa. Fórmulas, comentario y hoja oculta inocua (no debe disparar falsos positivos)."
+    },
+    "Propuesta_102_Beta_SA": {
+      "file": "Propuesta_102_Beta_SA.pdf",
+      "format": "pdf",
+      "verdict": "valid",
+      "codes": [],
+      "score": "88.30",
+      "real_cost": "9625.00",
+      "note": "Válida, 1.80 puntos bajo Alfa (dentro de δ=3) y más barata: por equivalencia técnica va primero."
+    },
+    "Propuesta_103_Gama_CA": {
+      "file": "Propuesta_103_Gama_CA.xlsx",
+      "format": "xlsx",
+      "verdict": "discarded",
+      "codes": [
+        "ARITMETICA"
+      ],
+      "score": null,
+      "real_cost": null,
+      "note": "11 × 640,00 = 7.040,00 pero el documento imprime 6.740,00 (Decimal, coincidencia exacta)."
+    },
+    "Propuesta_104_Delta_CA": {
+      "file": "Propuesta_104_Delta_CA.pdf",
+      "format": "pdf",
+      "verdict": "discarded",
+      "codes": [
+        "ALCANCE"
+      ],
+      "score": null,
+      "real_cost": null,
+      "note": "Solo cotiza computadoras y monitores: faltan teclado, ratón y protector para 11 equipos."
+    },
+    "Propuesta_105_Epsilon_SA": {
+      "file": "Propuesta_105_Epsilon_SA.pdf",
+      "format": "pdf",
+      "verdict": "discarded",
+      "codes": [
+        "MANIPULACION"
+      ],
+      "score": null,
+      "real_cost": null,
+      "note": "Instrucciones a la IA en texto de 1 pt y en texto blanco. Se detectan por patrón sobre el texto leído."
+    },
+    "Propuesta_106_Zeta_CA": {
+      "file": "Propuesta_106_Zeta_CA.xlsx",
+      "format": "xlsx",
+      "verdict": "discarded",
+      "codes": [
+        "MANIPULACION"
+      ],
+      "score": null,
+      "real_cost": null,
+      "note": "Instrucción a la IA en una fila oculta de la hoja de cálculo."
+    },
+    "Propuesta_107_Eta_SA": {
+      "file": "Propuesta_107_Eta_SA.xlsx",
+      "format": "xlsx",
+      "verdict": "valid",
+      "codes": [],
+      "score": "82.20",
+      "real_cost": "9991.00",
+      "note": "Flete e instalación fuera de las líneas: se suman al costo real (9.251 + 300 + 440), no descartan."
+    },
+    "Propuesta_108_Theta_CA": {
+      "file": "Propuesta_108_Theta_CA.png",
+      "format": "png",
+      "verdict": "valid",
+      "codes": [],
+      "score": "74.80",
+      "real_cost": "9878.00",
+      "note": "Foto de una cotización impresa: se lee con el modelo de visión (transcripción programada en la prueba)."
+    },
+    "Propuesta_109_Iota_SA": {
+      "file": "Propuesta_109_Iota_SA.png",
+      "format": "png",
+      "verdict": "pending_review",
+      "codes": [],
+      "score": null,
+      "real_cost": null,
+      "note": "Foto borrosa: la visión la marca ilegible. Queda pendiente de revisión humana, nunca descartada."
+    }
+  },
+  "ranking": [
+    "Propuesta_102_Beta_SA",
+    "Propuesta_101_Alfa_CA",
+    "Propuesta_107_Eta_SA",
+    "Propuesta_108_Theta_CA",
+    "Propuesta_109_Iota_SA",
+    "Propuesta_103_Gama_CA",
+    "Propuesta_104_Delta_CA",
+    "Propuesta_105_Epsilon_SA",
+    "Propuesta_106_Zeta_CA"
+  ]
+}
