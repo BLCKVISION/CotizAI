@@ -53,9 +53,3 @@ export function buildTasks(role: Role, projects: ProjectLike[], proposalsByProje
     .flatMap((p) => taskFor(role, p, proposalsByProject[p.id] ?? 0) ?? [])
     .sort((a, b) => PRIORITY[a.kind] - PRIORITY[b.kind]);
 }
-
-/** Project that receives quick uploads: the newest one still in reception, otherwise the newest. */
-export function pickFocus<P extends ProjectLike>(projects: P[]): P | null {
-  const sorted = newestFirst(projects);
-  return sorted.find((p) => p.estado === 'en_recepcion') ?? sorted[0] ?? null;
-}

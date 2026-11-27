@@ -2,14 +2,12 @@
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, View } from 'react-native';
 
-import { ACCEPT_DOCUMENTS, ACCEPT_PHOTOS, pickFiles } from '@/core/files';
 import { Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { accentGradient, soloWeb, useReducirMovimiento } from '@/design/efectos';
 import { innerSurface, Panel, RoundButton } from '@/design/Panel';
 import { RollingLabel } from '@/design/RollingLabel';
 import { useTema } from '@/design/tema';
 import { espacio, radio, texto as tipografia } from '@/design/tokens';
-import type { Proyecto } from '@/features/proyectos/api';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
@@ -82,22 +80,23 @@ function ColumnGuides() {
 }
 
 type Props = {
-  focus: Proyecto | null;
+  hasProjects: boolean;
   canEdit: boolean;
   busy: boolean;
-  onFiles: (files: File[]) => void;
+  /** Called with the dropped files, or with none when the person clicks. */
+  onAddProposals: (files: File[]) => void;
   onNavigate: (path: string) => void;
 };
 
-export function ActivityCard({ focus, canEdit, busy, onFiles, onNavigate }: Props) {
+export function ActivityCard({ hasProjects, canEdit, busy, onAddProposals, onNavigate }: Props) {
   const t = useTema();
   const [dragging, setDragging] = useState(false);
   const zone = useRef<ComponentRef<typeof View>>(null);
-  const handler = useRef(onFiles);
-  const canUpload = canEdit && focus?.estado === 'en_recepcion' && Platform.OS === 'web';
+  const handler = useRef(onAddProposals);
+  const canUpload = canEdit && hasProjects && Platform.OS === 'web';
   const enabled = useRef(canUpload);
   useEffect(() => {
-    handler.current = onFiles;
+    handler.current = onAddProposals;
     enabled.current = canUpload;
   });
   useEffect(() => {
@@ -123,19 +122,18 @@ export function ActivityCard({ focus, canEdit, busy, onFiles, onNavigate }: Prop
     };
   }, []);
 
-  const openFocus = () => onNavigate(focus ? `/proyectos/${focus.id}` : '/proyectos');
-  const creating = canEdit && !focus;
+  const creating = canEdit && !hasProjects;
   const action = canUpload
-    ? { icon: 'plus' as const, title: 'Agregar propuestas', detail: 'Suba o arrastre fotos, PDF o Excel', run: () => !busy && pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, onFiles) }
+    ? { icon: 'plus' as const, title: 'Agregar propuestas', detail: 'Elija el proyecto y suba fotos, PDF o Excel', run: () => !busy && onAddProposals([]) }
     : creating
       ? { icon: 'folder-plus' as const, title: 'Agregar proyecto', detail: 'Empiece con el requerimiento y la ubicación', run: () => onNavigate('/proyectos/nuevo') }
-      : { icon: 'folder' as const, title: focus ? 'Abrir proyecto' : 'Ver proyectos', detail: focus ? focus.nombre : 'Todavía no hay proyectos', run: openFocus };
+      : { icon: 'folder' as const, title: 'Ver proyectos', detail: hasProjects ? 'Consulte las propuestas y su evaluación' : 'Todavía no hay proyectos', run: () => onNavigate('/proyectos') };
 
   return (
     <Panel
       title="Mi actividad"
-      subtitle={focus ? `Las propuestas nuevas van a: ${focus.nombre}` : 'Empiece agregando un proyecto'}
-      actions={<RoundButton icon="calendar" label="Abrir proyecto" onPress={openFocus} />}
+      subtitle={!hasProjects ? 'Empiece agregando un proyecto' : canEdit ? 'Paso a paso: proyecto, archivos y evaluación' : 'Sus procesos de compra'}
+      actions={<RoundButton icon="calendar" label="Ver proyectos" onPress={() => onNavigate('/proyectos')} />}
     >
       <View ref={zone} style={{ ...innerSurface, padding: 16, gap: espacio.sm }}>
         <ColumnGuides />

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { buildTasks, pickFocus } from '../src/features/home/tasks';
+import { buildTasks } from '../src/features/home/tasks';
 
 const project = (id: string, estado = 'en_recepcion', creado = '2026-11-27T10:00:00Z') => ({ id, nombre: `P-${id}`, estado, creado });
 
@@ -30,13 +30,5 @@ describe('buildTasks', () => {
     for (const role of ['cargador', 'evaluador', 'aprobador', 'auditor'] as const) {
       assert.deepEqual(buildTasks(role, [project('a', 'cerrado')], { a: 5 }), []);
     }
-  });
-});
-
-describe('pickFocus', () => {
-  it('prefers the newest project still in reception', () => {
-    const list = [project('old', 'en_recepcion', '2026-11-01'), project('new', 'en_recepcion', '2026-11-20'), project('x', 'cerrado', '2026-11-27')];
-    assert.equal(pickFocus(list)?.id, 'new');
-    assert.equal(pickFocus([]), null);
   });
 });

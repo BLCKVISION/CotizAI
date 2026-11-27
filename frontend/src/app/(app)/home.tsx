@@ -2,6 +2,7 @@ import { type Href, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 
+import { ACCEPT_DOCUMENTS, ACCEPT_PHOTOS, pickFiles } from '@/core/files';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
@@ -12,9 +13,10 @@ import { FixedPage, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
 import { estadisticasApi, type Estadisticas } from '@/features/gestion/api';
 import { ActivityCard } from '@/features/home/ActivityCard';
+import { ProjectPicker } from '@/features/home/ProjectPicker';
 import { ProjectsCard } from '@/features/home/ProjectsCard';
 import { SummaryCard } from '@/features/home/SummaryCard';
-import { buildTasks, pickFocus } from '@/features/home/tasks';
+import { buildTasks } from '@/features/home/tasks';
 import { TodoCard } from '@/features/home/TodoCard';
 import { useLatestVerified } from '@/features/home/useLatestVerified';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
@@ -57,6 +59,8 @@ export default function Home() {
   const canSeeResults = usuario !== null && usuario.rol !== 'cargador'; // UX only: the backend is the authority
   const latest = useLatestVerified(canSeeResults);
   const [creating, setCreating] = useState(false);
+  /** Open while choosing the destination; holds any files already dropped. */
+  const [picking, setPicking] = useState<File[] | null>(null);
   // "New project" opens over Home instead of leaving it.
   const go = (path: string) => (path === '/proyectos/nuevo' ? setCreating(true) : router.push(path as Href));
   const wide = dispositivo === 'escritorio';
@@ -68,9 +72,14 @@ export default function Home() {
   const name = userName ? userName.charAt(0).toUpperCase() + userName.slice(1) : '';
 
   const tasks = datos ? buildTasks(role, datos.projects, datos.stats.propuestas_por_proyecto) : [];
-  const focus = datos ? pickFocus(datos.projects) : null;
-  const sendFiles = (files: File[]) => {
-    if (focus) void flow.upload(focus.id, files);
+  const sendTo = (project: Proyecto) => {
+    const dropped = picking ?? [];
+    const upload = (files: File[]) => {
+      setPicking(null);
+      void flow.upload(project.id, files);
+    };
+    if (dropped.length > 0) upload(dropped);
+    else pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, upload); // still inside the click, as browsers require
   };
 
   const cell = (flex: number): ViewStyle => (wide ? { flex, minWidth: 0, minHeight: 0 } : { minHeight: 340 });
@@ -116,13 +125,7 @@ export default function Home() {
               />
             </Entrada>
             <Entrada indice={1} estilo={cell(1)}>
-              <ActivityCard
-                focus={focus}
-                canEdit={canEdit}
-                busy={flow.busy}
-                onFiles={sendFiles}
-                onNavigate={go}
-              />
+              <ActivityCard hasProjects={datos.projects.length > 0} canEdit={canEdit} busy={flow.busy} onAddProposals={setPicking} onNavigate={go} />
             </Entrada>
           </View>
           <View style={row(1)}>
@@ -136,6 +139,18 @@ export default function Home() {
         </View>
       )}
       <UploadFlow visible={flow.visible} items={flow.items} busy={flow.busy} onClose={flow.close} />
+      <ProjectPicker
+        visible={canEdit && picking !== null}
+        projects={datos?.projects ?? []}
+        counts={datos?.stats.propuestas_por_proyecto ?? {}}
+        pendingFiles={picking?.length ?? 0}
+        onPick={sendTo}
+        onCreate={() => {
+          setPicking(null);
+          setCreating(true);
+        }}
+        onClose={() => setPicking(null)}
+      />
       <NewProjectDialog
         visible={canEdit && creating}
         onClose={() => {
