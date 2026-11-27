@@ -59,7 +59,8 @@ class Pesos:
 
 MAX_SCORE_WITHOUT_SUPPORT = 40
 _SUPPORT_WORDS = re.compile(
-    r"\b(soporte|support|asistencia|servicio t[eé]cnico|atenci[oó]n t[eé]cnica|post[- ]?venta)", re.IGNORECASE
+    # "support" also inside brand plans such as "ProSupport"
+    r"(soporte|support|\basistencia|\bservicio t[eé]cnico|\batenci[oó]n t[eé]cnica|\bpost[- ]?venta)", re.IGNORECASE
 )
 
 

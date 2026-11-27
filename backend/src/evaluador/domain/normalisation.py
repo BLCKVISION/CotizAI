@@ -39,6 +39,10 @@ def _line(line: Linea, figures: set[Decimal]) -> Linea:
     # A spreadsheet formula without a stored result: the model computed it, so the code does it again.
     if total is not None and total.literal.lstrip().startswith("=") and leer_monto(total) not in figures:
         total = None
+    if quantity == 1 and price is None and total is not None and leer_monto(total) is not None:
+        # One unit: its unit price is the line total.
+        line = line.model_copy(update={"precio_unitario": total})
+        price = leer_monto(total)
     if total is None and quantity is not None and price is not None:
         total = _computed(quantity * price, f"calculado: {quantity} x {price}")
     elif total is None and line.cantidad is None and price is not None:
