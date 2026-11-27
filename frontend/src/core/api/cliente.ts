@@ -13,6 +13,9 @@ export class ErrorApi extends Error {
   }
 }
 
+/** El backend puede responder `codigo/mensaje` o `code/message`: se aceptan ambos para no mostrar un error genérico. */
+type CuerpoDeError = { codigo?: string; mensaje?: string; code?: string; message?: string };
+
 const nuevoTrackId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 
 type Opciones = { metodo?: 'GET' | 'POST' | 'DELETE'; cuerpo?: unknown; token?: string | null; timeoutMs?: number };
@@ -40,8 +43,8 @@ export async function peticion<T>(ruta: string, { metodo = 'GET', cuerpo, token,
       throw new ErrorApi(respuesta.status, 'respuesta_invalida', 'El servidor devolvió una respuesta inesperada.', idServidor);
     }
     if (!respuesta.ok) {
-      const e = (datos ?? {}) as { codigo?: string; mensaje?: string };
-      throw new ErrorApi(respuesta.status, e.codigo ?? 'error', e.mensaje ?? 'Ocurrió un error.', idServidor);
+      const e = (datos ?? {}) as CuerpoDeError;
+      throw new ErrorApi(respuesta.status, e.codigo ?? e.code ?? 'error', e.mensaje ?? e.message ?? 'Ocurrió un error.', idServidor);
     }
     return datos as T;
   } catch (e) {
@@ -69,8 +72,8 @@ export async function peticionBinaria(ruta: string, token: string, cuerpo?: Blob
       body: cuerpo,
     });
     if (!r.ok) {
-      const e = ((await r.json().catch(() => undefined)) ?? {}) as { codigo?: string; mensaje?: string };
-      throw new ErrorApi(r.status, e.codigo ?? 'error', e.mensaje ?? 'Ocurrió un error.', r.headers.get('X-Track-Id') ?? trackId);
+      const e = ((await r.json().catch(() => undefined)) ?? {}) as CuerpoDeError;
+      throw new ErrorApi(r.status, e.codigo ?? e.code ?? 'error', e.mensaje ?? e.message ?? 'Ocurrió un error.', r.headers.get('X-Track-Id') ?? trackId);
     }
     return r;
   } catch (e) {

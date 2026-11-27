@@ -27,6 +27,7 @@ const GLYPHS = {
   sliders: 'equalizer',
   'arrow-up-right': 'arrow-up',
   'folder-plus': 'folder-alt',
+  'file-text': 'doc',
 } as const satisfies Record<string, ComponentProps<typeof SimpleLineIcons>['name']>;
 
 export type LineIconName = keyof typeof GLYPHS;
