@@ -8,9 +8,9 @@ import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import type { ProjectEvaluation, ReportFormat, ReviewDecision } from '@/features/evaluations/api';
 import { AskCard } from '@/features/evaluations/AskCard';
-import { FINDING_LABELS, formatMoney } from '@/features/evaluations/format';
+import { formatMoney } from '@/features/evaluations/format';
 
-import { finalAnswer, mainReasons, type Outcome, outcomes } from './flow';
+import { finalAnswer, issues, type Outcome, outcomes } from './flow';
 
 type Item = ProjectEvaluation['items'][number];
 
@@ -19,9 +19,9 @@ const costOf = (i: Item) => (i.converted_cost !== null ? formatMoney(i.converted
 function Detail({ outcome, onOpen }: { outcome: Outcome<Item>; onOpen: () => void }) {
   const t = useTema();
   const { item, approved } = outcome;
-  const tone = approved ? t.exito : t.error;
-  // A rejected proposal lists what discarded it; an approved one, anything still worth checking.
-  const findings = mainReasons(item).filter((f) => approved || f.discards);
+  const tone = approved ? t.exito : t.aviso;
+  // A rejected proposal lists what discarded it; an approved one, anything still worth checking. One entry per kind.
+  const found = [...issues(item, true), ...(approved ? issues(item, false) : [])];
   const name = item.supplier ?? item.filename;
   return (
     <Tarjeta onPress={onOpen} etiquetaAccesible={`Ver el detalle de ${name}`}>
@@ -40,14 +40,18 @@ function Detail({ outcome, onOpen }: { outcome: Outcome<Item>; onOpen: () => voi
           </Texto>
         </View>
         <Texto variante="etiqueta" color={tone.texto}>
-          {approved ? 'Aprobada' : 'Rechazada'}
+          {approved ? 'Aprobada' : 'No aprobada'}
         </Texto>
       </View>
       {outcome.changed ? <Texto>Comentario de la verificación: «{outcome.reason}»</Texto> : null}
-      {findings.map((f, i) => (
-        <View key={`${f.code}-${i}`} style={{ paddingLeft: espacio.sm + 4, borderLeftWidth: 3, borderLeftColor: f.discards ? t.error.texto : t.aviso.texto, gap: 2 }}>
-          <Texto variante="etiqueta">{FINDING_LABELS[f.code] ?? f.code}</Texto>
-          <Texto variante="pequeno">{f.reason}</Texto>
+      {found.map((issue) => (
+        <View key={issue.title} style={{ paddingLeft: espacio.sm + 4, borderLeftWidth: 3, borderLeftColor: t.aviso.texto, gap: 2 }}>
+          <Texto variante="etiqueta">{issue.title}</Texto>
+          {issue.points.map((p) => (
+            <Texto key={p} variante="pequeno">
+              {p}
+            </Texto>
+          ))}
         </View>
       ))}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>

@@ -82,7 +82,7 @@ function Figures({ evaluation }: { evaluation: ProjectEvaluation }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
         <Insignia etiqueta={`Válidas: ${count('valida')}`} tono="exito" icono="check-circle" />
         <Insignia etiqueta={`Pendientes: ${count('pendiente_de_revision')}`} tono="aviso" icono="alert-circle" />
-        <Insignia etiqueta={`Descartadas: ${count('descartada')}`} tono="error" icono="x-circle" />
+        <Insignia etiqueta={`No cumplen: ${count('descartada')}`} tono="aviso" icono="alert-circle" />
       </View>
       <Texto>{best ? `Mejor propuesta: ${best.supplier ?? best.filename}` : 'Ninguna propuesta resultó válida: revise los hallazgos.'}</Texto>
     </View>

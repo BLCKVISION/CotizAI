@@ -10,7 +10,7 @@ import { pickFiles, ACCEPT_DOCUMENTS, ACCEPT_PHOTOS } from '@/core/files';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
-import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
+import { Boton, BotonIcono, Icono, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb, vidrio } from '@/design/efectos';
 import { useTema } from '@/design/tema';
@@ -27,7 +27,8 @@ import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
 import { AnalysisStep } from './AnalysisStep';
-import { currentStep, defaultSelection, EVALUATION_STEPS, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
+import { DocumentPanel } from './DocumentPanel';
+import { currentStep, defaultSelection, EVALUATION_STEPS, highlightTerms, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
 import { PreparationHero } from './PreparationHero';
 import { ResultStep } from './ResultStep';
 import { Stepper } from './Stepper';
@@ -134,19 +135,19 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
     }
   };
 
-  const addButton = canUpload ? (
-    <Boton etiqueta="Agregar propuestas" icono="plus" variante="secundario" onPress={() => pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, (files) => void upload.upload(project.id, files))} />
-  ) : null;
+  const addProposals = () => pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, (files) => void upload.upload(project.id, files));
+  const chooseAgain = () => {
+    setSelection(null); // back to the default batch: what has not been analysed yet
+    goTo('analysis');
+  };
+  const addButton = canUpload ? <Boton etiqueta="Agregar propuestas" icono="plus" variante="secundario" onPress={addProposals} /> : null;
   const nextBatch = Math.min(unanalysed, MAX_PER_RUN);
   const evaluateOthers = canEvaluate && hasEvaluation ? (
     <Boton
       etiqueta={nextBatch > 0 ? `Analizar ${nextBatch === 1 ? 'la que falta' : `las siguientes ${nextBatch}`}` : 'Evaluar de nuevo o elegir otras'}
       icono="cpu"
       variante="secundario"
-      onPress={() => {
-        setSelection(null); // back to the default batch: what has not been analysed yet
-        goTo('analysis');
-      }}
+      onPress={chooseAgain}
     />
   ) : null;
 
@@ -184,54 +185,72 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
 
   const verifying = step === 'verification' && open !== null && seesResults;
   const wide = dispositivo === 'escritorio';
+  // While answering on a wide screen, the secondary actions are icons next to the answer buttons.
+  const singleRow = wide && verifying && can(role, 'review') && !closed;
 
   return (
     <View style={{ flex: 1, minHeight: 0, gap: espacio.md }}>
       {showSteps ? <Stepper active={running ? 'analysis' : step} reached={running ? 'analysis' : reached} onSelect={goTo} /> : null}
 
       {verifying ? (
-        <View style={{ flex: 1, minHeight: wide ? 0 : 620, flexDirection: wide ? 'row' : 'column', gap: espacio.md }}>
-          <ScrollView style={{ width: wide ? 280 : undefined, flexGrow: 0, maxHeight: wide ? undefined : 180 }} contentContainerStyle={{ gap: 6 }}>
-            {items.map((i) => {
-              const look = VERDICT_TONE[i.verdict];
-              const mine = decisionFor(i.proposal_id);
-              const current = i.proposal_id === open.proposal_id;
-              return (
-                <Pressable
-                  key={i.proposal_id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Revisar ${i.supplier ?? i.filename}`}
-                  accessibilityState={{ selected: current }}
-                  onPress={() => {
-                    setOpenId(i.proposal_id);
-                    setComment('');
-                  }}
-                  style={(e: PressState) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.sm, padding: espacio.sm + 2, borderRadius: radio.lg, borderWidth: 2, borderColor: e.focused ? t.foco : current ? t.accentStrong : 'transparent', backgroundColor: current || e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.6)' })}
-                >
-                  <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: t[look.tone].fondo }}>
-                    <Icono nombre={look.icon} tamano="sm" color={t[look.tone].texto} />
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Texto variante="etiqueta" numberOfLines={1}>
-                      {i.supplier ?? i.filename}
-                    </Texto>
-                    <Texto variante="pequeno" suave numberOfLines={1}>
-                      {mine ? `Usted: ${mine.approved ? 'SÍ' : 'NO'}` : 'Falta verificar'}
-                    </Texto>
-                  </View>
-                  {mine ? <Icono nombre="user-check" tamano="sm" /> : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-          <ScrollView key={open.proposal_id} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
-            <Entrada>
+        <View style={{ flex: 1, minHeight: wide ? 0 : 620, gap: espacio.sm }}>
+          {/* With several proposals, a row to move between them; the width below is for reading. */}
+          {items.length > 1 ? (
+            <ScrollView horizontal style={{ flexGrow: 0 }} contentContainerStyle={{ gap: espacio.sm }}>
+              {items.map((i) => {
+                const look = VERDICT_TONE[i.verdict];
+                const mine = decisionFor(i.proposal_id);
+                const current = i.proposal_id === open.proposal_id;
+                return (
+                  <Pressable
+                    key={i.proposal_id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Revisar ${i.supplier ?? i.filename}`}
+                    accessibilityState={{ selected: current }}
+                    onPress={() => {
+                      setOpenId(i.proposal_id);
+                      setComment('');
+                    }}
+                    style={(e: PressState) => ({ width: 250, flexDirection: 'row', alignItems: 'center', gap: espacio.sm, padding: espacio.sm, borderRadius: radio.lg, borderWidth: 2, borderColor: e.focused ? t.foco : current ? t.accentStrong : 'transparent', backgroundColor: current || e.hovered ? '#FFFFFF' : 'rgba(255,255,255,0.6)' })}
+                  >
+                    <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: t[look.tone].fondo }}>
+                      <Icono nombre={look.icon} tamano="sm" color={t[look.tone].texto} />
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Texto variante="etiqueta" numberOfLines={1}>
+                        {i.supplier ?? i.filename}
+                      </Texto>
+                      <Texto variante="pequeno" suave numberOfLines={1}>
+                        {mine ? `Usted: ${mine.approved ? 'aprobada' : 'no aprobada'}` : 'Falta verificar'}
+                      </Texto>
+                    </View>
+                    {mine ? <Icono nombre="user-check" tamano="sm" /> : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          ) : null}
+          {/* The document on the left, its evaluation on the right; on narrow screens, one after the other. */}
+          {wide ? (
+            <View style={{ flex: 1, minHeight: 0, flexDirection: 'row', gap: espacio.md }}>
+              <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 11, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
+                <DocumentPanel projectId={project.id} proposalId={open.proposal_id} filename={open.filename} terms={highlightTerms(open)} />
+              </ScrollView>
+              <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 9, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
+                <Entrada>
+                  <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
+                </Entrada>
+              </ScrollView>
+            </View>
+          ) : (
+            <ScrollView key={open.proposal_id} style={{ flex: 1 }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
               <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
-            </Entrada>
-          </ScrollView>
+              <DocumentPanel projectId={project.id} proposalId={open.proposal_id} filename={open.filename} terms={highlightTerms(open)} />
+            </ScrollView>
+          )}
         </View>
       ) : (
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
           {preparing ? (
             <>
               <PreparationHero
@@ -298,13 +317,20 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
             />
             <Boton etiqueta="No, rechazar" icono="x" variante="secundario" deshabilitado={saving} onPress={() => void decide(false)} />
             <Boton etiqueta="Sí, aprobar" icono="check" cargando={saving} onPress={() => void decide(true)} />
+            {wide ? (
+              <>
+                <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: t.borde }} />
+                {canUpload ? <BotonIcono nombre="plus" etiqueta="Agregar propuestas" onPress={addProposals} /> : null}
+                {evaluateOthers ? <BotonIcono nombre="cpu" etiqueta="Evaluar de nuevo o elegir otras" onPress={chooseAgain} /> : null}
+              </>
+            ) : null}
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
           <Texto variante="pequeno" suave style={{ flexShrink: 1 }}>
             {hint}
           </Texto>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>{actions}</View>
+          {singleRow && pending.length > 0 ? null : <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>{actions}</View>}
         </View>
       </View>
       )}

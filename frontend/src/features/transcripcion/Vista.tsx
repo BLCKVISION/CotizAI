@@ -15,13 +15,15 @@ const CALIDAD: Record<Calidad, { tono: Tono; etiqueta: string; icono: 'check-cir
 };
 
 /** Texto con las cifras inciertas resaltadas (fondo + etiqueta accesible: nunca solo color). */
-function ConInciertos({ valor, inciertos, medio = false }: { valor: string; inciertos: string[]; medio?: boolean }) {
+export type Partir = (valor: string) => { texto: string; incierto: boolean }[];
+
+function ConInciertos({ valor, inciertos, medio = false, partir }: { valor: string; inciertos: string[]; medio?: boolean; partir?: Partir }) {
   const t = useTema();
   return (
     <Texto variante={medio ? 'cuerpoMedio' : 'cuerpo'}>
-      {partirPorInciertos(valor, inciertos).map((s, i) =>
+      {(partir ? partir(valor) : partirPorInciertos(valor, inciertos)).map((s, i) =>
         s.incierto ? (
-          <Text key={i} accessibilityLabel={`Cifra dudosa: ${s.texto}`} style={{ backgroundColor: t.aviso.fondo, color: t.aviso.texto }}>
+          <Text key={i} accessibilityLabel={`${partir ? 'Resaltado' : 'Cifra dudosa'}: ${s.texto}`} style={{ backgroundColor: t.aviso.fondo, color: t.aviso.texto }}>
             {s.texto}
           </Text>
         ) : (
@@ -32,15 +34,15 @@ function ConInciertos({ valor, inciertos, medio = false }: { valor: string; inci
   );
 }
 
-function Tabla({ cabecera, filas, inciertos }: { cabecera: string[]; filas: string[][]; inciertos: string[] }) {
+function Tabla({ cabecera, filas, inciertos, partir, minimo }: { cabecera: string[]; filas: string[][]; inciertos: string[]; partir?: Partir; minimo: number }) {
   const t = useTema();
   // Cada columna ocupa según su texto: en un presupuesto el detalle es mucho más largo que la cantidad.
   const pesos = cabecera.map((_, i) => Math.min(6, Math.max(1, Math.max(...[cabecera, ...filas].map((f) => Math.max(...(f[i] ?? '').split('\n').map((l) => l.length)))) / 10)));
   const fila = (celdas: string[], clave: string, encabezado = false) => (
     <View key={clave} style={{ flexDirection: 'row', backgroundColor: encabezado ? t.superficieAlta : 'transparent' }}>
       {celdas.map((c, i) => (
-        <View key={i} style={{ minWidth: 112, flex: pesos[i] ?? 1, flexBasis: 0, padding: espacio.sm, borderTopWidth: 1, borderColor: t.borde }}>
-          <ConInciertos valor={c} inciertos={inciertos} medio={encabezado} />
+        <View key={i} style={{ minWidth: minimo, flex: pesos[i] ?? 1, flexBasis: 0, padding: espacio.sm, borderTopWidth: 1, borderColor: t.borde }}>
+          <ConInciertos valor={c} inciertos={inciertos} medio={encabezado} partir={partir} />
         </View>
       ))}
     </View>
@@ -56,7 +58,7 @@ function Tabla({ cabecera, filas, inciertos }: { cabecera: string[]; filas: stri
   );
 }
 
-export function BloqueVista({ bloque, inciertos }: { bloque: Bloque; inciertos: string[] }) {
+export function BloqueVista({ bloque, inciertos, partir, minimoDeColumna = 112 }: { bloque: Bloque; inciertos: string[]; partir?: Partir; minimoDeColumna?: number }) {
   if (bloque.tipo === 'titulo') {
     return (
       <Texto variante={bloque.nivel === 1 ? 'subtitulo' : 'cuerpoMedio'} accessibilityRole="header">
@@ -64,8 +66,8 @@ export function BloqueVista({ bloque, inciertos }: { bloque: Bloque; inciertos: 
       </Texto>
     );
   }
-  if (bloque.tipo === 'tabla') return <Tabla cabecera={bloque.cabecera} filas={bloque.filas} inciertos={inciertos} />;
-  return <ConInciertos valor={bloque.texto} inciertos={inciertos} />;
+  if (bloque.tipo === 'tabla') return <Tabla cabecera={bloque.cabecera} filas={bloque.filas} inciertos={inciertos} partir={partir} minimo={minimoDeColumna} />;
+  return <ConInciertos valor={bloque.texto} inciertos={inciertos} partir={partir} />;
 }
 
 export function VistaTranscripcion({ resultado }: { resultado: Transcripcion }) {

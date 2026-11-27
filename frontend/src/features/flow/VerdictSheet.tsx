@@ -1,32 +1,67 @@
-/** Fixed "why yes / why no" template. Every proposal shows the same sections; only the information changes. */
+/** The evaluation in plain words. Every proposal shows the same sections; only the information changes. */
 import { View } from 'react-native';
 
-import { Icono, type NombreIcono, Tarjeta, Texto, type Tono } from '@/design/componentes';
+import { Icono, type NombreIcono, Texto, type Tono } from '@/design/componentes';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import type { ProposalEvaluationItem, ReviewDecision } from '@/features/evaluations/api';
-import { CRITERION_LABELS, FINDING_LABELS, formatMoney } from '@/features/evaluations/format';
+import { CRITERION_LABELS, formatMoney } from '@/features/evaluations/format';
 
-import { ANSWERS, type CheckState, checklist, mainReasons } from './flow';
+import { ANSWERS, type CheckState, checklist, type Issue, issues } from './flow';
 
+// "Does not meet the requirements" is an outcome, not a system error: warm amber, never red.
 export const VERDICT_TONE: Record<ProposalEvaluationItem['verdict'], { tone: Tono; icon: NombreIcono }> = {
   valida: { tone: 'exito', icon: 'check' },
-  descartada: { tone: 'error', icon: 'x' },
-  pendiente_de_revision: { tone: 'aviso', icon: 'alert-circle' },
+  descartada: { tone: 'aviso', icon: 'alert-circle' },
+  pendiente_de_revision: { tone: 'info', icon: 'help-circle' },
 };
 
 const CHECK_LOOK: Record<CheckState, { icon: NombreIcono; label: string; tone: Tono }> = {
-  yes: { icon: 'check', label: 'Sí', tone: 'exito' },
-  no: { icon: 'x', label: 'No', tone: 'error' },
-  doubt: { icon: 'alert-circle', label: 'Revisar', tone: 'aviso' },
+  yes: { icon: 'check', label: 'Cumple', tone: 'exito' },
+  no: { icon: 'alert-circle', label: 'No cumple', tone: 'aviso' },
+  doubt: { icon: 'help-circle', label: 'Por confirmar', tone: 'info' },
   unchecked: { icon: 'minus', label: 'Sin verificar', tone: 'neutro' },
+};
+
+const ISSUE_ICONS: Record<string, NombreIcono> = {
+  ALCANCE: 'list', COMPAT: 'cpu', CAPACIDAD: 'zap', CALIDAD: 'award', ABUSIVO: 'dollar-sign', ARITMETICA: 'percent', MANIPULACION: 'eye-off', LECTURA: 'help-circle',
 };
 
 function SectionTitle({ children }: { children: string }) {
   return (
-    <Texto variante="sobretitulo" suave accessibilityRole="header">
-      {children.toUpperCase()}
+    <Texto variante="subtitulo" accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold' }}>
+      {children}
     </Texto>
+  );
+}
+
+function IssueCard({ issue }: { issue: Issue }) {
+  const t = useTema();
+  return (
+    <View style={{ gap: espacio.sm, padding: espacio.md, borderRadius: radio.lg, borderWidth: 1, borderColor: t.borde, backgroundColor: '#FFFFFF' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm + 4 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: t.superficieAlta }}>
+          <Icono nombre={ISSUE_ICONS[issue.code] ?? 'info'} tamano="sm" />
+        </View>
+        <Texto variante="cuerpoMedio" style={{ flex: 1, fontFamily: 'Urbanist_600SemiBold' }}>
+          {issue.title}
+        </Texto>
+      </View>
+      {issue.meaning ? <Texto>{issue.meaning}</Texto> : null}
+      {issue.points.map((p) => (
+        <Texto key={p}>• {p}</Texto>
+      ))}
+      {issue.quotes.map((q) => (
+        <View key={q} style={{ padding: espacio.sm + 2, borderRadius: radio.md, backgroundColor: t.superficieAlta, gap: 2 }}>
+          <Texto variante="pequeno" suave>
+            En el documento{issue.byAi ? ' (señalado por la IA: confirme la cita)' : ''}
+          </Texto>
+          <Texto variante="pequeno" numberOfLines={3}>
+            «{q}»
+          </Texto>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -35,46 +70,52 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
   const answer = ANSWERS[item.verdict];
   const look = VERDICT_TONE[item.verdict];
   const tone = t[look.tone];
-  const reasons = mainReasons(item);
+  const problems = issues(item, true);
+  const doubts = issues(item, false);
   const cost = item.converted_cost !== null ? formatMoney(item.converted_cost, item.converted_currency) : item.real_cost !== null ? formatMoney(item.real_cost, item.currency) : 'No determinado';
 
   return (
-    <Tarjeta>
-      {/* 1. The answer */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md, padding: espacio.md, borderRadius: radio.xl, backgroundColor: tone.fondo }}>
-        <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
-          <Texto variante="subtitulo" color={tone.texto} style={{ fontFamily: 'Urbanist_700Bold', fontSize: 22, lineHeight: 28 }}>
-            {answer.short}
-          </Texto>
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Texto variante="subtitulo" color={tone.texto} accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold' }}>
+    <View style={{ gap: espacio.md, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: 'rgba(255,255,255,0.92)' }}>
+      {/* 1. The answer, highlighted */}
+      <View style={{ gap: espacio.sm, padding: espacio.md + 4, borderRadius: radio.xl, borderLeftWidth: 6, borderLeftColor: tone.texto, backgroundColor: tone.fondo }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm + 4 }}>
+          <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+            <Icono nombre={look.icon} tamano="lg" color={tone.texto} />
+          </View>
+          <Texto variante="subtitulo" accessibilityRole="header" style={{ flex: 1, fontFamily: 'Urbanist_700Bold', fontSize: 22, lineHeight: 28 }}>
             {answer.headline}
           </Texto>
-          <Texto variante="etiqueta" numberOfLines={1}>
-            {item.supplier ?? item.filename}
-          </Texto>
-          <Texto variante="pequeno" suave numberOfLines={1}>
-            {item.filename} · costo real: {cost}
-            {item.score !== null ? ` · ${Number(item.score)} de 100` : ''}
-            {item.over_budget ? ' · supera el presupuesto' : ''}
-          </Texto>
         </View>
+        <Texto>{answer.detail}</Texto>
+        <Texto variante="etiqueta">
+          {item.supplier ?? item.filename} · Costo real: {cost}
+          {item.score !== null ? ` · ${Number(item.score)} de 100` : ''}
+          {item.over_budget ? ' · supera el presupuesto' : ''}
+        </Texto>
       </View>
       {decision ? (
         <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center', padding: espacio.sm + 4, borderRadius: radio.lg, backgroundColor: t.superficieAlta }}>
           <Icono nombre="user-check" tamano="sm" />
           <Texto variante="pequeno" style={{ flex: 1 }}>
-            Verificado por {decision.decided_by}: {decision.approved ? 'SÍ, aprobada' : 'NO, rechazada'}
+            Verificado por {decision.decided_by}: {decision.approved ? 'aprobada' : 'no aprobada'}
             {decision.comment ? ` · «${decision.comment}»` : ''}
           </Texto>
         </View>
       ) : null}
 
-      {/* 2. Why */}
-      <SectionTitle>{answer.why}</SectionTitle>
-      {item.verdict === 'valida' && item.criteria.length > 0
-        ? item.criteria.map((c) => (
+      {/* 2. What does not meet the requirements, then what still needs confirming */}
+      {problems.length > 0 ? <SectionTitle>Lo que no cumple</SectionTitle> : null}
+      {problems.map((i) => (
+        <IssueCard key={i.code} issue={i} />
+      ))}
+      {doubts.length > 0 ? <SectionTitle>Por confirmar</SectionTitle> : null}
+      {doubts.map((i) => (
+        <IssueCard key={i.code} issue={i} />
+      ))}
+      {item.verdict === 'valida' && item.criteria.length > 0 ? (
+        <>
+          <SectionTitle>Por qué cumple</SectionTitle>
+          {item.criteria.map((c) => (
             <View key={c.criterion} style={{ gap: 2 }}>
               <Texto variante="etiqueta">
                 {CRITERION_LABELS[c.criterion] ?? c.criterion}: {c.score} de 100 (pesa {c.weight} %)
@@ -85,41 +126,26 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
                 </Texto>
               ))}
             </View>
-          ))
-        : null}
-      {reasons.map((r, i) => (
-        <View key={`${r.code}-${i}`} style={{ gap: 2, paddingLeft: espacio.sm + 4, borderLeftWidth: 3, borderLeftColor: r.discards ? t.error.texto : t.aviso.texto }}>
-          <Texto variante="etiqueta">
-            {FINDING_LABELS[r.code] ?? r.code}: {r.reason}
-          </Texto>
-          {r.evidence ? (
-            <Texto variante="pequeno" suave numberOfLines={3}>
-              Cita del documento: «{r.evidence}»
-            </Texto>
-          ) : null}
-          <Texto variante="pequeno" suave>
-            Detectado por {r.origin === 'ia' ? 'la IA: verifique la cita' : 'una regla del sistema'}
-          </Texto>
-        </View>
-      ))}
-      {reasons.length === 0 && item.criteria.length === 0 ? <Texto suave>No hay observaciones registradas.</Texto> : null}
+          ))}
+        </>
+      ) : null}
 
       {/* 3. The same questions for everyone */}
-      <SectionTitle>Preguntas de control</SectionTitle>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: espacio.md }}>
-        {checklist(item).map((c) => {
+      <SectionTitle>Requisitos revisados</SectionTitle>
+      <View style={{ borderRadius: radio.lg, borderWidth: 1, borderColor: t.borde, backgroundColor: '#FFFFFF' }}>
+        {checklist(item).map((c, i) => {
           const state = CHECK_LOOK[c.state];
           return (
-            <View key={c.code} accessible accessibilityLabel={`${c.question} ${state.label}`} style={{ flexGrow: 1, flexBasis: 280, flexDirection: 'row', alignItems: 'center', gap: espacio.sm, minHeight: 36 }}>
-              <View style={{ width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: t[state.tone].fondo }}>
-                <Icono nombre={state.icon} tamano="sm" color={t[state.tone].texto} />
-              </View>
+            <View key={c.code} accessible accessibilityLabel={`${c.question} ${state.label}`} style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm, minHeight: 44, paddingHorizontal: espacio.sm + 4, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: t.borde }}>
               <Texto variante="pequeno" style={{ flex: 1 }}>
                 {c.question}
               </Texto>
-              <Texto variante="etiqueta" color={t[state.tone].texto}>
-                {state.label}
-              </Texto>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radio.pildora, backgroundColor: t[state.tone].fondo }}>
+                <Icono nombre={state.icon} tamano="sm" color={t[state.tone].texto} />
+                <Texto variante="etiqueta" color={t[state.tone].texto}>
+                  {state.label}
+                </Texto>
+              </View>
             </View>
           );
         })}
@@ -150,6 +176,6 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
           Avisos de lectura: {item.reading_warnings.join(' · ')}
         </Texto>
       ) : null}
-    </Tarjeta>
+    </View>
   );
 }

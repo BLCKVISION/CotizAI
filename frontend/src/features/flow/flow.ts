@@ -59,10 +59,10 @@ export function checklist(item: ItemLike): Check[] {
   });
 }
 
-export const ANSWERS: Record<Verdict, { short: string; headline: string; why: string }> = {
-  valida: { short: 'SÍ', headline: 'La IA dice que SÍ cumple', why: 'Por qué sí' },
-  descartada: { short: 'NO', headline: 'La IA dice que NO cumple', why: 'Por qué no' },
-  pendiente_de_revision: { short: '?', headline: 'La IA no puede decidir: necesita su revisión', why: 'Por qué no pudo decidir' },
+export const ANSWERS: Record<Verdict, { headline: string; detail: string }> = {
+  valida: { headline: 'Este presupuesto cumple los requerimientos', detail: 'No se encontró nada que lo descarte. Confirme los datos antes de aprobarlo.' },
+  descartada: { headline: 'Este presupuesto no cumple los requerimientos', detail: 'Estos son los puntos que habría que corregir.' },
+  pendiente_de_revision: { headline: 'Falta información para saber si cumple', detail: 'Revise los puntos por confirmar antes de decidir.' },
 };
 
 /** The AI's reasons in one list: what discards first, then what needs attention. */
@@ -166,4 +166,86 @@ export function finalAnswer<I extends ItemLike>(list: Outcome<I>[], costOf: (ite
   const unverified = CHECKS.filter((c) => best.item.unverified?.includes(c.code)).map((c) => UNVERIFIED[c.code]).filter(Boolean);
   if (unverified.length > 0) paragraphs.push(`Antes de adjudicar, confirme lo que no se pudo verificar: ${joinList(unverified)}.`);
   return { approved: true, label: 'Propuesta recomendada', headline: nameOf(best.item), paragraphs };
+}
+
+const ISSUE_TITLES: Record<string, string> = {
+  ALCANCE: 'Falta parte de lo que pide el proyecto',
+  COMPAT: 'Componentes que no son compatibles',
+  CAPACIDAD: 'La energía no alcanza para los equipos',
+  CALIDAD: 'Equipos que no corresponden a la calidad pedida',
+  ABUSIVO: 'Precios o condiciones que perjudican al comprador',
+  ARITMETICA: 'Las cuentas no cuadran',
+  MANIPULACION: 'Texto que intenta influir en la evaluación',
+  LECTURA: 'Dato por confirmar',
+};
+
+/** What each kind of problem means for the person who has to decide. */
+const ISSUE_MEANING: Record<string, string> = {
+  MANIPULACION: 'El documento trae instrucciones dirigidas a la inteligencia artificial. No se obedecieron.',
+  COMPAT: 'Con estas piezas el equipo no se puede armar o no va a funcionar.',
+};
+
+export type Issue = { code: string; title: string; meaning: string | null; points: string[]; quotes: string[]; byAi: boolean };
+
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+const readable = (reason: string) => {
+  const line = /^(Línea \d+):\s*(.*)$/s.exec(reason);
+  return line ? `${sentence(line[2].replace(/\.$/, ''))} (${line[1].toLowerCase()} del presupuesto).` : sentence(reason);
+};
+const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
+
+/** One entry per kind of problem, however many times it was detected. `discards` picks problems or doubts. */
+export function issues(item: ItemLike, discards: boolean): Issue[] {
+  const found = item.findings.filter((f) => f.discards === discards);
+  const order = [...CHECKS.map((c) => c.code as string), 'LECTURA'];
+  const codes = unique(found.map((f) => f.code)).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return codes.map((code) => {
+    const group = found.filter((f) => f.code === code);
+    // A quote contained in a longer one adds nothing.
+    const quotes = unique(group.map((f) => f.evidence.trim()));
+    return {
+      code,
+      title: ISSUE_TITLES[code] ?? code,
+      meaning: ISSUE_MEANING[code] ?? null,
+      points: unique(group.map((f) => readable(f.reason))),
+      quotes: quotes.sort((a, b) => b.length - a.length).slice(0, 1),
+      byAi: group.every((f) => f.origin === 'ia'),
+    };
+  });
+}
+
+/** Short fragments worth marking in the document: the incompatible parts and the quoted orders. */
+export function highlightTerms(item: ItemLike): string[] {
+  const terms = item.findings.filter((f) => f.discards).flatMap((f) => {
+    if (f.code === 'COMPAT') return `${f.reason} ${f.evidence}`.match(/socket\s+[a-z]{2,5}\s?\d{1,4}|\bddr\d\b/gi) ?? [];
+    const quote = f.evidence.trim();
+    return quote.length >= 6 && quote.length <= 80 ? [quote] : [];
+  });
+  return [...new Map(terms.map((t) => [t.toLowerCase(), t])).values()];
+}
+
+export type Fragment = { text: string; marked: boolean };
+
+/** Splits `text` marking every term, ignoring case and never inside a longer word. */
+export function splitHighlights(text: string, terms: string[]): Fragment[] {
+  if (!text) return [];
+  const lower = text.toLowerCase();
+  const wanted = terms.map((t) => t.toLowerCase()).filter(Boolean).sort((a, b) => b.length - a.length);
+  const wordChar = /[\p{L}\p{N}]/u;
+  const fragments: Fragment[] = [];
+  let plain = '';
+  for (let i = 0; i < text.length; ) {
+    const term = wanted.find((t) => lower.startsWith(t, i) && !wordChar.test(text[i - 1] ?? ' ') && !wordChar.test(text[i + t.length] ?? ' '));
+    if (term) {
+      if (plain) fragments.push({ text: plain, marked: false });
+      plain = '';
+      fragments.push({ text: text.slice(i, i + term.length), marked: true });
+      i += term.length;
+    } else {
+      plain += text[i];
+      i++;
+    }
+  }
+  if (plain) fragments.push({ text: plain, marked: false });
+  return fragments;
 }
