@@ -2,6 +2,8 @@
 import { View } from 'react-native';
 
 import { Icono, type NombreIcono, Texto, type Tono } from '@/design/componentes';
+import { CollapsibleCard } from '@/design/Collapsible';
+import { Entrada } from '@/design/efectos';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import type { ProposalEvaluationItem, ReviewDecision } from '@/features/evaluations/api';
@@ -65,6 +67,45 @@ function IssueCard({ issue }: { issue: Issue }) {
   );
 }
 
+const TRACE_LOOK = {
+  ok: { icon: 'check', tone: 'exito' },
+  alert: { icon: 'x', tone: 'error' },
+  info: { icon: 'info', tone: 'info' },
+} as const;
+
+/** The agent's audit trail: each step that ran, what it found and how the verdict was reached. */
+function DecisionTrace({ steps }: { steps: NonNullable<ProposalEvaluationItem['trace']> }) {
+  const t = useTema();
+  return (
+    <CollapsibleCard title="Cómo se decidió, paso a paso" detail={`${steps.length} pasos registrados del agente`} defaultOpen>
+      {steps.map((step, i) => {
+        const look = TRACE_LOOK[step.status] ?? TRACE_LOOK.info;
+        const last = i === steps.length - 1;
+        return (
+          <Entrada key={`${step.step}-${i}`} indice={Math.min(i, 10)}>
+            <View accessible accessibilityLabel={`Paso ${i + 1}: ${step.title}. ${step.detail.join('. ')}`} style={{ flexDirection: 'row', gap: espacio.sm + 4 }}>
+              <View style={{ alignItems: 'center' }}>
+                <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: t[look.tone].fondo }}>
+                  <Icono nombre={look.icon} tamano="sm" color={t[look.tone].texto} />
+                </View>
+                {last ? null : <View style={{ width: 2, flex: 1, minHeight: 12, backgroundColor: t.borde }} />}
+              </View>
+              <View style={{ flex: 1, gap: 2, paddingBottom: last ? 0 : espacio.md }}>
+                <Texto variante="etiqueta">{step.title}</Texto>
+                {step.detail.map((line, n) => (
+                  <Texto key={`${n}-${line}`} variante="pequeno" suave>
+                    {line}
+                  </Texto>
+                ))}
+              </View>
+            </View>
+          </Entrada>
+        );
+      })}
+    </CollapsibleCard>
+  );
+}
+
 export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem; decision: ReviewDecision | undefined }) {
   const t = useTema();
   const answer = ANSWERS[item.verdict];
@@ -102,6 +143,8 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
           </Texto>
         </View>
       ) : null}
+
+      {item.trace && item.trace.length > 0 ? <DecisionTrace steps={item.trace} /> : null}
 
       {/* 2. What does not meet the requirements, then what still needs confirming */}
       {problems.length > 0 ? <SectionTitle>Lo que no cumple</SectionTitle> : null}

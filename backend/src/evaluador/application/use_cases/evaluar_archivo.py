@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from typing import Protocol
 
 from evaluador.application.ports.agente import Embebedor, IndiceVectorial, ModeloDeLenguaje, MotorDeEvaluacion
 from evaluador.application.ports.documentos import ContenidoLeido
 from evaluador.domain.costo import CostoReal, calcular_costo_real
+from evaluador.domain.decision_trace import TraceStep
 from evaluador.domain.errores import DatoInvalido
 from evaluador.domain.evaluacion import (
     CodigoHallazgo,
@@ -96,9 +97,14 @@ class EvaluarArchivo:
                 CodigoHallazgo.LECTURA, Severidad.ADVERTENCIA, False,
                 "Parte del documento no se pudo leer con fiabilidad.", "; ".join(warnings)[:300], Origen.REGLA,
             )  # fmt: skip
-            r = ResultadoEvaluacion(
-                r.propuesta_id, Veredicto.PENDIENTE_DE_REVISION, (*r.hallazgos, unreadable), r.extraccion
-            )
+            note = TraceStep(
+                "verdict", "Lectura incompleta", "info",
+                ("Parte del documento no se leyó con fiabilidad: pasa a revisión de una persona.",),
+            )  # fmt: skip
+            r = replace(
+                r, veredicto=Veredicto.PENDIENTE_DE_REVISION, hallazgos=(*r.hallazgos, unreadable),
+                trace=(*r.trace, note),
+            )  # fmt: skip
         breakdown = calcular_costo_real(r.extraccion) if r.extraccion is not None else None
         if r.veredicto is not Veredicto.VALIDA or breakdown is None or r.extraccion is None:
             return Evaluacion(r, breakdown=breakdown, text=texto, warnings=warnings)

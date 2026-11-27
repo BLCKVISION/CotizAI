@@ -19,6 +19,7 @@ export type ProposalFinding = {
 };
 
 export type CostStep = { concept: string; amount: string | null; detail: string };
+export type TraceStep = { step: string; title: string; status: 'ok' | 'alert' | 'info'; detail: string[] };
 export type Criterion = { criterion: string; score: number; weight: number; evidence: string[] };
 
 export type ProposalEvaluationItem = {
@@ -37,6 +38,8 @@ export type ProposalEvaluationItem = {
   reading_warnings: string[];
   over_budget: boolean;
   supplier_history: string[];
+  /** What the agent really did, step by step. Absent in results saved before it existed. */
+  trace?: TraceStep[];
   /** Control questions without enough data. Absent in results saved before it existed. */
   unverified?: string[];
 };

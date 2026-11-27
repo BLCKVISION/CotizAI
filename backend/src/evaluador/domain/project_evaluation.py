@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
+from .decision_trace import TraceStep
+
 
 @dataclass(frozen=True, slots=True)
 class ProposalFindingSummary:
@@ -62,6 +64,7 @@ class ProposalEvaluationItem:
     supplier_history: tuple[str, ...] = ()  # earlier discards of the same supplier in this organisation
     evaluated_at: datetime | None = None  # when this proposal was read; a selective run keeps the older ones
     unverified: tuple[str, ...] = ()  # control questions without enough data to answer
+    trace: tuple[TraceStep, ...] = ()  # absent in older results
     lines: tuple[QuotedLine, ...] = ()  # absent in evaluations stored before the assistant existed
 
 

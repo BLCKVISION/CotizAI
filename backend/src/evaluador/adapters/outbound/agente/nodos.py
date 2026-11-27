@@ -144,13 +144,15 @@ class NodosEvaluacion:
         """COMPAT, CAPACIDAD, CALIDAD y ABUSIVO: reglas deterministas sobre la extracción (sin modelo)."""
         e = s["extraccion"]
         # Sin precios de mercado (búsqueda desactivada o sin resultados), ABUSIVO solo juzga flete y cláusulas.
+        references = self._market_references(e)
         return {
+            "consultas": {"enabled": self._market_finder is not None, "references": tuple(sorted(references.items()))},
             "hallazgos": [
                 *validar_compatibilidad(e),
                 *validar_capacidad(e),
                 *validar_calidad(e),
-                *validar_abuso(e, referencias=self._market_references(e), document=s.get("texto", "")),
-            ]
+                *validar_abuso(e, referencias=references, document=s.get("texto", "")),
+            ],
         }
 
     def _components_by_quote(self, extraction: ExtraccionPropuesta, document: str) -> set[str]:

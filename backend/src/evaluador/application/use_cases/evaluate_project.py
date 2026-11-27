@@ -19,6 +19,7 @@ from evaluador.application.ports.salida import Auditoria, ProyectoRepositorio, R
 from evaluador.application.use_cases.evaluar_archivo import Evaluacion, EvaluarArchivo
 from evaluador.application.use_cases.exchange_rates import ResolveRates
 from evaluador.application.use_cases.gestion import Gestion
+from evaluador.domain.decision_trace import TraceStep
 from evaluador.domain.errores import (
     DatoInvalido,
     ErrorDeDominio,
@@ -351,8 +352,19 @@ class EvaluateProject:
         if verdict is Veredicto.VALIDA and ev.puntaje is None:
             verdict = Veredicto.PENDIENTE_DE_REVISION
         budget = project.presupuesto_referencial
+        trail = list(ev.resultado.trace)
+        if breakdown:
+            cost_lines = [
+                f"{s.concepto}: {s.monto if s.monto is not None else 'no determinado'}" for s in breakdown.pasos
+            ]
+            cost_lines.append(f"Costo real: {f'{currency} {total}' if total is not None else 'no determinado'}.")
+            trail.append(TraceStep("cost", "Costo real: fletes, recargos e impuestos", "info", tuple(cost_lines[:10])))
+        if ev.rubric:
+            scores = tuple(f"{c.criterion.replace('_', ' ')}: {c.score}/100, pesa {c.weight} %" for c in criteria)
+            trail.append(TraceStep("score", f"Puntaje: {ev.puntaje} de 100", "ok", scores))
         return (
             ProposalEvaluationItem(
+                trace=tuple(trail),
                 proposal_id=proposal.id,
                 filename=proposal.archivo,
                 verdict=verdict.value,
@@ -449,7 +461,8 @@ _ANSWER_INSTRUCTIONS = (
     "o cotizaciones (por ejemplo cultura general, programación, opiniones o cualquier otro tema), no la respondas: "
     "indica con amabilidad que no puedes ayudar con eso porque no es parte de tus funciones, invita a preguntar "
     "sobre las cotizaciones, costos, descartes o el ranking del proyecto, y deja 'sources' vacío.\n"
-    "Si el mensaje es solo un saludo o no plantea ninguna pregunta concreta, preséntate brevemente como Coti, asistente "
+    "Si el mensaje es solo un saludo o no plantea ninguna pregunta concreta, preséntate brevemente como Coti, "
+    "asistente "
     "de CotizAI y pregunta con amabilidad qué necesita saber sobre las cotizaciones, y deja 'sources' vacío.\n"
     "Pregunta del comité: "
 )

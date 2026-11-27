@@ -53,3 +53,4 @@ class ResultadoEvaluacion:
     veredicto: Veredicto
     hallazgos: tuple[Hallazgo, ...] = field(default_factory=tuple)
     extraccion: ExtraccionPropuesta | None = None
+    trace: tuple = ()  # TraceStep items; the module that defines them imports this one

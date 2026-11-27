@@ -44,6 +44,13 @@ class CriterionResponseDto(DtoSalida):
     evidence: list[str]
 
 
+class TraceStepResponseDto(DtoSalida):
+    step: str
+    title: str
+    status: str
+    detail: list[str]
+
+
 class ProposalEvaluationResponseDto(DtoSalida):
     proposal_id: str
     filename: str
@@ -61,6 +68,7 @@ class ProposalEvaluationResponseDto(DtoSalida):
     over_budget: bool
     supplier_history: list[str]
     unverified: list[str]
+    trace: list[TraceStepResponseDto]
 
 
 class ExchangeRateSnapshotDto(DtoSalida):

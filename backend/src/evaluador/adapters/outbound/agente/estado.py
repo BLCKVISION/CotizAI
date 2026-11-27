@@ -20,5 +20,6 @@ class EstadoEvaluacion(TypedDict, total=False):
     extraccion: ExtraccionPropuesta | None
     error_de_lectura: bool
     hallazgos: Annotated[list[Hallazgo], operator.add]
+    consultas: dict  # web price lookups, kept for the audit trail
     # salida
     resultado: ResultadoEvaluacion

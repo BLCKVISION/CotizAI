@@ -9,6 +9,7 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
+from evals.assistant.fixtures import report_text
 from fastapi.testclient import TestClient
 
 from evaluador.adapters.inbound.http.aplicacion import crear_aplicacion
@@ -312,6 +313,14 @@ def test_report_downloads_in_both_formats(app_client):
     sheet = app_client.get(f"/api/v1/proyectos/{pid}/evaluations/report?fmt=csv", headers=headers)
     assert len(sheet.text.strip().splitlines()) == 4
     assert app_client.get(f"/api/v1/proyectos/{pid}/evaluations/report?fmt=exe", headers=headers).status_code == 422
+    for fmt, signature in (("pdf", b"%PDF-"), ("xlsx", b"PK")):
+        file = app_client.get(f"/api/v1/proyectos/{pid}/evaluations/report?fmt={fmt}", headers=headers)
+        assert file.content.startswith(signature)
+        assert f"informe-evaluacion.{fmt}" in file.headers["content-disposition"]
+        assert "Conformidad del comité" in report_text(fmt, file.content)
+    evaluated = app_client.get(f"/api/v1/proyectos/{pid}/evaluations", headers=headers).json()
+    steps = [step["step"] for step in evaluated["items"][0]["trace"]]
+    assert steps[:2] == ["context", "extraction"] and "verdict" in steps and "cost" in steps
 
 
 def test_questions_return_only_real_citations(app_client):
