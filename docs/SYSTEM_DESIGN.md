@@ -127,7 +127,7 @@ La IP solo se toma de `X-Forwarded-For` si `EVALUADOR_CONFIAR_EN_PROXY=true` (Ca
 | `GET, POST /proyectos` | Listar / crear | ver_estado / crear_proyecto |
 | `GET /proyectos/{id}` | Detalle | ver_estado |
 | `POST /proyectos/{id}/transiciones` | Cambiar de estado | según destino |
-| `POST /transcriptions?archivo=` | Foto de un presupuesto (PNG, JPG, WebP; 25 MiB) a Markdown. No guarda la imagen | cargar_documentos |
+| `POST /transcriptions?archivo=` | Foto de un presupuesto (PNG, JPG, WebP; máximo 10 MB) a Markdown. No guarda la imagen | cargar_documentos |
 | `GET /proyectos/{id}/propuestas/{pid}/markdown` | Texto de la propuesta en Markdown: `pdfplumber` (PDF), `openpyxl` (XLSX), IA con visión (imágenes y páginas escaneadas; Tesseract de respaldo, siempre marcado para revisión) | como descargar el archivo |
 | `DELETE /proyectos/{id}` | Borra el proyecto, sus archivos, evaluación, verificaciones y notas. Conserva la auditoría. No si fue adjudicado | crear_proyecto |
 | `DELETE /proyectos/{id}/propuestas/{pid}` | Borra el archivo, su resultado y su verificación. No si el proyecto fue adjudicado o está cerrado | cargar_documentos |

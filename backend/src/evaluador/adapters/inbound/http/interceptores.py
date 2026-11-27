@@ -13,8 +13,7 @@ from starlette.datastructures import Headers, MutableHeaders
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from evaluador.application.use_cases.transcription import MAX_IMAGE_BYTES
-from evaluador.domain.gestion import MAX_BYTES_DOCUMENTO
+from evaluador.domain.gestion import MAX_BYTES_DOCUMENTO, UPLOAD_TOO_LARGE
 from evaluador.observabilidad import contexto
 from evaluador.observabilidad.censura import censurar, censurar_cabeceras
 
@@ -99,7 +98,8 @@ class InterceptorDeTrazabilidad:
             if demasiado_grande:
                 excedido = True
                 respuesta = JSONResponse(
-                    {"codigo": "payload_demasiado_grande", "mensaje": "El cuerpo excede el tamaño máximo.",
+                    {"codigo": "payload_demasiado_grande",
+                     "mensaje": UPLOAD_TOO_LARGE if es_carga else "El cuerpo excede el tamaño máximo.",
                      "track_id": track_id},
                     status_code=413,
                     headers=cabeceras_de_seguridad(produccion=self._produccion, ruta=scope["path"]),
@@ -131,9 +131,8 @@ class InterceptorDeTrazabilidad:
     def _upload_limit(scope: Scope) -> int | None:
         if scope["method"] != "POST":
             return None
-        if scope["path"] == _TRANSCRIPTION_PATH:
-            return MAX_IMAGE_BYTES
-        return MAX_BYTES_DOCUMENTO if _RUTA_DE_CARGA.match(scope["path"]) else None
+        is_upload = scope["path"] == _TRANSCRIPTION_PATH or _RUTA_DE_CARGA.match(scope["path"])
+        return MAX_BYTES_DOCUMENTO if is_upload else None
 
     def _ip(self, scope: Scope, cab: Headers) -> str:
         if self._confiar_en_proxy:

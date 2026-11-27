@@ -15,6 +15,7 @@ import { espacio, radio } from '@/design/tokens';
 import { SelectBox, SelectionChips, type Selection } from '@/features/flow/ProposalSelection';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
 import type { Proyecto } from '@/features/proyectos/api';
+import { MAX_FILE_LABEL } from '@/features/uploads/limits';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
 import { descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from './api';
@@ -75,7 +76,7 @@ export function ZonaDeCarga({ onArchivos, ocupado, compact = false }: { onArchiv
     <View ref={zona} style={{ borderWidth: 2, borderStyle: 'dashed', borderColor: encima ? t.foco : t.bordeControl, backgroundColor: encima ? t.info.fondo : t.superficieAlta, borderRadius: radio.xl, padding: compact ? espacio.md : espacio.xl, alignItems: 'center', gap: espacio.sm }}>
       <Icono nombre="upload-cloud" tamano={compact ? 'lg' : 'xl'} />
       <Texto variante="subtitulo" style={{ textAlign: 'center' }}>Arrastre aquí las propuestas</Texto>
-      <Texto variante="pequeno" suave style={{ textAlign: 'center' }}>PDF, JPG, PNG o XLSX · hasta 10 MB cada una · se cifran con AES-256 al guardarlas</Texto>
+      <Texto variante="pequeno" suave style={{ textAlign: 'center' }}>{`PDF, JPG, PNG o XLSX · máximo ${MAX_FILE_LABEL} por archivo · se cifran con AES-256 al guardarlas`}</Texto>
       <View style={{ flexDirection: 'row' }}>
         <Boton etiqueta="Elegir archivos" icono="paperclip" onPress={elegir} cargando={ocupado} />
       </View>

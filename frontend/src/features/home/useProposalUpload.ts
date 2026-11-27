@@ -4,6 +4,7 @@ import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { showToast } from '@/design/toastStore';
 import { cargarPropuestaApi } from '@/features/gestion/api';
+import { isTooLarge, tooLargeMessage } from '@/features/uploads/limits';
 
 export type UploadState = 'waiting' | 'uploading' | 'saved' | 'rejected';
 export type UploadItem = { key: string; name: string; size: number; state: UploadState; reason?: string };
@@ -34,6 +35,13 @@ export function useProposalUpload(onDone: () => void) {
 
     const rejected: { name: string; reason: string }[] = [];
     for (const [i, file] of files.entries()) {
+      if (isTooLarge(file.size)) {
+        const reason = tooLargeMessage(file.size); // never sent: the server would reject it
+        rejected.push({ name: file.name, reason });
+        update(i, { state: 'rejected', reason });
+        if (rejected.length <= MAX_REJECTION_TOASTS) showToast({ tone: 'error', title: reason, detail: file.name });
+        continue;
+      }
       update(i, { state: 'uploading' });
       try {
         await conSesion(cargarPropuestaApi(projectId, file.name, file));

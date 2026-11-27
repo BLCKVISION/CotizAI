@@ -6,9 +6,8 @@ import logging
 
 from evaluador.application.ports.transcription import ImageTranscriber, Transcription
 from evaluador.domain.errores import DatoInvalido, ErrorDeDominio, PayloadTooLarge, ServicioNoDisponible
+from evaluador.domain.gestion import MAX_BYTES_DOCUMENTO, UPLOAD_TOO_LARGE
 from evaluador.domain.identidad import Permiso, Usuario
-
-MAX_IMAGE_BYTES = 25 * 1024 * 1024
 
 _log = logging.getLogger("evaluador.transcription")
 
@@ -21,8 +20,8 @@ class TranscribeImage:
         actor.exigir(Permiso.CARGAR_DOCUMENTOS)
         if not data:
             raise DatoInvalido("El archivo está vacío.")
-        if len(data) > MAX_IMAGE_BYTES:
-            raise PayloadTooLarge("La imagen excede el tamaño máximo de 25 MiB.")
+        if len(data) > MAX_BYTES_DOCUMENTO:
+            raise PayloadTooLarge(UPLOAD_TOO_LARGE)
         try:
             return self._transcriber(filename, data)
         except ErrorDeDominio:

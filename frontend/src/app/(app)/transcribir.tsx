@@ -10,8 +10,8 @@ import { EncabezadoDePagina, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
 import { type Transcripcion, transcribirImagenApi } from '@/features/transcripcion/api';
 import { VistaTranscripcion } from '@/features/transcripcion/Vista';
+import { isTooLarge, MAX_FILE_LABEL, tooLargeMessage } from '@/features/uploads/limits';
 
-const MAX_BYTES = 25 * 1024 * 1024;
 // Propia de esta pantalla: ACCEPT_PHOTOS la comparten las subidas de propuestas, que no contemplan WebP en sus estadísticas.
 const ACEPTAR_IMAGENES = '.jpg,.jpeg,.png,.webp';
 
@@ -27,8 +27,8 @@ export default function Transcribir() {
   const [copia, setCopia] = useState<'ok' | 'fallo' | null>(null);
 
   const transcribir = async (archivo: File) => {
-    if (archivo.size > MAX_BYTES) {
-      return setEstado({ fase: 'error', mensaje: 'La imagen excede el tamaño máximo de 25 MiB.' });
+    if (isTooLarge(archivo.size)) {
+      return setEstado({ fase: 'error', mensaje: tooLargeMessage(archivo.size) });
     }
     setCopia(null);
     setEstado({ fase: 'cargando', nombre: archivo.name });
@@ -66,7 +66,7 @@ export default function Transcribir() {
         <EstadoVacio
           icono="image"
           titulo="Aún no hay ninguna imagen"
-          descripcion="Formatos admitidos: JPG, PNG y WebP, hasta 25 MiB. Funciona también con fotos algo borrosas."
+          descripcion={`Formatos admitidos: JPG, PNG y WebP, máximo ${MAX_FILE_LABEL}. Funciona también con fotos algo borrosas.`}
           accion={<Boton etiqueta="Elegir imagen" icono="upload" onPress={elegir} />}
         />
       ) : null}

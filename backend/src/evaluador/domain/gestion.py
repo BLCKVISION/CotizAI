@@ -13,7 +13,8 @@ MAX_PROPUESTAS = 20
 MIN_PROPUESTAS = 1
 # A whole project can be analysed at once, as the challenge asks. The batch CLI has no limit.
 MAX_PROPOSALS_PER_RUN = 20
-MAX_BYTES_DOCUMENTO = 10 * 1024 * 1024
+MAX_BYTES_DOCUMENTO = 10 * 1024 * 1024  # every file people upload to the platform
+UPLOAD_TOO_LARGE = "El archivo supera el máximo de 10 MB. Redúzcalo o divídalo y vuelva a intentarlo."
 _NOMBRE_VALIDO = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,150}$")
 # extensión -> firmas válidas al inicio del archivo (el contenido manda, no solo el nombre)
 _FIRMAS: dict[str, tuple[bytes, ...]] = {
@@ -48,7 +49,7 @@ def validar_documento(nombre: str, contenido: bytes) -> str:
     if not contenido:
         raise DatoInvalido("El archivo está vacío.")
     if len(contenido) > MAX_BYTES_DOCUMENTO:
-        raise DatoInvalido("El archivo supera los 10 MB.")
+        raise DatoInvalido(UPLOAD_TOO_LARGE)
     if not contenido.startswith(_FIRMAS[extension]):
         raise DatoInvalido("El contenido no corresponde a la extensión del archivo.")
     return "jpg" if extension == "jpeg" else extension

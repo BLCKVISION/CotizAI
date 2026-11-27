@@ -55,7 +55,7 @@ export async function peticion<T>(ruta: string, { metodo = 'GET', cuerpo, token,
   }
 }
 
-/** Envío o recepción de archivos en binario (sin JSON en el cuerpo). Plazo amplio para documentos de 10 MB. */
+/** Envío o recepción de archivos en binario (sin JSON en el cuerpo). Plazo amplio para el tamaño máximo de carga. */
 export async function peticionBinaria(ruta: string, token: string, cuerpo?: Blob): Promise<Response> {
   const trackId = nuevoTrackId();
   const control = new AbortController();

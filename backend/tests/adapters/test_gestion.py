@@ -45,7 +45,10 @@ def test_rechaza_archivos_invalidos_duplicados_y_sin_permiso(contenedor, tmp_pat
     auditor = cabecera(cliente, rol="auditor")
     assert cliente.post(f"{url}?archivo=c.pdf", content=PDF + b"x", headers=auditor).status_code == 403
     grande = b"%PDF-" + bytes(10 * 1024 * 1024)
-    assert cliente.post(f"{url}?archivo=g.pdf", content=grande, headers=cab).status_code == 413
+    rejected = cliente.post(f"{url}?archivo=g.pdf", content=grande, headers=cab)
+    assert rejected.status_code == 413 and "10 MB" in rejected.json()["mensaje"]
+    exact = b"%PDF-" + bytes(10 * 1024 * 1024 - 5)  # exactly the limit is still accepted
+    assert cliente.post(f"{url}?archivo=justo.pdf", content=exact, headers=cab).status_code == 201
 
 
 def test_estadisticas_proveedores_y_auditoria_encadenada(contenedor, tmp_path):

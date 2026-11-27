@@ -112,12 +112,13 @@ def test_requires_a_session(client):
     assert client.post(f"{URL}?archivo=a.jpg", content=image()).status_code == 401
 
 
-def test_accepts_images_above_the_json_limit_and_rejects_above_25_mib(client, vision):
+def test_accepts_images_above_the_json_limit_and_rejects_above_10_mb(client, vision):
     vision.replies = [ImageMarkdownReading(markdown="ok")]
     padded = image() + b"0" * (2 * 1024 * 1024)
     assert send(client, padded).status_code == 200
-    r = send(client, b"0" * (25 * 1024 * 1024 + 1))
+    r = send(client, b"0" * (10 * 1024 * 1024 + 1))
     assert r.status_code == 413 and r.json()["codigo"] == "payload_demasiado_grande"
+    assert "10 MB" in r.json()["mensaje"]
 
 
 @pytest.mark.parametrize(("size", "long_side"), [((400, 300), MIN_LONG_SIDE), ((5000, 1000), MAX_LONG_SIDE)])
