@@ -2,7 +2,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { usePathname } from 'expo-router';
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 
 import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
@@ -56,6 +56,15 @@ export function CotiChat() {
   const { width, height } = useWindowDimensions();
   const projectId = projectIdFrom(usePathname());
   const [open, setOpen] = useState(false);
+  // The panel stays mounted while it fades out, so closing is as smooth as opening.
+  const [mounted, setMounted] = useState(false);
+  const [progress] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (open) setMounted(true); // eslint-disable-line react-hooks/set-state-in-effect -- mount first so the animation has something to move
+    Animated.timing(progress, { toValue: open ? 1 : 0, duration: open ? 320 : 220, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start(({ finished }) => {
+      if (finished && !open) setMounted(false);
+    });
+  }, [open, progress]);
   const [messages, setMessages] = useState<Message[]>(() => loadMessages(projectId));
   const skipSave = useRef(false); // right after a project switch `messages` still hold the previous project's chat
   const [draft, setDraft] = useState('');
@@ -107,15 +116,25 @@ export function CotiChat() {
     }
   };
 
-  const panelWidth = Math.min(380, width - espacio.md * 2);
+  const BUBBLE = 60;
+  const panelWidth = Math.min(380, width - BUBBLE - espacio.md * 3);
   const panelHeight = Math.min(520, height - 140);
 
   return (
-    <View pointerEvents="box-none" style={{ position: 'absolute', right: espacio.md, bottom: espacio.md, alignItems: 'flex-end', gap: espacio.sm, zIndex: 60 }}>
-      {open ? (
-        <View
+    <View pointerEvents="box-none" style={{ position: 'absolute', right: espacio.md, bottom: espacio.md, flexDirection: 'row', alignItems: 'flex-end', gap: espacio.sm, zIndex: 60 }}>
+      {mounted ? (
+        <Animated.View
+          pointerEvents={open ? 'auto' : 'none'}
           accessibilityViewIsModal={false}
-          style={{ ...vidrio({ opacidad: 0.96, blur: 32, radio: radio.xl }), width: panelWidth, height: panelHeight, overflow: 'hidden' }}
+          style={{
+            ...vidrio({ opacidad: 0.96, blur: 32, radio: radio.xl }),
+            width: panelWidth,
+            height: panelHeight,
+            overflow: 'hidden',
+            opacity: progress,
+            transform: [{ translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [32, 0] }) }, { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }],
+            ...soloWeb({ transformOrigin: 'right bottom' }),
+          }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: espacio.md, gap: espacio.sm, borderBottomWidth: 1, borderBottomColor: t.borde }}>
             <View style={{ width: 36, height: 36, borderRadius: radio.pildora, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
@@ -168,7 +187,7 @@ export function CotiChat() {
             <CampoDeTexto etiqueta="Mensaje para Coti" value={draft} onChangeText={setDraft} maxLength={500} onSubmitEditing={() => void send()} />
             <Boton etiqueta="Enviar" icono="send" cargando={thinking} deshabilitado={draft.trim().length < 2} onPress={() => void send()} />
           </View>
-        </View>
+        </Animated.View>
       ) : null}
 
       <Pressable
@@ -185,14 +204,16 @@ export function CotiChat() {
           backgroundColor: e.pressed || e.hovered ? t.accentPressed : t.accent,
           borderWidth: 2,
           borderColor: e.focused ? t.foco : 'transparent',
-          ...soloWeb({ boxShadow: '0 8px 24px rgba(15,23,42,0.22)', transitionProperty: 'background-color', transitionDuration: '160ms' }),
+          ...soloWeb({ boxShadow: '0 8px 24px rgba(15,23,42,0.22)', transitionProperty: 'background-color, transform', transitionDuration: '260ms', transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)' }),
         })}
       >
-        {open ? (
-          <Icono nombre="x" tamano="lg" color={t.onAccent} />
-        ) : (
+        {/* The two icons cross-fade and turn a little, instead of swapping abruptly. */}
+        <Animated.View style={{ position: 'absolute', opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-90deg'] }) }, { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 0.6] }) }] }}>
           <MaterialCommunityIcons name="robot-happy-outline" size={30} color={t.onAccent} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
-        )}
+        </Animated.View>
+        <Animated.View style={{ position: 'absolute', opacity: progress, transform: [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['90deg', '0deg'] }) }, { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }] }}>
+          <Icono nombre="x" tamano="lg" color={t.onAccent} />
+        </Animated.View>
       </Pressable>
     </View>
   );

@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, ErrorConReintento, Rejilla } from '@/design/bloques';
-import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
+import { CollapsibleCard } from '@/design/Collapsible';
+import { Icono, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { TarjetaDeGrafico } from '@/design/graficos';
 import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
@@ -11,7 +11,6 @@ import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import { estadisticasApi, type Estadisticas } from '@/features/gestion/api';
 import { porEstado, porFormato, porMes, porUbicacion } from '@/features/gestion/datosDeGraficos';
-import { SAMPLE_STATS } from '@/features/gestion/sampleStats';
 import { formatoMonto } from '@/features/proyectos/estados';
 
 const CURRENCY_NAME: Record<string, string> = { USD: 'Dólares (USD)', VES: 'Bolívares (VES)' };
@@ -64,39 +63,38 @@ function Budgets({ budgets }: { budgets: Record<string, string> }) {
 
 export default function StatisticsScreen() {
   const { datos, error, recargar } = useDatos(estadisticasApi);
-  const [sample, setSample] = useState(false);
   const { ancho, dispositivo } = useDispositivo();
   const chartColumns = dispositivo === 'movil' ? 1 : ancho >= FOUR_COLUMNS_FROM ? 4 : 2;
-  const e = sample ? SAMPLE_STATS : datos;
+  const e = datos;
   return (
     <Pagina>
       <EncabezadoDePagina
         sobretitulo="Estadísticas"
         titulo="Estadísticas"
         descripcion="Calculadas con los datos registrados por su organización."
-        accion={<Boton etiqueta={sample ? 'Ver mis datos' : 'Ver con datos de ejemplo'} variante="secundario" icono={sample ? 'arrow-left' : 'eye'} onPress={() => setSample((v) => !v)} />}
       />
-      {sample ? <Aviso tono="aviso" texto="Datos de ejemplo: son cifras inventadas para previsualizar la pantalla. No corresponden a su organización." /> : null}
-      {error && !sample ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
+      {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
       {!e ? (
         error ? null : <Cargando />
       ) : (
-        // The key restarts counters and charts when switching between real and sample data.
-        <View key={sample ? 'sample' : 'real'} style={{ gap: espacio.lg }}>
+        <View style={{ gap: espacio.lg }}>
           <Rejilla>
             <Metrica destacada etiqueta="Proyectos" valor={e.total_proyectos} icono="folder" />
             <Metrica etiqueta="Propuestas" valor={e.total_propuestas} icono="file-text" />
             <Metrica etiqueta="Proveedores" valor={e.total_proveedores} icono="briefcase" />
           </Rejilla>
           <Budgets budgets={e.presupuestos} />
-          {/* A real grid: equal widths in every row, never three on top and one stretched below. */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -espacio.sm, rowGap: espacio.md }}>
-            {charts(e).map((chart) => (
-              <View key={chart.titulo} style={{ width: `${100 / chartColumns}%`, paddingHorizontal: espacio.sm }}>
-                <TarjetaDeGrafico {...chart} />
-              </View>
-            ))}
-          </View>
+          {/* Folded by default: the numbers above already say the essentials. */}
+          <CollapsibleCard title="Gráficos" detail="Por estado, por mes, por ubicación y por formato">
+            {/* A real grid: equal widths in every row, never three on top and one stretched below. */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -espacio.sm, rowGap: espacio.md }}>
+              {charts(e).map((chart) => (
+                <View key={chart.titulo} style={{ width: `${100 / chartColumns}%`, paddingHorizontal: espacio.sm }}>
+                  <TarjetaDeGrafico {...chart} />
+                </View>
+              ))}
+            </View>
+          </CollapsibleCard>
           <Aviso tono="info" texto="Los resultados de cada evaluación (válidas, descartes y costo real) se consultan dentro de su proyecto." />
         </View>
       )}

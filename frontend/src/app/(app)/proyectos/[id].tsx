@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { can } from '@/core/auth/permissions';
 import { ErrorApi } from '@/core/api/cliente';
@@ -15,6 +15,8 @@ import { espacio, radio } from '@/design/tokens';
 import { ProjectFlow } from '@/features/flow/ProjectFlow';
 import { Expediente } from '@/features/gestion/Expediente';
 import { Revision } from '@/features/gestion/Revision';
+import { DeleteProjectDialog } from '@/features/proyectos/DeleteProjectDialog';
+import { canBeDeleted } from '@/features/proyectos/deletion';
 import { obtenerProyectoApi, type Proyecto } from '@/features/proyectos/api';
 import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
@@ -93,12 +95,13 @@ function Dato({ icono, etiqueta, valor }: { icono: Parameters<typeof Icono>[0]['
 export default function DetalleProyecto() {
   const t = useTema();
   const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
-  const { conSesion } = useSesion();
+  const { conSesion, usuario } = useSesion();
+  const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [error, setError] = useState<string | null>(null);
   // `?tab=revision` lets a task open the tab where it is done.
   const [pestana, setPestana] = useState<'propuestas' | 'ficha' | 'revision'>(tab === 'revision' ? 'revision' : 'propuestas');
-  const { usuario } = useSesion();
   const pestanas = [
       { id: 'propuestas', etiqueta: 'Evaluación' },
     { id: 'ficha', etiqueta: 'Ficha y avance' },
@@ -194,6 +197,18 @@ export default function DetalleProyecto() {
             <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => setPestana(x.id)} />
           ))}
         </View>
+        {can(usuario?.rol, 'createProject') && canBeDeleted(proyecto) ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Eliminar proyecto"
+            onPress={() => setDeleting(true)}
+            style={(s: { pressed: boolean; hovered?: boolean; focused?: boolean }) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.xs + 2, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 2, borderColor: s.focused ? t.foco : 'transparent', backgroundColor: s.pressed || s.hovered ? '#B91C1C' : '#DC2626' })}
+          >
+            <Icono nombre="trash-2" tamano="sm" color="#FFFFFF" />
+            <Texto variante="etiqueta" color="#FFFFFF">Eliminar proyecto</Texto>
+          </Pressable>
+        ) : null}
+        <DeleteProjectDialog project={deleting ? proyecto : null} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/proyectos')} />
       </View>
     </View>
   );
