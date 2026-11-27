@@ -46,8 +46,8 @@ válidas. La decisión final es del comité.
   lote que genera `salida.json`.
 - Registro de cuentas: cada una recibe su propia organización aislada (se puede desactivar con
   `EVALUADOR_REGISTRATION_ENABLED=false`).
-- Búsqueda web de precios de mercado (Perplexity Sonar): activa en los despliegues con Docker Compose y
-  desactivable con `EVALUADOR_MARKET_SEARCH_ENABLED=false`. Consulta hasta 5 líneas por propuesta.
+- Búsqueda web de precios de mercado (Perplexity Sonar): implementada y **apagada por defecto** para controlar el
+  costo (`EVALUADOR_MARKET_SEARCH_ENABLED=true` la activa). Consulta hasta 5 líneas por propuesta.
 - Traza por propuesta con los pasos que ejecutó el agente, sus hallazgos, el costo y el veredicto.
 
 **Limitaciones**
@@ -154,7 +154,8 @@ Las versiones exactas están en [`backend/requirements.txt`](backend/requirement
   `frontend/src/design/icons/paths.ts`.
 - *Favicon*, isotipo y logotipo de CotizAI: propios del equipo (originales en `img/`).
 - Íconos de aplicación móvil en `frontend/assets/`: los de la plantilla de Expo.
-- Logotipo, isotipo e imagen de acceso (`img/`, `frontend/assets/brand/`): [COMPLETAR ORIGEN, AUTOR Y LICENCIA].
+- Logotipo de CotizAI (`img/`, `frontend/assets/brand/`): diseño propio de Albert Fonseca, diseñador gráfico del equipo,
+  hecho en Figma.
 
 **Modelos, APIs y servicios externos**
 
@@ -174,7 +175,6 @@ Las versiones exactas están en [`backend/requirements.txt`](backend/requirement
 **Asistentes de inteligencia artificial usados en el desarrollo**
 
 - Claude Code (modelos Claude de Anthropic): código, pruebas y documentación.
-- [COMPLETAR: otras herramientas de IA, *plugins* o generadores de diseño que haya usado el equipo.]
 
 ## Flujo guiado
 

@@ -15,3 +15,5 @@ dist/
 Today/
 # Private notes kept next to the project: never publish.
 ignorar/
+# Local test images: not part of the delivery.
+Datasets/
