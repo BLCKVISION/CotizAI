@@ -10,6 +10,8 @@ from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severi
 _PATRONES = [
     r"\bignor[ae]\s+(todas?\s+)?(las\s+)?(instrucciones|reglas)\b",
     r"\bignore\s+(all\s+)?(previous|prior|above)\s+instructions\b",
+    # "ignora cualquier instrucción previa": requires "previous/earlier", which an honest quote has no reason to say
+    r"\bignor[ae]n?\s+(cualquier|toda|todas\s+las|las)\s+instrucci(ón|on|ones)\s+(previas?|anteriores?)\b",
     r"\b(eres|act[uú]a\s+como|you\s+are\s+now)\s+(un|una|el|la|a|an|the)\b",
     r"\b(califica|punt[uú]a|rate|score)\b\s+.{0,40}(m[aá]xim|perfect|10/10|\b100\b)",
     r"\bno\s+(descartes|descalifiques)\s+esta\s+propuesta\b",

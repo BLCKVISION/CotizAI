@@ -12,6 +12,8 @@ from evaluador.domain.errores import DatoInvalido
 
 MAX_PAGINAS = 100
 TAMANO_MINIMO_PT = 4.0  # por debajo de esto un humano no lo lee en una página normal
+# Some PDFs draw a glyph twice to fake bold. Below the advance of a narrow letter, even in 3 pt text.
+DUPLICATE_GLYPH_TOLERANCE_PT = 0.4
 
 
 def _es_blanco(color: Any) -> bool:
@@ -41,7 +43,8 @@ def leer_pdf(datos: bytes, *, max_paginas: int = MAX_PAGINAS) -> ContenidoLeido:
         with pdfplumber.open(io.BytesIO(datos)) as pdf:
             if len(pdf.pages) > max_paginas:
                 raise DatoInvalido("El PDF excede el máximo de páginas permitido.")
-            for n, pagina in enumerate(pdf.pages, start=1):
+            for n, original in enumerate(pdf.pages, start=1):
+                pagina = original.dedupe_chars(tolerance=DUPLICATE_GLYPH_TOLERANCE_PT)
                 motivos = {id(c): _motivo_oculto(c, pagina) for c in pagina.chars}
                 visible = pagina.filter(lambda o, mt=motivos: o.get("object_type") != "char" or mt.get(id(o)) is None)
                 texto = (visible.extract_text() or "").strip()

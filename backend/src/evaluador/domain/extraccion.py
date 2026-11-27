@@ -5,9 +5,10 @@ El modelo solo transcribe; nunca recalcula. `null` (None) significa Â«no constaÂ
 
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class _Base(BaseModel):
@@ -30,6 +31,20 @@ def _blank_amount_as_missing(value: object) -> object:
     return value
 
 
+_INCLUDED_WORDS = frozenset({"incluido", "incluida", "incluidos", "incluidas", "included"})
+
+
+def _means_included(value: str) -> bool:
+    return value.strip().strip(".").lower() in _INCLUDED_WORDS
+
+
+def _is_zero(value: str) -> bool:
+    try:
+        return Decimal(value.strip()) == 0
+    except InvalidOperation:
+        return False
+
+
 class Evidencia(_Base):
     pagina_o_celda: str = ""
     texto: str = ""
@@ -48,6 +63,14 @@ class Linea(_Base):
     legibilidad: Literal["alta", "media", "baja"] = "alta"
 
     _blank = field_validator("cantidad", "precio_unitario", "total_linea", mode="before")(_blank_amount_as_missing)
+
+    @model_validator(mode="after")
+    def _included_unit_price_is_zero(self) -> Linea:
+        """"Included" as the unit price of a line that totals zero is a price of zero, not an unreadable amount."""
+        price, total = self.precio_unitario, self.total_linea
+        if price is not None and total is not None and _is_zero(total.valor) and _means_included(price.valor):
+            self.precio_unitario = Monto(literal=price.literal, valor="0")
+        return self
 
     @field_validator("especificaciones", mode="before")
     @classmethod

@@ -7,6 +7,7 @@ especificación en una fuente técnica antes de concluir).
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -69,6 +70,40 @@ def _comparar_texto(n: int, linea: Linea, par: _ParDeTexto) -> list[Hallazgo]:
     return []
 
 
+_STATED_SOCKET = re.compile(r"\b(?:socket|zocalo)\s*:?\s*((?:lga|am|fm|str|tr|sp)\s*-?\s*\d{1,4}[a-z]?)\b")
+_PROCESSOR_WORDS = re.compile(
+    r"\b(?:cpu|procesador|ryzen|athlon|threadripper|xeon|pentium|celeron|core\s+(?:ultra|i\d))\b"
+)
+_BOARD_WORDS = re.compile(r"\b(?:placa|tarjeta\s+madre|motherboard|mainboard|board|[abhqxz][1-9]\d0[a-z]?)\b")
+
+
+def _stated_sockets(linea: Linea) -> dict[str, str]:
+    """Sockets the document writes out for both the processor and the board of one line.
+
+    Models do not reliably use the canonical keys, so this reads each specification and each part of the quoted
+    text. It answers only when both sides are unambiguous: otherwise nothing is added, not even a review notice.
+    """
+    parts = [f"{key}: {value}" for key, value in linea.especificaciones.items()]
+    parts += re.split(r"[|\n]", linea.evidencia.texto)
+    found: dict[str, set[str]] = {esp.SOCKET_CPU: set(), esp.SOCKET_PLACA: set()}
+    for part in parts:
+        text = esp.sin_acentos(part).lower()
+        sockets = {esp.normalizar_texto(s) for s in _STATED_SOCKET.findall(text)}
+        processor, board = bool(_PROCESSOR_WORDS.search(text)), bool(_BOARD_WORDS.search(text))
+        if len(sockets) == 1 and processor != board:  # a part naming both or neither says nothing about which
+            found[esp.SOCKET_CPU if processor else esp.SOCKET_PLACA] |= sockets
+    if any(len(values) != 1 for values in found.values()):
+        return {}
+    return {key: f"Socket {values.pop().upper()}" for key, values in found.items()}
+
+
+def _with_stated_sockets(linea: Linea) -> Linea:
+    if linea.especificaciones.get(esp.SOCKET_CPU) and linea.especificaciones.get(esp.SOCKET_PLACA):
+        return linea  # the extraction already gave both
+    stated = _stated_sockets(linea)
+    return linea.model_copy(update={"especificaciones": linea.especificaciones | stated}) if stated else linea
+
+
 def _comparar_gpu(n: int, linea: Linea) -> list[Hallazgo]:
     tarjeta, maximo = linea.especificaciones.get(esp.LONGITUD_GPU_MM), linea.especificaciones.get(esp.MAX_GPU_MM)
     if tarjeta is None and maximo is None:
@@ -89,7 +124,8 @@ def _comparar_gpu(n: int, linea: Linea) -> list[Hallazgo]:
 
 def validar_compatibilidad(e: ExtraccionPropuesta) -> list[Hallazgo]:
     hallazgos: list[Hallazgo] = []
-    for n, linea in enumerate(e.lineas, start=1):
+    for n, original in enumerate(e.lineas, start=1):
+        linea = _with_stated_sockets(original)
         for par in _PARES:
             hallazgos += _comparar_texto(n, linea, par)
         hallazgos += _comparar_gpu(n, linea)
