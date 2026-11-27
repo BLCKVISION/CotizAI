@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 
 import { can } from '@/core/auth/permissions';
-import { pickFiles, ACCEPT_DOCUMENTS, ACCEPT_PHOTOS } from '@/core/files';
+import { pickFiles, saveFile, ACCEPT_DOCUMENTS, ACCEPT_PHOTOS } from '@/core/files';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
@@ -21,7 +21,7 @@ import { downloadReportApi, getReviewsApi, type ReportFormat, sendReviewApi } fr
 import { EvaluationProcess } from '@/features/evaluations/EvaluationProcess';
 import { RatePanel } from '@/features/evaluations/RatePanel';
 import { useProjectEvaluation } from '@/features/evaluations/useProjectEvaluation';
-import { propuestasApi } from '@/features/gestion/api';
+import { descargarPropuestaApi, type Propuesta, propuestasApi } from '@/features/gestion/api';
 import { Expediente, ZonaDeCarga } from '@/features/gestion/Expediente';
 import { MarkdownDialog } from '@/features/gestion/MarkdownDialog';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
@@ -31,6 +31,7 @@ import { UploadFlow } from '@/features/uploads/UploadFlow';
 import { DocumentTile } from './DocumentTile';
 import { currentStep, defaultSelection, EVALUATION_STEPS, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
 import { PreparationHero } from './PreparationHero';
+import { ProjectDocuments } from './ProjectDocuments';
 import { ResultStep } from './ResultStep';
 import { Stepper } from './Stepper';
 import { VERDICT_TONE, VerdictSheet } from './VerdictSheet';
@@ -135,14 +136,17 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
 
   const download = async (format: ReportFormat) => {
     try {
-      const url = URL.createObjectURL(await conSesion(downloadReportApi(project.id, format)));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `informe-evaluacion.${format}`;
-      link.click();
-      URL.revokeObjectURL(url);
+      saveFile(await conSesion(downloadReportApi(project.id, format)), `informe-evaluacion.${format}`);
     } catch (e) {
       showToast({ tone: 'error', title: mensajeDeError(e) });
+    }
+  };
+
+  const downloadDocument = async (proposal: Propuesta) => {
+    try {
+      saveFile(await conSesion(descargarPropuestaApi(project.id, proposal.id)), proposal.archivo);
+    } catch (e) {
+      showToast({ tone: 'error', title: mensajeDeError(e), detail: proposal.archivo });
     }
   };
 
@@ -181,6 +185,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       <>
         {addButton}
         {evaluateOthers}
+        {seesResults && Platform.OS === 'web' ? <Boton etiqueta="Descargar informe (PDF)" icono="download" variante="secundario" onPress={() => void download('pdf')} /> : null}
         {pending.length === 0 && seesResults ? <Boton etiqueta="Ver la respuesta final" icono="arrow-right" onPress={() => goTo('result')} /> : null}
       </>
     );
@@ -219,6 +224,29 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
     </View>
   );
 
+  const documentsPanel = open ? (
+    <ProjectDocuments
+      proposals={list}
+      evaluatedIds={[...evaluated]}
+      verifiedIds={decisions.map((d) => d.proposal_id)}
+      currentId={open.proposal_id}
+      onDownload={(proposal) => void downloadDocument(proposal)}
+      onSelect={(proposal, status) => {
+        if (status === 'new') return setViewing(proposal.id); // no evaluation yet: show the document itself
+        setOpenId(proposal.id);
+        setComment('');
+      }}
+    />
+  ) : null;
+
+  const openFile = list.find((proposal) => proposal.id === open?.proposal_id);
+  const downloadCurrent =
+    openFile && Platform.OS === 'web' ? (
+      <Boton etiqueta="Descargar documento" icono="download" variante="secundario" onPress={() => void downloadDocument(openFile)} />
+    ) : null;
+  // Uploaded but not analysed yet: shown at the top, so adding a file is seen at once.
+  const waiting = results ? list.filter((proposal) => !evaluated.has(proposal.id)) : [];
+
   const autoStart = evaluar === '1' && !autoDone && canEvaluate && list.length > 0 && !hasEvaluation && !running;
 
   return (
@@ -246,8 +274,25 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       {verifying ? (
         <View style={{ flex: 1, minHeight: wide ? 0 : 620, gap: espacio.sm }}>
           {/* With several proposals, a row to move between them; the width below is for reading. */}
-          {items.length > 1 ? (
+          {items.length + waiting.length > 1 ? (
             <ScrollView horizontal style={{ flexGrow: 0 }} contentContainerStyle={{ gap: espacio.sm }}>
+              {waiting.map((proposal) => (
+                <Pressable
+                  key={proposal.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver el archivo nuevo ${proposal.archivo}, sin analizar`}
+                  onPress={() => setViewing(proposal.id)}
+                  style={(e: PressState) => ({ width: 250, flexDirection: 'row', alignItems: 'center', gap: espacio.sm, padding: espacio.sm, borderRadius: radio.lg, borderWidth: 2, borderStyle: 'dashed', borderColor: e.focused ? t.foco : t.aviso.texto, backgroundColor: e.hovered ? '#FFFFFF' : t.aviso.fondo })}
+                >
+                  <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+                    <Icono nombre="file-text" tamano="sm" color={t.aviso.texto} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Texto variante="etiqueta" numberOfLines={1}>{proposal.archivo}</Texto>
+                    <Texto variante="pequeno" color={t.aviso.texto} numberOfLines={1}>Nuevo · sin analizar</Texto>
+                  </View>
+                </Pressable>
+              ))}
               {items.map((i) => {
                 const look = VERDICT_TONE[i.verdict];
                 const mine = decisionFor(i.proposal_id);
@@ -286,7 +331,9 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
             <View style={{ flex: 1, minHeight: 0, flexDirection: 'row', gap: espacio.md }}>
               <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 2, minWidth: 220, borderRadius: radio.xl }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
                 <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
+                {downloadCurrent}
                 {canDecide ? decisionPanel : null}
+                {documentsPanel}
               </ScrollView>
               <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 8, minWidth: 0, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
                 <Entrada>
@@ -298,6 +345,8 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
             <ScrollView key={open.proposal_id} style={{ flex: 1 }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
               <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
               <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
+              {downloadCurrent}
+              {documentsPanel}
             </ScrollView>
           )}
         </View>
