@@ -54,9 +54,27 @@ services:
     depends_on:
       db: { condition: service_healthy }
 
+  # Almacén de objetos para los archivos de presupuestos. Red interna; la consola solo en loopback (túnel SSH).
+  # La API cifra cada archivo (AES-256-GCM) ANTES de subirlo: aquí nunca hay contenido legible.
+  minio:
+    <<: *endurecido
+    image: cgr.dev/chainguard/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?defina MINIO_ROOT_USER en infra/.env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?defina MINIO_ROOT_PASSWORD en infra/.env}
+    read_only: true
+    tmpfs: [/tmp]
+    volumes:
+      - minio_data:/data
+    ports:                            # solo loopback: consola (túnel SSH) y API S3 (pruebas); nunca a internet
+      - "127.0.0.1:19001:9001"
+      - "127.0.0.1:19000:9000"
+    networks: [interna]
 
 networks:
   interna: {}
 volumes:
   pgdata:
   modelos:
+  minio_data:
