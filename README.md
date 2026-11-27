@@ -6,11 +6,11 @@ Hackatón Venezuela INNOVA 2026 · Reto grupal (IA, Desarrollo de Software y Cib
 
 | Nombre completo | Rol |
 |---|---|
-| Emanuel [COMPLETAR APELLIDO] | [COMPLETAR ROL] |
-| Albert [COMPLETAR APELLIDO] | [COMPLETAR ROL] |
-| Deivy [COMPLETAR APELLIDO] | [COMPLETAR ROL] |
-| Nikolas [COMPLETAR APELLIDO] | [COMPLETAR ROL] |
-| [COMPLETAR NOMBRE] | [COMPLETAR ROL] |
+| Emanuel Jimenez | Backend |
+| Albert Fonseca | Frontend |
+| Deivy Morales | Infraestructura |
+| Nikolas Rivas | Infraestructura |
+| Aristides Rodriguez | UA |
 
 ## Descripción del proyecto
 
@@ -36,7 +36,7 @@ válidas. La decisión final es del comité.
 
 **Implementado**
 
-- Proyectos con estados, usuarios con cuatro roles, directorio de proveedores y auditoría con huellas encadenadas.
+- Proyectos con estados, usuarios con cinco roles, directorio de proveedores y auditoría con huellas encadenadas.
 - Carga de hasta 20 propuestas por proyecto, cifradas con AES-256-GCM. La plataforma analiza hasta 20 a la vez; el modo
   lote procesa todos los archivos.
 - Lectura de PDF, PDF escaneado, imágenes y XLSX (incluye contenido oculto).
