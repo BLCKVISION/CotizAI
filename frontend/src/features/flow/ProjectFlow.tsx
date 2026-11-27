@@ -22,12 +22,13 @@ import { RatePanel } from '@/features/evaluations/RatePanel';
 import { useProjectEvaluation } from '@/features/evaluations/useProjectEvaluation';
 import { propuestasApi } from '@/features/gestion/api';
 import { Expediente } from '@/features/gestion/Expediente';
+import { MarkdownDialog } from '@/features/gestion/MarkdownDialog';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
 import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
-import { DocumentPanel } from './DocumentPanel';
-import { currentStep, defaultSelection, EVALUATION_STEPS, highlightTerms, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
+import { DocumentTile } from './DocumentTile';
+import { currentStep, defaultSelection, EVALUATION_STEPS, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
 import { PreparationHero } from './PreparationHero';
 import { ResultStep } from './ResultStep';
 import { Stepper } from './Stepper';
@@ -61,6 +62,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [showProcess, setShowProcess] = useState(false);
+  const [viewing, setViewing] = useState<string | null>(null);
 
   if (proposals.error) return <ErrorConReintento texto={proposals.error} onReintentar={proposals.recargar} />;
   if (!proposals.datos || loading) return <Cargando />;
@@ -253,7 +255,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
           {wide ? (
             <View style={{ flex: 1, minHeight: 0, flexDirection: 'row', gap: espacio.md }}>
               <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 9, borderRadius: radio.xl }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
-                <DocumentPanel projectId={project.id} proposalId={open.proposal_id} filename={open.filename} terms={highlightTerms(open)} />
+                <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
                 {canDecide ? decisionPanel : null}
               </ScrollView>
               <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 11, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
@@ -265,7 +267,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
           ) : (
             <ScrollView key={open.proposal_id} style={{ flex: 1 }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
               <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
-              <DocumentPanel projectId={project.id} proposalId={open.proposal_id} filename={open.filename} terms={highlightTerms(open)} />
+              <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
             </ScrollView>
           )}
         </View>
@@ -356,6 +358,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       </View>
       )}
 
+      <MarkdownDialog projectId={project.id} proposal={list.find((p) => p.id === viewing) ?? null} onClose={() => setViewing(null)} />
       <UploadFlow visible={upload.visible} items={upload.items} busy={upload.busy} onClose={upload.close} />
       <EvaluationProcess
         visible={showProcess}
