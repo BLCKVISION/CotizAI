@@ -64,6 +64,9 @@ class Conditions(_Base):
 
 class ProposalExtraction(_Base):
     supplier: str | None = None
+    supplier_rif: str | None = None
+    supplier_location: str | None = None
+    supplier_contact: str | None = None
     currency: str | None = None
     lines: list[Line] = Field(default_factory=list)
     totals: Totals = Field(default_factory=Totals)

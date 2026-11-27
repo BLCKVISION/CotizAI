@@ -27,5 +27,5 @@ plugins = ["pydantic.mypy"]
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]
-module = ["openpyxl.*", "pdfplumber.*"]
+module = ["openpyxl.*", "pdfplumber.*", "reportlab.*"]
 ignore_missing_imports = true

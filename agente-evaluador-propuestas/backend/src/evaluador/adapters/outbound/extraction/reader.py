@@ -54,7 +54,7 @@ def read_document(name: str, data: bytes, vision: VisionModel | None = None) -> 
     if _type_by_content(data) != expected:
         raise InvalidData("El contenido del archivo no corresponde a su extensión.")
     if expected == "pdf":
-        return read_pdf(data)
+        return read_pdf(data, vision=vision)
     if expected == "xlsx":
         return read_xlsx(data)
     if vision is None:

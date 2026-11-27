@@ -9,7 +9,7 @@ from typing import Protocol
 
 from evaluador.application.ports.agent import Embedder, EvaluationEngine, LanguageModel, VectorIndex
 from evaluador.application.ports.documents import ReadContent
-from evaluador.domain.cost import compute_real_cost
+from evaluador.domain.cost import RealCost, compute_real_cost
 from evaluador.domain.errors import InvalidData
 from evaluador.domain.evaluation import EvaluationResult, Verdict
 from evaluador.domain.rag import Chunk, chunk
@@ -32,6 +32,8 @@ class Evaluation:
     score: Decimal | None = None  # solo para válidas
     real_cost: Decimal | None = None  # None = indeterminado
     currency: str | None = None
+    rubric: ScoredRubric | None = None  # puntaje por criterio con su evidencia (solo válidas)
+    cost: RealCost | None = None  # desglose paso a paso; se calcula siempre que haya extracción
 
 
 class ProposalEvaluator(Protocol):
@@ -68,11 +70,12 @@ class EvaluateFile:
         finally:  # en memoria: no se acumula contenido de propuestas ya evaluadas
             self._index.delete_proposal(tenant_id=BATCH_TENANT, proposal_id=proposal_id)
         if r.verdict is not Verdict.VALID or r.extraction is None:
-            return Evaluation(r)
+            # Una descartada también muestra su desglose de costo: el comité debe poder verlo.
+            return Evaluation(r, cost=compute_real_cost(r.extraction) if r.extraction else None)
         rubric = self._model.structure(
             instructions=_INSTR_RUBRIC,
             untrusted_content=text[:_MAX_RUBRIC_CHARS],
             schema=ScoredRubric,
         )
         cost = compute_real_cost(r.extraction)
-        return Evaluation(r, total_score(rubric), cost.total, r.extraction.currency)
+        return Evaluation(r, total_score(rubric), cost.total, r.extraction.currency, rubric=rubric, cost=cost)

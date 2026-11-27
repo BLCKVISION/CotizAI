@@ -57,12 +57,13 @@ class MarketReference:
     unit_price: Decimal
     currency: str
     sources: int  # cuántas fuentes independientes respaldan el precio
+    citation: str = ""  # referencias citadas (fuentes y precios): va en la evidencia del hallazgo
 
 
 @dataclass(frozen=True, slots=True)
 class AbuseParams:
     overprice_threshold: Decimal = Decimal("0.30")  # 30 % sobre el precio de mercado
-    min_sources: int = 2
+    min_sources: int = 2  # fuentes distintas necesarias para descartar; nunca menos de 2 (ver MIN_SOURCES_TO_DISCARD)
     freight_threshold: Decimal = Decimal("0.15")  # 15 % de la base
 
     def __post_init__(self) -> None:
@@ -70,17 +71,51 @@ class AbuseParams:
             raise InvalidData("Parámetros de abuso inválidos.")
 
 
+MIN_SOURCES_TO_DISCARD = 2  # una sola referencia jamás descarta por precio, aunque se configure 1
+
+
 def _pct(fraction: Decimal) -> str:
     return f"{(fraction * 100).normalize():f}"
 
 
-def _finding(reason: str, quote: str, *, discards: bool = True, code: FindingCode = FindingCode.ABUSIVO) -> Finding:
-    severity = Severity.CRITICAL if discards else Severity.WARNING
-    return Finding(code, severity, discards, reason, quote[:200], Origin.RULE)
+def _finding(
+    reason: str,
+    quote: str,
+    *,
+    discards: bool = True,
+    code: FindingCode = FindingCode.ABUSIVO,
+    severity: Severity | None = None,
+    limit: int = 200,
+) -> Finding:
+    severity = severity or (Severity.CRITICAL if discards else Severity.WARNING)
+    return Finding(code, severity, discards, reason, quote[:limit], Origin.RULE)
 
 
-def _overprices(e: ProposalExtraction, references: Mapping[int, MarketReference], p: AbuseParams) -> list[Finding]:
+def _not_enough_reference(n: int, found: int, needed: int, quote: str, citation: str = "") -> Finding:
+    """Informativo: sin referencias suficientes no se juzga el precio (y no se trata como cero ni como abuso)."""
+    evidence = f"{citation} | {quote}" if citation else quote
+    return _finding(
+        f"Línea {n}: sin referencia suficiente de mercado ({found} de {needed} fuentes); no se puede juzgar el precio.",
+        evidence,
+        discards=False,
+        severity=Severity.INFO,
+        limit=400,
+    )
+
+
+def _overprices(
+    e: ProposalExtraction,
+    references: Mapping[int, MarketReference],
+    p: AbuseParams,
+    unreferenced: Mapping[int, int],
+) -> list[Finding]:
     findings: list[Finding] = []
+    needed = max(p.min_sources, MIN_SOURCES_TO_DISCARD)
+    for n, found in sorted(unreferenced.items()):
+        if not 1 <= n <= len(e.lines):
+            raise InvalidData(f"Referencia de mercado para una línea inexistente ({n}).")
+        ln = e.lines[n - 1]
+        findings.append(_not_enough_reference(n, found, needed, ln.evidence.text or ln.description))
     for n, ref in sorted(references.items()):
         if not 1 <= n <= len(e.lines):
             raise InvalidData(f"Referencia de mercado para una línea inexistente ({n}).")
@@ -108,10 +143,18 @@ def _overprices(e: ProposalExtraction, references: Mapping[int, MarketReference]
                 f"Línea {n}: precio {price} supera en {excess.quantize(Decimal('0.1'))} % al de mercado "
                 f"({ref.unit_price}; umbral {_pct(p.overprice_threshold)} %)."
             )
-            if ref.sources >= p.min_sources:
-                findings.append(_finding(reason, quote))
+            evidence = f"{ref.citation} | {quote}" if ref.citation else quote
+            if ref.sources >= needed:
+                findings.append(_finding(reason, evidence, limit=400))
             else:
-                findings.append(_finding(reason + " Una sola fuente no basta para descartar.", quote, discards=False))
+                why = (
+                    "Una sola fuente no basta para descartar."
+                    if ref.sources <= 1
+                    else f"Solo {ref.sources} de {needed} fuentes: referencia insuficiente para descartar."
+                )
+                findings.append(_finding(f"{reason} {why}", evidence, discards=False, limit=400))
+        elif ref.sources < needed:
+            findings.append(_not_enough_reference(n, ref.sources, needed, quote, ref.citation))
     return findings
 
 
@@ -147,6 +190,8 @@ def validate_abuse(
     e: ProposalExtraction,
     references: Mapping[int, MarketReference] | None = None,
     p: AbuseParams | None = None,
+    unreferenced: Mapping[int, int] | None = None,
 ) -> list[Finding]:
+    """`unreferenced`: línea -> cuántas referencias comparables se hallaron (menos de las necesarias)."""
     p = p or AbuseParams()
-    return [*_overprices(e, references or {}, p), *_freight(e, p), *_clauses(e)]
+    return [*_overprices(e, references or {}, p, unreferenced or {}), *_freight(e, p), *_clauses(e)]

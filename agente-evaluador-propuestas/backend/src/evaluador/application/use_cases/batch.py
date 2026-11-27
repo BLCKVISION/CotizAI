@@ -12,7 +12,7 @@ import time
 from collections import Counter
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from pathlib import PurePath
@@ -41,6 +41,7 @@ class BatchResult:
     end: datetime
     processed: tuple[Processed, ...]
     ranking: tuple[str, ...]
+    evaluations: dict[str, Evaluation] = field(default_factory=dict)  # por proposal_id; ausentes = no se pudo leer
 
 
 def _unique_ids(files: list[str]) -> list[str]:
@@ -103,4 +104,10 @@ class ProcessBatch:
             if verdict is Verdict.VALID and (e is None or e.score is None):
                 verdict = Verdict.PENDING_REVIEW  # válida sin puntaje no se puede ordenar: revisión humana
             candidates.append(Candidate(p.proposal_id, verdict, e.score if e else None, cost))
-        return BatchResult(start, self._clock(), tuple(p for p, _ in outputs), sort_ranking(candidates))
+        return BatchResult(
+            start,
+            self._clock(),
+            tuple(p for p, _ in outputs),
+            sort_ranking(candidates),
+            {p.proposal_id: e for p, e in outputs if e is not None},
+        )
