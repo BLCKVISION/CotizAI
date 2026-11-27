@@ -107,7 +107,7 @@ ejecutar `./infra/deploy.sh todo`.
 
 ### Modo lote (`salida.json`)
 
-Haga commit antes: `salida.json` registra el commit actual.
+Haga commit antes: `salida.json` registra el commit actual. Para el lote oficial se usó `EVALUADOR_IA_MODELO=google/gemini-2.5-flash`.
 
 ```bash
 cd backend
@@ -159,7 +159,8 @@ Las versiones exactas están en [`backend/requirements.txt`](backend/requirement
 
 **Modelos, APIs y servicios externos**
 
-- OpenRouter: `google/gemini-2.5-flash-lite` (texto y visión) y, si se activa la búsqueda de precios,
+- OpenRouter: `google/gemini-2.5-flash` para el modo lote del lote oficial (`salida.json`), porque lee mejor las
+  cotizaciones desglosadas por componente; `google/gemini-2.5-flash-lite` (texto y visión) y, si se activa la búsqueda de precios,
   `perplexity/sonar`.
 - Compatible también con Anthropic y con Ollama (modelo por defecto: `qwen2.5:7b`).
 - *Embeddings* locales: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`.
