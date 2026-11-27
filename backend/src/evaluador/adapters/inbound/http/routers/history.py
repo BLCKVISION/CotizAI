@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 
 from evaluador.adapters.inbound.http.guards import sesion_actual
 from evaluador.adapters.inbound.http.routers.proyectos import ProyectoId
-from evaluador.adapters.outbound.reportes.evaluation_report import render_csv_report, render_markdown_report
+from evaluador.adapters.outbound.reportes.assistant_report import ReportFileRenderer
+from evaluador.application.ports.assistant import REPORT_MEDIA_TYPES
 from evaluador.application.use_cases.autenticacion import SesionAutenticada
 from evaluador.domain.supplier_history import SupplierRecord
 
@@ -48,17 +49,13 @@ def run_report(
     run_id: ProyectoId,
     request: Request,
     session: Session,
-    fmt: Annotated[Literal["md", "csv"], Query()] = "md",
+    fmt: Annotated[Literal["pdf", "xlsx", "md", "csv"], Query()] = "pdf",
 ) -> Response:
     container = request.app.state.contenedor
     run = container.evaluation_history.run(session.usuario, proyecto_id, run_id)
     project = container.obtener_proyecto.ejecutar(session.usuario, proyecto_id)
-    if fmt == "csv":
-        body, media_type = "﻿" + render_csv_report(run), "text/csv"  # BOM: Excel reads accents
-    else:
-        body, media_type = render_markdown_report(run, project.nombre), "text/markdown"
     return Response(
-        body,
-        media_type=f"{media_type}; charset=utf-8",
+        ReportFileRenderer().evaluation(run, project.nombre, fmt),
+        media_type=REPORT_MEDIA_TYPES[fmt],
         headers={"Content-Disposition": f'attachment; filename="informe-{run.creado:%Y%m%d-%H%M}.{fmt}"'},
     )

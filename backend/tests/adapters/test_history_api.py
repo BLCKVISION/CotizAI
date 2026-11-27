@@ -23,8 +23,11 @@ def test_every_run_is_kept_and_its_report_can_be_downloaded(app_client):  # noqa
     runs = _get(app_client, f"proyectos/{project}/evaluation-runs").json()
     assert len(runs) == 2 and {r["proposals"] for r in runs} == {2}
     assert runs[0]["recommended"] == "alfa.pdf" and runs[0]["evaluated_by"] == "evaluador@alfa.test"
-    report = _get(app_client, f"proyectos/{project}/evaluation-runs/{runs[1]['id']}/report")
+    path = f"proyectos/{project}/evaluation-runs/{runs[1]['id']}/report"
+    report = _get(app_client, f"{path}?fmt=md")
     assert report.status_code == 200 and "alfa.pdf" in report.text
+    assert _get(app_client, path).content.startswith(b"%PDF-")
+    assert _get(app_client, f"{path}?fmt=xlsx").content.startswith(b"PK")
     # Removing a file edits the current result; the earlier runs stay as they were.
     assert _delete(app_client, f"{project}/propuestas/{ids['gamma.pdf']}").status_code == 204
     assert [r["proposals"] for r in _get(app_client, f"proyectos/{project}/evaluation-runs").json()] == [2, 2]

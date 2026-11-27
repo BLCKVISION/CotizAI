@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from evaluador.adapters.inbound.http.guards import LimitadorDeVentana
+from evaluador.composition.semillas import sembrar_demo
 from tests.conftest import CLAVE, cabecera
 
 PASSWORD = "Equipo-Seguro-2026!"
@@ -64,3 +67,12 @@ def test_weak_passwords_and_taken_emails_are_rejected(cliente):
         assert cliente.post("/api/v1/team", json={**NEW, "email": email}, headers=boss).status_code == 422
     roles = {r["role"]: r["permissions"] for r in cliente.get("/api/v1/team", headers=boss).json()["roles"]}
     assert "manage_team" in roles["coordinador"] and "adjudicar_o_cerrar" not in roles["coordinador"]
+
+
+def test_a_disabled_demo_account_stays_disabled_after_seeding_again(contenedor):
+    sembrar_demo(contenedor, CLAVE)
+    auditor = contenedor.usuarios.por_correo("auditor@demo.local")
+    contenedor.usuarios.guardar(replace(auditor, activo=False))
+    sembrar_demo(contenedor, CLAVE)  # what a restart does when accounts are persisted
+    assert contenedor.usuarios.por_correo("auditor@demo.local").activo is False
+    assert contenedor.usuarios.por_correo("evaluador@demo.local").activo is True

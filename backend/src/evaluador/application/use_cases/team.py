@@ -8,7 +8,8 @@ from dataclasses import replace
 from evaluador.application.ports.salida import Auditoria, GeneradorDeIds, HasheadorDeContrasenas, UsuarioRepositorio
 from evaluador.domain.errores import DatoInvalido, NoEncontrado
 from evaluador.domain.identidad import Permiso, Rol, Usuario
-from evaluador.domain.team import MAX_MEMBERS, require_strong_password, require_valid_email
+from evaluador.domain.passwords import require_strong_password
+from evaluador.domain.team import MAX_MEMBERS, require_valid_email
 
 _EMAIL_TAKEN = "No se puede usar ese correo. Pruebe con otro."
 
