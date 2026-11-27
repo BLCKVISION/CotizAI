@@ -7,7 +7,7 @@ from collections import Counter
 from decimal import Decimal
 
 from evaluador.domain.errores import DatoInvalido, NoEncontrado, ServicioNoDisponible, TransicionInvalida
-from evaluador.domain.gestion import MAX_PROPUESTAS, Nota, Propuesta, Proveedor, validar_documento
+from evaluador.domain.gestion import MAX_PROPUESTAS, Nota, Propuesta, Proveedor, sanitize_filename, validar_documento
 from evaluador.domain.identidad import Permiso, Usuario
 from evaluador.domain.proyecto import EstadoProyecto, Proyecto
 
@@ -50,6 +50,7 @@ class Gestion:
         self._require_open_for_uploads(self._proyecto(actor, proyecto_id))
         if self._almacen is None:
             raise ServicioNoDisponible("El almacén cifrado no está configurado.")
+        archivo = sanitize_filename(archivo)
         formato = validar_documento(archivo, contenido)
         existentes = self.propuestas_de(actor, proyecto_id)
         if len(existentes) >= MAX_PROPUESTAS:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -22,6 +23,19 @@ _FIRMAS: dict[str, tuple[bytes, ...]] = {
     "jpeg": (b"\xff\xd8\xff",),
     "xlsx": (b"PK\x03\x04",),
 }
+
+
+def sanitize_filename(name: str) -> str:
+    """Turn a user file name into a safe one: drop accents, replace other characters with '_'. Paths are rejected."""
+    if re.search(r"[\\/]", name) or ".." in name:
+        raise DatoInvalido("Nombre de archivo no permitido: no puede incluir rutas.")
+    base = name.strip()
+    ascii_name = unicodedata.normalize("NFKD", base).encode("ascii", "ignore").decode("ascii")
+    cleaned = re.sub(r"[^A-Za-z0-9_.-]+", "_", ascii_name).lstrip("._-")
+    stem, dot, ext = cleaned.rpartition(".")
+    if not dot:
+        return cleaned[:150]
+    return f"{stem[: 150 - len(ext) - 1]}.{ext}"
 
 
 def validar_documento(nombre: str, contenido: bytes) -> str:
