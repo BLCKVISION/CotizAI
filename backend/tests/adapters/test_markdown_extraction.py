@@ -156,6 +156,7 @@ def test_the_file_type_picks_the_extractor():
 
 
 @pytest.mark.skipif(shutil.which("tesseract") is None, reason="Tesseract is installed in the container image")
-def test_real_tesseract_reads_spanish_text_and_figures():
-    result = TesseractOcr.if_available()(_png("Instalación incluida  Total USD 15.120,00"))
-    assert "Instalación" in result.text and "15.120,00" in result.text and result.reliable
+def test_real_tesseract_reads_text_and_figures():
+    # Without accents: Pillow's built-in font draws a box instead of them.
+    result = TesseractOcr.if_available()(_png("Equipos incluidos  Total USD 15.120,00"))
+    assert "Equipos incluidos" in result.text and "15.120,00" in result.text and result.reliable
