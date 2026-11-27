@@ -1,4 +1,4 @@
-"""Lectura de imágenes: primero OCR; si no es fiable, un modelo de visión. Transcribe, no interpreta ni calcula."""
+"""Lectura de imágenes con un modelo de visión; sin modelo, OCR con revisión. Transcribe, no interpreta ni calcula."""
 
 from __future__ import annotations
 
@@ -25,13 +25,14 @@ OCR_NOTICE = "leída con OCR (Tesseract)"
 
 
 def read_picture(data: bytes, mime: str, vision: ModeloConVision | None, ocr: OcrEngine | None) -> ContenidoLeido:
-    """OCR when it is sure of the text; otherwise the vision model. An unsure reading is never taken as complete."""
-    read = ocr(data) if ocr is not None else None
-    if read is not None and read.reliable:
-        return ContenidoLeido(read.text, [OCR_NOTICE])
+    """The vision model reads the picture; OCR only when there is no model.
+
+    A failure of the model propagates, so the caller retries or asks for review: deciding on OCR could discard an
+    honest supplier over a misread figure.
+    """
     if vision is not None:
         return leer_imagen(data, mime, vision)
-    if read is None:
-        raise DatoInvalido("Leer imágenes requiere OCR o un modelo con visión configurado.")
-    return ContenidoLeido(read.text, [OCR_NOTICE, "el OCR no está seguro del texto: requiere revisión humana"],
-                          incomplete=True)  # fmt: skip
+    if ocr is None:
+        raise DatoInvalido("Leer imágenes requiere un modelo con visión u OCR configurado.")
+    read = ocr(data)
+    return ContenidoLeido(read.text, [OCR_NOTICE, "leída solo con OCR: requiere revisión humana"], incomplete=True)

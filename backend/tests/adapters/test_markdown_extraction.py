@@ -111,30 +111,38 @@ class Vision:
         return ImageMarkdownReading(markdown="leído por la IA")
 
 
-def test_a_sure_ocr_reading_never_calls_the_model():
+class BrokenVision:
+    def estructurar_imagen(self, **_):
+        raise RuntimeError("provider down")
+
+
+def _must_not_run(_):
+    raise AssertionError("OCR must not run when the model answers")
+
+
+def test_the_vision_model_reads_images_first():
     vision = Vision()
-    content = leer_documento("foto.png", _png(), vision, lambda _: SURE)
-    assert content.texto == SURE.text and not content.incomplete and vision.calls == 0
-    read = lazy_transcriber(None, vision, lambda _: SURE)("foto.png", _png())
-    assert read.engine == "ocr" and read.markdown == SURE.markdown and vision.calls == 0
+    assert leer_documento("foto.png", _png(), vision, _must_not_run).texto == "texto leído por la IA"
+    read = lazy_transcriber(None, vision, _must_not_run)("foto.png", _png())
+    assert (read.engine, read.markdown) == ("vision", "leído por la IA")
 
 
-def test_an_unsure_ocr_reading_goes_to_the_model_or_asks_for_review():
-    vision = Vision()
-    assert leer_documento("foto.png", _png(), vision, lambda _: UNSURE).texto == "texto leído por la IA"
-    assert lazy_transcriber(None, vision, lambda _: UNSURE)("foto.png", _png()).engine == "vision"
-    alone = leer_documento("foto.png", _png(), None, lambda _: UNSURE)
-    assert alone.incomplete and alone.texto == UNSURE.text
-    read = lazy_transcriber(None, None, lambda _: UNSURE)("foto.png", _png())
-    assert (read.quality, read.uncertain) == ("low", ("1700",))
+def test_to_show_a_document_ocr_replaces_a_failing_model_and_says_so():
+    read = lazy_transcriber(None, BrokenVision(), lambda _: SURE)("foto.png", _png())
+    assert (read.engine, read.quality) == ("ocr", "medium")  # never "high": OCR can be wrong while confident
+    assert "compare las cifras" in read.notices[0]
+    weak = lazy_transcriber(None, BrokenVision(), lambda _: UNSURE)("foto.png", _png())
+    assert (weak.quality, weak.uncertain) == ("low", ("1700",))
 
 
-def test_a_readable_page_with_one_doubtful_figure_is_shown_from_ocr_with_it_highlighted():
-    readable, vision = OcrResult("| a |", "Cotización completa y bien leída REF-8636", 94.0, ("REF-8636",)), Vision()
-    shown = lazy_transcriber(None, vision, lambda _: readable)("foto.png", _png())
-    assert (shown.engine, shown.quality, shown.uncertain) == ("ocr", "medium", ("REF-8636",)) and vision.calls == 0
-    # The evaluation is stricter: a doubtful figure there goes to the model.
-    assert leer_documento("foto.png", _png(), vision, lambda _: readable).texto == "texto leído por la IA"
+def test_the_evaluation_never_falls_back_to_ocr_when_the_model_fails():
+    with pytest.raises(RuntimeError):
+        leer_documento("foto.png", _png(), BrokenVision(), _must_not_run)
+
+
+def test_without_any_model_an_ocr_reading_always_asks_for_review():
+    content = leer_documento("foto.png", _png(), None, lambda _: SURE)
+    assert content.incomplete and content.texto == SURE.text
 
 
 def test_without_ocr_or_model_the_image_is_not_invented():

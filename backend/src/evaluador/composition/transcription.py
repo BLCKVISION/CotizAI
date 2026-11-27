@@ -1,4 +1,4 @@
-"""Composition of image transcription: OCR first, then the vision model. It does not need the embeddings."""
+"""Composition of image transcription: the vision model, with OCR as fallback. It does not need the embeddings."""
 
 from __future__ import annotations
 
@@ -11,9 +11,9 @@ from evaluador.application.ports.agente import ModeloConVision
 from evaluador.application.ports.documentos import OcrEngine
 from evaluador.application.ports.transcription import ImageTranscriber, Transcription
 from evaluador.composition.configuracion import Configuracion
-from evaluador.domain.errores import ServicioNoDisponible
+from evaluador.domain.errores import DatoInvalido, ServicioNoDisponible
 
-_OCR_NOTICE = "leído con OCR (Tesseract), sin usar IA"
+_OCR_NOTICE = "leído con OCR de respaldo porque la IA no respondió: compare las cifras y los nombres con el documento"
 
 
 def lazy_transcriber(
@@ -33,19 +33,17 @@ def lazy_transcriber(
 
     def transcribe(filename: str, data: bytes) -> Transcription:
         image_mime(filename, data)  # reject anything that is not a supported image before reading it
-        read = ocr(data) if ocr is not None else None
-        if read is not None and (read.reliable or read.readable):
-            if not read.doubtful_figures:
-                return Transcription(read.markdown, (), "high", (_OCR_NOTICE,), "ocr")
-            notices = (_OCR_NOTICE, f"cifras dudosas: revise {len(read.doubtful_figures)} valor(es) resaltado(s)")
-            return Transcription(read.markdown, read.doubtful_figures, "medium", notices, "ocr")
         try:
             return transcribe_image(filename, data, model())
+        except DatoInvalido:
+            raise
         except Exception:
+            # OCR is the fallback: measured on real quotes it loses letterheads and sometimes misreads figures,
+            # even when it reports high confidence. So its reading is never presented as verified.
+            read = ocr(data) if ocr is not None else None
             if read is None or not read.text.strip():
                 raise
-            # The model is not available: what OCR could read is still useful, clearly flagged.
-            notices = (_OCR_NOTICE, "el OCR no está seguro del texto: revise las cifras")
-            return Transcription(read.markdown, read.doubtful_figures, "low", notices, "ocr")
+            quality = "medium" if read.reliable or read.readable else "low"
+            return Transcription(read.markdown, read.doubtful_figures, quality, (_OCR_NOTICE,), "ocr")
 
     return transcribe
