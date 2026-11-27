@@ -26,23 +26,58 @@ const projectIdFrom = (path: string): string | null => {
 
 const firstMessage = (): Message => ({ id: 0, from: 'coti', text: GREETING });
 
+const MAX_SAVED = 50;
+const storageKey = (projectId: string | null) => `cotizai.coti.${projectId ?? 'none'}`;
+
+/** Conversation kept in this browser only (a convenience, never data); any storage failure just means a fresh chat. */
+const loadMessages = (projectId: string | null): Message[] => {
+  try {
+    const raw = typeof window !== 'undefined' ? window.localStorage?.getItem(storageKey(projectId)) : null;
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed as Message[];
+  } catch {
+    /* blocked or corrupt storage */
+  }
+  return [firstMessage()];
+};
+
+const saveMessages = (projectId: string | null, messages: Message[]) => {
+  try {
+    window.localStorage.setItem(storageKey(projectId), JSON.stringify(messages.slice(-MAX_SAVED)));
+  } catch {
+    /* blocked storage: the chat just is not remembered */
+  }
+};
+
 export function CotiChat() {
   const t = useTema();
   const { conSesion } = useSesion();
   const { width, height } = useWindowDimensions();
   const projectId = projectIdFrom(usePathname());
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([firstMessage()]);
+  const [messages, setMessages] = useState<Message[]>(() => loadMessages(projectId));
+  const skipSave = useRef(false); // right after a project switch `messages` still hold the previous project's chat
   const [draft, setDraft] = useState('');
   const [thinking, setThinking] = useState(false);
   const scroller = useRef<ComponentRef<typeof ScrollView>>(null);
   const nextId = useRef(1);
 
-  // Each project has its own conversation: switching project starts over.
+  // Each project has its own saved conversation: switching project loads that one.
   useEffect(() => {
-    setMessages([firstMessage()]);
+    const saved = loadMessages(projectId);
+    skipSave.current = true;
+    nextId.current = Math.max(...saved.map((m) => m.id)) + 1;
+    setMessages(saved);
     setDraft('');
   }, [projectId]);
+
+  useEffect(() => {
+    if (skipSave.current) {
+      skipSave.current = false;
+      return;
+    }
+    saveMessages(projectId, messages);
+  }, [projectId, messages]);
 
   const push = (m: Omit<Message, 'id'>) => setMessages((all) => [...all, { ...m, id: nextId.current++ }]);
 
