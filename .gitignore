@@ -8,3 +8,8 @@ node_modules/
 .venv/
 dist/
 .expo/
+
+# Public CA intermediate needed to verify the BCV certificate (not a secret).
+!backend/src/evaluador/adapters/outbound/exchange_rates/sectigo_ov_r36.pem
+# Local working kits (may contain API keys): never publish.
+Today/
