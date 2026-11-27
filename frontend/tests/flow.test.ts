@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { can } from '../src/core/auth/permissions';
-import { checklist, currentStep, defaultSelection, outcomes, recommendation, selectionProblem } from '../src/features/flow/flow';
+import { checklist, currentStep, defaultSelection, EVALUATION_STEPS, finalAnswer, outcomes, recommendation, selectionProblem } from '../src/features/flow/flow';
 
 const finding = (code: string, discards = true, reason = `motivo ${code}`) => ({ code, discards, reason, evidence: '', origin: 'regla' });
 const item = (id: string, verdict: 'valida' | 'descartada' | 'pendiente_de_revision' = 'valida', findings = [] as ReturnType<typeof finding>[]) => ({ proposal_id: id, filename: `${id}.pdf`, supplier: null, verdict, findings });
@@ -63,5 +63,36 @@ describe('permissions', () => {
     for (const p of ['createProject', 'upload', 'evaluate', 'seeResults', 'review'] as const) assert.ok(can('coordinador', p));
     assert.equal(can('coordinador', 'award'), false);
     assert.equal(can('cargador', 'seeResults'), false);
+  });
+});
+
+describe('final answer', () => {
+  const no = (id: string, comment = '') => ({ proposal_id: id, approved: false, comment });
+  const yes = (id: string, comment = '') => ({ proposal_id: id, approved: true, comment });
+  const cost = () => 'USD 100,00';
+
+  it('shows only the three evaluation steps', () => {
+    assert.deepEqual(EVALUATION_STEPS.map((s) => s.id), ['analysis', 'verification', 'result']);
+  });
+  it('explains a single rejection in everyday words, without repeating a problem', () => {
+    const findings = [finding('MANIPULACION'), finding('MANIPULACION'), finding('COMPAT'), finding('LECTURA', false)];
+    const answer = finalAnswer(outcomes([item('a', 'descartada', findings)], [no('a')]), cost);
+    assert.equal(answer.approved, false);
+    assert.equal(answer.headline, 'Esta propuesta no cumple');
+    assert.equal(answer.paragraphs[1], 'No la recomendamos porque ofrece componentes que no son compatibles entre sí y contiene instrucciones dirigidas a la inteligencia artificial para alterar la evaluación.');
+  });
+  it('quotes the person when they rejected what the AI accepted', () => {
+    const answer = finalAnswer(outcomes([item('a')], [no('a', 'Sin referencias.')]), cost);
+    assert.equal(answer.paragraphs[1], 'Motivo registrado en la verificación: «Sin referencias».');
+  });
+  it('names the recommended proposal with its figures', () => {
+    const answer = finalAnswer(outcomes([item('a'), item('b', 'descartada', [finding('ALCANCE')])], [yes('a'), no('b')]), cost, () => 88);
+    assert.equal(answer.headline, 'a.pdf');
+    assert.deepEqual(answer.paragraphs, ['Se revisaron 2 propuestas: 1 quedó aprobada y 1 rechazada.', 'La opción recomendada es a.pdf, con un costo real de USD 100,00 y 88 puntos de 100.']);
+  });
+  it('says so when a person approved what the AI had discarded, and omits unknown figures', () => {
+    const answer = finalAnswer(outcomes([item('a', 'descartada', [finding('ABUSIVO')])], [yes('a', 'Flete aclarado')]), () => null);
+    assert.equal(answer.paragraphs[1], 'La opción recomendada es a.pdf.');
+    assert.match(answer.paragraphs[2], /La IA no la daba por válida.*«Flete aclarado»/);
   });
 });

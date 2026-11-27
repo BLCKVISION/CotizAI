@@ -5,6 +5,7 @@ import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { can } from '@/core/auth/permissions';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
+import { BackButton } from '@/design/BackButton';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
 import { Boton, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
@@ -84,11 +85,14 @@ export default function Projects() {
   return (
     <FixedPage>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md, flexShrink: 1 }}>
+        <BackButton fallback={'/home' as Href} />
         <View style={{ flexShrink: 1 }}>
           <Texto variante="titulo" accessibilityRole="header" style={{ fontFamily: 'Urbanist_600SemiBold' }}>
             Proyectos
           </Texto>
           <Texto suave>Cada carpeta reúne las propuestas de un proceso de compra.</Texto>
+        </View>
         </View>
       </View>
 

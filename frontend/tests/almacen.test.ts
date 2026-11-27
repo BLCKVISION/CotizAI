@@ -14,14 +14,34 @@ beforeEach(async () => {
 });
 
 describe('almacenDeToken', () => {
-  it('web: guarda solo en memoria y nunca toca SecureStore ni localStorage', async () => {
-    (globalThis as { localStorage?: unknown }).localStorage = {
-      setItem: () => assert.fail('no debe usar localStorage'),
+  it('web: sobrevive a una recarga con sessionStorage y nunca toca localStorage ni SecureStore', async () => {
+    const tab = new Map<string, string>();
+    const globals = globalThis as { localStorage?: unknown; sessionStorage?: unknown };
+    globals.localStorage = { setItem: () => assert.fail('no debe usar localStorage') };
+    globals.sessionStorage = {
+      getItem: (k: string) => tab.get(k) ?? null,
+      setItem: (k: string, v: string) => void tab.set(k, v),
+      removeItem: (k: string) => void tab.delete(k),
     };
     await almacenDeToken.guardar('abc');
+    assert.equal(tab.get('sesion_token'), 'abc'); // what a reloaded page finds
     assert.equal(await almacenDeToken.leer(), 'abc');
     assert.equal(almacenFalso.size, 0);
-    delete (globalThis as { localStorage?: unknown }).localStorage;
+    await almacenDeToken.borrar();
+    assert.equal(tab.size, 0);
+    delete globals.localStorage;
+    delete globals.sessionStorage;
+  });
+
+  it('web: con el almacenamiento bloqueado sigue funcionando en memoria', async () => {
+    const globals = globalThis as { sessionStorage?: unknown };
+    const blocked = () => { throw new Error('blocked'); };
+    globals.sessionStorage = { getItem: blocked, setItem: blocked, removeItem: blocked };
+    await almacenDeToken.guardar('abc');
+    assert.equal(await almacenDeToken.leer(), 'abc');
+    await almacenDeToken.borrar();
+    assert.equal(await almacenDeToken.leer(), null);
+    delete globals.sessionStorage;
   });
 
   it('web: borrar limpia el token', async () => {

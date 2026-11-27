@@ -77,7 +77,12 @@ export default function Home() {
     const dropped = picking ?? [];
     const upload = (files: File[]) => {
       setPicking(null);
-      void flow.upload(project.id, files);
+      // With something saved, the next decision (evaluate or not) is taken inside the project.
+      void flow.upload(project.id, files).then((saved) => {
+        if (saved === 0) return; // stay: the dialog explains why each file was rejected
+        flow.close();
+        router.push(`/proyectos/${project.id}` as Href);
+      });
     };
     if (dropped.length > 0) upload(dropped);
     else pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, upload); // still inside the click, as browsers require

@@ -1,6 +1,6 @@
 /**
- * The guided path inside a project: proposals → AI analysis → human yes/no → final answer.
- * The content scrolls; the action bar stays at the bottom, inside the window.
+ * Inside a project: preparation (documents and one "evaluate" button) → AI analysis → human yes/no → final answer.
+ * Steps are shown only while evaluating and verifying. The content scrolls; the action bar stays inside the window.
  */
 import { useState } from 'react';
 import { Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
@@ -27,7 +27,8 @@ import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
 import { AnalysisStep } from './AnalysisStep';
-import { currentStep, defaultSelection, MAX_PER_RUN, MIN_PROPOSALS, pendingVerification, selectionProblem, type StepId, STEPS } from './flow';
+import { currentStep, defaultSelection, EVALUATION_STEPS, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
+import { PreparationHero } from './PreparationHero';
 import { ResultStep } from './ResultStep';
 import { Stepper } from './Stepper';
 import { VERDICT_TONE, VerdictSheet } from './VerdictSheet';
@@ -90,12 +91,14 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   const evaluate = async () => {
     const ids = [...selected].filter((id) => list.some((p) => p.id === id));
     setShowProcess(true);
+    setChosenStep('analysis'); // stay on the AI step while it works, even when re-evaluating from another screen
     // The whole set is sent as a plain run, so the server drops results of deleted files.
     const completed = await run(ids.length === list.length ? undefined : ids);
     if (completed) {
       showToast({ tone: 'success', title: 'La IA terminó el análisis', detail: 'Ahora verifíquelo' });
       setSelection(null);
       setOpenId(null);
+      setChosenStep(null); // on to whatever now needs the person
     }
     onProjectChange(); // also after a failure: the server may have restored the project state
   };
@@ -147,30 +150,21 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
     />
   ) : null;
 
+  const preparing = step === 'proposals' || step === 'analysis';
+  const showSteps = running || step === 'verification';
+  const blocker = !canEvaluate ? (closed ? 'El proyecto está cerrado.' : 'Su rol no inicia evaluaciones.') : problem;
+  const heroTitle = list.length === 0 ? 'Agregue las propuestas' : hasEvaluation ? '¿Evaluar de nuevo?' : '¿Desea evaluar este proyecto?';
+  const heroDetail =
+    list.length === 0
+      ? 'Cargue al menos un presupuesto. Después decidirá si quiere evaluarlo.'
+      : `${chosenCount === list.length ? (list.length === 1 ? 'Hay 1 propuesta lista' : `Hay ${list.length} propuestas listas`) : `Eligió ${chosenCount} de ${list.length} propuestas`}. La IA leerá cada documento, revisará cuentas y condiciones, y le explicará por qué sí o por qué no.`;
+
+  // The preparation screen has its own large button, so only later screens use the bottom bar.
   let hint = '';
   let actions = null;
-  if (step === 'proposals') {
-    hint = list.length < MIN_PROPOSALS ? 'Agregue al menos una propuesta para continuar.' : `${list.length} ${list.length === 1 ? 'propuesta lista' : 'propuestas listas'}.`;
-    actions = (
-      <>
-        {addButton}
-        <Boton etiqueta="Continuar al análisis" icono="arrow-right" deshabilitado={list.length < MIN_PROPOSALS} onPress={() => goTo('analysis')} />
-      </>
-    );
-  } else if (step === 'analysis') {
-    hint = !canEvaluate ? (closed ? 'El proyecto está cerrado.' : 'Su rol no inicia evaluaciones.') : (problem ?? `${chosenCount} de ${list.length} elegidas · máximo ${MAX_PER_RUN} por tanda.`);
-    actions = (
-      <>
-        {addButton}
-        {running ? (
-          <Boton etiqueta={`Ver el proceso (${elapsed} s)`} icono="activity" onPress={() => setShowProcess(true)} />
-        ) : (
-          <Boton etiqueta={chosenCount === list.length && list.length > 1 ? 'Evaluar todas' : `Evaluar ${chosenCount} ${chosenCount === 1 ? 'propuesta' : 'propuestas'}`} icono="cpu" deshabilitado={!canEvaluate || problem !== null} onPress={() => void evaluate()} />
-        )}
-      </>
-    );
-  } else if (step === 'verification') {
-    hint = seesResults ? `${items.length - pending.length} de ${items.length} verificadas${unanalysed > 0 ? ` · ${unanalysed} sin analizar` : ''}.` : 'La IA terminó. El comité está verificando.';
+  if (step === 'verification') {
+    const progress = seesResults ? `${items.length - pending.length} de ${items.length} verificadas${unanalysed > 0 ? ` · ${unanalysed} sin analizar` : ''}.` : 'La IA terminó. El comité está verificando.';
+    hint = `Paso ${EVALUATION_STEPS.findIndex((s) => s.id === 'verification') + 1} de ${EVALUATION_STEPS.length} · ${progress}`;
     actions = (
       <>
         {addButton}
@@ -178,7 +172,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         {pending.length === 0 && seesResults ? <Boton etiqueta="Ver la respuesta final" icono="arrow-right" onPress={() => goTo('result')} /> : null}
       </>
     );
-  } else {
+  } else if (step === 'result') {
     hint = unanalysed > 0 ? `Quedan ${unanalysed} sin analizar: el resultado todavía no las incluye.` : 'Puede agregar propuestas o evaluar de nuevo cuando quiera.';
     actions = (
       <>
@@ -193,7 +187,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
 
   return (
     <View style={{ flex: 1, minHeight: 0, gap: espacio.md }}>
-      <Stepper active={step} reached={reached} onSelect={goTo} />
+      {showSteps ? <Stepper active={running ? 'analysis' : step} reached={running ? 'analysis' : reached} onSelect={goTo} /> : null}
 
       {verifying ? (
         <View style={{ flex: 1, minHeight: wide ? 0 : 620, flexDirection: wide ? 'row' : 'column', gap: espacio.md }}>
@@ -238,12 +232,24 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         </View>
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
-          {step === 'proposals' ? <Expediente proyecto={project} onCambio={() => { proposals.recargar(); onProjectChange(); }} /> : null}
-          {step === 'analysis' ? (
+          {preparing ? (
             <>
-              <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
-              <AnalysisStep proposals={list} selected={selected} evaluated={evaluated} onChange={setSelection} />
+              <PreparationHero
+                title={heroTitle}
+                detail={heroDetail}
+                blocker={list.length === 0 && canEvaluate ? 'Agregue al menos una propuesta para poder evaluar.' : blocker}
+                canEvaluate={canEvaluate}
+                running={running}
+                elapsed={elapsed}
+                onEvaluate={() => void evaluate()}
+                onShowProcess={() => setShowProcess(true)}
+                onBackToResult={hasEvaluation ? () => goTo(null) : undefined}
+              />
               {error ? <ErrorConReintento texto={error} onReintentar={() => void (seesResults ? reload() : evaluate())} /> : null}
+              {/* With a single proposal there is nothing to choose. */}
+              {list.length > 1 ? <AnalysisStep proposals={list} selected={selected} evaluated={evaluated} onChange={setSelection} /> : null}
+              <Expediente proyecto={project} onCambio={() => { proposals.recargar(); onProjectChange(); }} />
+              <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
             </>
           ) : null}
           {step === 'verification' && !seesResults ? (
@@ -263,10 +269,20 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
               }}
             />
           ) : null}
+          {/* The result is a page to read: its actions close it instead of covering it with a bar. */}
+          {step === 'result' && !preparing ? (
+            <View style={{ alignItems: 'center', gap: espacio.sm, paddingVertical: espacio.md }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: espacio.sm }}>{actions}</View>
+              <Texto variante="pequeno" suave style={{ textAlign: 'center' }}>
+                {hint}
+              </Texto>
+            </View>
+          ) : null}
         </ScrollView>
       )}
 
-      {/* Always visible: what to do next. */}
+      {/* What to do next, always visible while verifying. */}
+      {step !== 'verification' ? null : (
       <View style={{ ...vidrio({ opacidad: 0.96, radio: radio.xl, elevado: true }), padding: espacio.sm + 4, gap: espacio.sm }}>
         {verifying && can(role, 'review') && !closed ? (
           <View style={{ flexDirection: wide ? 'row' : 'column', alignItems: wide ? 'center' : 'stretch', gap: espacio.sm }}>
@@ -286,11 +302,12 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         ) : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
           <Texto variante="pequeno" suave style={{ flexShrink: 1 }}>
-            Paso {STEPS.findIndex((s) => s.id === step) + 1} de {STEPS.length} · {hint}
+            {hint}
           </Texto>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>{actions}</View>
         </View>
       </View>
+      )}
 
       <UploadFlow visible={upload.visible} items={upload.items} busy={upload.busy} onClose={upload.close} />
       <EvaluationProcess

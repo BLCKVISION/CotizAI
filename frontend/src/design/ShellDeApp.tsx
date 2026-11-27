@@ -9,6 +9,7 @@ import { Tour } from '@/features/onboarding/Tour';
 
 import { BrandRow, Isotype } from './Brand';
 import { BotonIcono, Chip, Insignia, Texto } from './componentes';
+import { ConfirmDialog } from './ConfirmDialog';
 import { useDispositivo } from './dispositivo';
 import { soloWeb, vidrio } from './efectos';
 import { LineIcon, type LineIconName } from './LineIcon';
@@ -90,6 +91,22 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
   const { dispositivo } = useDispositivo();
   const { usuario, cerrarSesion } = useSesion();
   const esEscritorio = dispositivo === 'escritorio';
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const askToSignOut = () => setConfirmingSignOut(true);
+  const signOutDialog = (
+    <ConfirmDialog
+      visible={confirmingSignOut}
+      title="¿Cerrar sesión?"
+      description="Tendrá que escribir su correo y contraseña para volver a entrar."
+      confirmLabel="Sí, cerrar sesión"
+      confirmIcon="log-out"
+      onCancel={() => setConfirmingSignOut(false)}
+      onConfirm={() => {
+        setConfirmingSignOut(false);
+        void cerrarSesion();
+      }}
+    />
+  );
   const categorias = NAVEGACION.map((c) => ({ ...c, items: c.items.filter((i) => !i.soloRol || i.soloRol === usuario?.rol) })).filter(
     (c) => c.items.length > 0,
   );
@@ -117,7 +134,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
           <View style={{ flex: 1 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm }}>
             <NotificationsBell />
-            <UserBubble name={usuario?.display_name || usuario?.correo || '??'} role={usuario ? ETIQUETA_ROL[usuario.rol] : ''} onSignOut={cerrarSesion} />
+            <UserBubble name={usuario?.display_name || usuario?.correo || '??'} role={usuario ? ETIQUETA_ROL[usuario.rol] : ''} onSignOut={askToSignOut} />
           </View>
         </View>
 
@@ -140,12 +157,13 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
               </View>
             </View>
             <View style={{ paddingBottom: espacio.lg }}>
-              <RailItem label="Cerrar sesión" icon="log-out" danger expanded={expanded} onPress={cerrarSesion} />
+              <RailItem label="Cerrar sesión" icon="log-out" danger expanded={expanded} onPress={askToSignOut} />
             </View>
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>{children}</View>
         </View>
         <Tour />
+        {signOutDialog}
       </View>
     );
   }
@@ -175,7 +193,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
             </View>
           ) : null}
           <NotificationsBell />
-          <BotonIcono nombre="log-out" etiqueta="Cerrar sesión" onPress={cerrarSesion} />
+          <BotonIcono nombre="log-out" etiqueta="Cerrar sesión" onPress={askToSignOut} />
         </View>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: espacio.sm, paddingHorizontal: espacio.md, paddingTop: espacio.sm }}>
@@ -185,6 +203,7 @@ export function ShellDeApp({ children }: { children: ReactNode }) {
       </ScrollView>
       <View style={{ flex: 1 }}>{children}</View>
       <Tour />
+      {signOutDialog}
     </SafeAreaView>
   );
 }

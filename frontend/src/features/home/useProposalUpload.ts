@@ -11,6 +11,7 @@ export type UploadItem = { key: string; name: string; size: number; state: Uploa
 const MAX_REJECTION_TOASTS = 3;
 
 /** Uploads files one by one into a project. Each item reports what the server really answered. */
+// `upload` resolves with how many files the server saved.
 export function useProposalUpload(onDone: () => void) {
   const { conSesion } = useSesion();
   const [items, setItems] = useState<UploadItem[]>([]);
@@ -18,9 +19,12 @@ export function useProposalUpload(onDone: () => void) {
   const [visible, setVisible] = useState(false);
   const running = useRef(false); // a ref: a second drop can arrive before the state updates
 
-  const upload = async (projectId: string, files: File[]) => {
-    if (files.length === 0) return;
-    if (running.current) return showToast({ tone: 'info', title: 'Espere a que termine la carga actual' });
+  const upload = async (projectId: string, files: File[]): Promise<number> => {
+    if (files.length === 0) return 0;
+    if (running.current) {
+      showToast({ tone: 'info', title: 'Espere a que termine la carga actual' });
+      return 0;
+    }
     running.current = true;
     setBusy(true);
     setVisible(true);
@@ -46,6 +50,7 @@ export function useProposalUpload(onDone: () => void) {
     running.current = false;
     setBusy(false);
     onDone();
+    return saved;
   };
 
   return { items, busy, visible, close: () => setVisible(false), upload };

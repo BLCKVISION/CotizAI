@@ -12,6 +12,8 @@ export const STEPS = [
   { id: 'result', label: 'Resultado' },
 ] as const;
 export type StepId = (typeof STEPS)[number]['id'];
+/** The steps the person sees, and only while a proposal is being evaluated and verified. */
+export const EVALUATION_STEPS = STEPS.slice(2);
 
 type Verdict = 'valida' | 'descartada' | 'pendiente_de_revision';
 type FindingLike = { code: string; discards: boolean; reason: string; evidence: string; origin: string };
@@ -95,4 +97,64 @@ export function selectionProblem(selected: number, total: number): string | null
   if (selected === 0) return 'Elija al menos una propuesta.';
   if (selected > MAX_PER_RUN) return `Máximo ${MAX_PER_RUN} propuestas por tanda.`;
   return null;
+}
+
+/** Each finding in everyday words, to finish the sentence "no la recomendamos porque…". */
+const PLAIN_PROBLEMS: Record<string, string> = {
+  MANIPULACION: 'contiene instrucciones dirigidas a la inteligencia artificial para alterar la evaluación',
+  COMPAT: 'ofrece componentes que no son compatibles entre sí',
+  ALCANCE: 'no cubre todo lo que pide el proyecto',
+  CAPACIDAD: 'la protección o la energía prevista no soporta los equipos',
+  CALIDAD: 'los equipos no corresponden a la calidad o condición que se cobra',
+  ABUSIVO: 'incluye precios o cláusulas abusivas',
+  ARITMETICA: 'sus cuentas no cuadran',
+};
+
+const joinList = (parts: string[]) => (parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join('; ')} y ${parts[parts.length - 1]}`);
+
+/** The discarding problems of one proposal, once each, in the order of the control questions. */
+export function plainProblems(item: ItemLike): string[] {
+  const found = new Set(item.findings.filter((f) => f.discards).map((f) => f.code));
+  return CHECKS.filter((c) => found.has(c.code)).map((c) => PLAIN_PROBLEMS[c.code]);
+}
+
+/** Why a person's NO stands: their own words when they differ from the AI, otherwise what the rules found. */
+function whyRejected<I extends ItemLike>(o: Outcome<I>): string {
+  const problems = plainProblems(o.item);
+  const comment = o.changed || problems.length === 0 ? o.reason : '';
+  if (problems.length === 0) return `Motivo registrado en la verificación: «${comment.replace(/[.\s]+$/, '')}».`;
+  return `No la recomendamos porque ${joinList(problems)}.`;
+}
+
+export type FinalAnswer = { approved: boolean; label: string; headline: string; paragraphs: string[] };
+
+const nameOf = (i: ItemLike) => i.supplier ?? i.filename;
+
+/** The verified answer in full sentences. `costOf` and `scoreOf` keep this file free of formatting rules. */
+export function finalAnswer<I extends ItemLike>(list: Outcome<I>[], costOf: (item: I) => string | null, scoreOf: (item: I) => number | null = () => null): FinalAnswer {
+  const best = recommendation(list);
+  const total = list.length;
+  const approved = list.filter((o) => o.approved).length;
+  const reviewed = total === 1 ? 'Se revisó una propuesta' : `Se revisaron ${total} propuestas`;
+  if (!best) {
+    const paragraphs = [
+      total === 1
+        ? `${reviewed}, la de ${nameOf(list[0].item)}, y no fue aprobada en la verificación.`
+        : `${reviewed} y ninguna fue aprobada en la verificación.`,
+    ];
+    if (total === 1) paragraphs.push(whyRejected(list[0]));
+    paragraphs.push('Antes de adjudicar, pida una cotización corregida o agregue propuestas de otros proveedores.');
+    return { approved: false, label: 'No recomendamos adjudicar', headline: total === 1 ? 'Esta propuesta no cumple' : 'Ninguna propuesta cumple', paragraphs };
+  }
+  const cost = costOf(best.item);
+  const score = scoreOf(best.item);
+  const figures = [cost ? `un costo real de ${cost}` : null, score !== null ? `${score} puntos de 100` : null].filter((x): x is string => x !== null);
+  const paragraphs = [
+    total === 1
+      ? `${reviewed} y fue aprobada en la verificación.`
+      : `${reviewed}: ${approved} ${approved === 1 ? 'quedó aprobada' : 'quedaron aprobadas'} y ${total - approved} ${total - approved === 1 ? 'rechazada' : 'rechazadas'}.`,
+    `La opción recomendada es ${nameOf(best.item)}${figures.length > 0 ? `, con ${figures.join(' y ')}` : ''}.`,
+  ];
+  if (best.changed) paragraphs.push(`La IA no la daba por válida; la persona que verificó la aprobó y explicó: «${best.reason.replace(/[.\s]+$/, '')}».`);
+  return { approved: true, label: 'Propuesta recomendada', headline: nameOf(best.item), paragraphs };
 }

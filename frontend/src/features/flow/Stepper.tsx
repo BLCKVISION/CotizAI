@@ -1,4 +1,4 @@
-/** The five steps of a purchase. Finished steps can be reopened. */
+/** The steps of an evaluation, shown only while one is under way. Finished steps can be reopened. */
 import { Pressable, View } from 'react-native';
 
 import { Icono, Texto } from '@/design/componentes';
@@ -6,19 +6,21 @@ import { accentGradient, soloWeb } from '@/design/efectos';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 
-import { type StepId, STEPS } from './flow';
+import { EVALUATION_STEPS, type StepId, STEPS } from './flow';
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
 export function Stepper({ active, reached, onSelect }: { active: StepId; reached: StepId; onSelect: (step: StepId) => void }) {
   const t = useTema();
-  const limit = STEPS.findIndex((s) => s.id === reached);
-  const activeIndex = STEPS.findIndex((s) => s.id === active);
+  const position = (id: StepId) => Math.max(0, EVALUATION_STEPS.findIndex((s) => s.id === id));
+  // Before the AI step there is nothing finished, whatever the earlier internal step is called.
+  const limit = STEPS.findIndex((s) => s.id === reached) < STEPS.findIndex((s) => s.id === 'analysis') ? 0 : position(reached);
+  const activeIndex = position(active);
   return (
     <View accessibilityRole="tablist" style={{ flexDirection: 'row', gap: espacio.sm }}>
-      {STEPS.map((step, i) => {
-        const open = i > 0 && i <= Math.max(limit, 1);
-        const done = i < limit || i === 0;
+      {EVALUATION_STEPS.map((step, i) => {
+        const open = i <= limit;
+        const done = i < limit;
         const isActive = i === activeIndex;
         return (
           <Pressable

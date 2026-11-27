@@ -81,7 +81,7 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 - Estados siempre cubiertos: cargando, vacío, error, sin permiso.
 
 ### Seguridad
-- Token en `expo-secure-store` (móvil) y **solo memoria** en web; **nunca** `localStorage`/`AsyncStorage`.
+- Token en `expo-secure-store` (móvil) y `sessionStorage` en web (sobrevive a una recarga y se borra al cerrar la pestaña); **nunca** `localStorage`/`AsyncStorage`.
 - No loguear tokens ni contraseñas; no incluir secretos en el bundle (todo lo `EXPO_PUBLIC_*` es público).
 - Mostrar al usuario el `trackId` de los errores para soporte; no mostrar mensajes técnicos.
 - La UI **no decide permisos**: oculta lo no permitido por UX, pero la autoridad es el backend.

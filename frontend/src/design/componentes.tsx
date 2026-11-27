@@ -78,7 +78,9 @@ export function Boton({
   cargando = false,
   deshabilitado = false,
   anchoCompleto = false,
+  large = false,
 }: {
+  large?: boolean;
   etiqueta: string;
   onPress: () => void;
   variante?: 'primario' | 'secundario' | 'fantasma';
@@ -98,9 +100,10 @@ export function Boton({
       disabled={inactivo}
       onPress={onPress}
       style={(e: EstadoPressable): ViewStyle => ({
-        minHeight: tamanoTactil,
+        minHeight: large ? 64 : tamanoTactil,
+        minWidth: large ? 280 : undefined,
         borderRadius: radio.pildora,
-        paddingHorizontal: espacio.lg,
+        paddingHorizontal: large ? espacio.xxl : espacio.lg,
         flexDirection: 'row',
         gap: espacio.sm,
         alignItems: 'center',
@@ -140,7 +143,7 @@ export function Boton({
         ) : (
           <>
             {icono ? <Icono nombre={icono} color={colorTexto} /> : null}
-            <RollingLabel text={etiqueta} active={Boolean(hovered) && !inactivo} style={{ ...texto.etiqueta, fontSize: 14, color: colorTexto }} />
+            <RollingLabel text={etiqueta} active={Boolean(hovered) && !inactivo} style={{ ...texto.etiqueta, fontSize: large ? 20 : 14, lineHeight: large ? 26 : texto.etiqueta.lineHeight, color: colorTexto }} />
           </>
         )
       }

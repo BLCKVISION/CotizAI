@@ -165,7 +165,7 @@ flowchart LR
 
 ## 9. Frontend (Expo / React Native + web)
 
-Una sola base de código para web, iOS y Android con **Expo Router**. Capas: `app/` (rutas) → `features/` (por dominio) → `core/` (API, sesión, config) → `design/` (tokens y componentes). Sistema de diseño en `design-system/agente-evaluador/MASTER.md` (estilo *Accessible & Ethical*, Atkinson Hyperlegible, contraste ≥ 4.5:1, objetivos táctiles ≥ 44 px). Token de sesión: `expo-secure-store` en móvil y **solo en memoria** en web (nunca `localStorage`). Cada petición envía `X-Track-Id` y se muestra en errores para soporte.
+Una sola base de código para web, iOS y Android con **Expo Router**. Capas: `app/` (rutas) → `features/` (por dominio) → `core/` (API, sesión, config) → `design/` (tokens y componentes). Sistema de diseño en `design-system/agente-evaluador/MASTER.md` (estilo *Accessible & Ethical*, Atkinson Hyperlegible, contraste ≥ 4.5:1, objetivos táctiles ≥ 44 px). Token de sesión: `expo-secure-store` en móvil y `sessionStorage` en web, para que recargar no cierre la sesión; se borra al cerrar la pestaña (nunca `localStorage`). Cada petición envía `X-Track-Id` y se muestra en errores para soporte.
 
 ## 10. Decisiones abiertas / deuda conocida
 

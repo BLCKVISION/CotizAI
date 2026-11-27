@@ -1,12 +1,13 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { can } from '@/core/auth/permissions';
 import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
+import { BackButton } from '@/design/BackButton';
 import { CollapsibleCard } from '@/design/Collapsible';
-import { Boton, Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
+import { Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { EncabezadoDePagina, FixedPage, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
@@ -90,7 +91,6 @@ function Dato({ icono, etiqueta, valor }: { icono: Parameters<typeof Icono>[0]['
 
 export default function DetalleProyecto() {
   const t = useTema();
-  const router = useRouter();
   const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
   const { conSesion } = useSesion();
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
@@ -99,7 +99,7 @@ export default function DetalleProyecto() {
   const [pestana, setPestana] = useState<'propuestas' | 'ficha' | 'revision'>(tab === 'revision' ? 'revision' : 'propuestas');
   const { usuario } = useSesion();
   const pestanas = [
-      { id: 'propuestas', etiqueta: 'Proceso' },
+      { id: 'propuestas', etiqueta: 'Evaluación' },
     { id: 'ficha', etiqueta: 'Ficha y avance' },
     // El rol Cargador no ve notas ni historial (el backend también lo impide).
     ...(can(usuario?.rol, 'seeResults') ? [{ id: 'revision', etiqueta: 'Revisión del comité' } as const] : []),
@@ -139,7 +139,7 @@ export default function DetalleProyecto() {
     }
   };
 
-  const volver = <Boton etiqueta="Proyectos" variante="fantasma" icono="arrow-left" onPress={() => router.replace('/proyectos')} />;
+  const volver = <BackButton fallback="/proyectos" />;
 
   if (error) {
     return (
@@ -173,6 +173,8 @@ export default function DetalleProyecto() {
   const e = infoEstado(proyecto.estado);
   const heading = (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.md, flexShrink: 1 }}>
+        {volver}
       <View style={{ flexShrink: 1, gap: 2 }}>
         <Texto variante="subtitulo" accessibilityRole="header" numberOfLines={1} style={{ fontFamily: 'Urbanist_600SemiBold', fontSize: 22, lineHeight: 28 }}>
           {proyecto.nombre}
@@ -184,13 +186,13 @@ export default function DetalleProyecto() {
           </Texto>
         </View>
       </View>
+      </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: espacio.sm }}>
         <View accessibilityRole="tablist" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
           {pestanas.map((x) => (
             <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => setPestana(x.id)} />
           ))}
         </View>
-        {volver}
       </View>
     </View>
   );
