@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from evaluador.application.ports.agente import Embebedor, IndiceVectorial, ModeloDeLenguaje
 from evaluador.application.ports.market_search import MarketPriceFinder
@@ -45,6 +46,24 @@ _INSTR_ALCANCE = (
 )
 
 
+_FAILED_FIELD = re.compile(r"^(Línea \d+(, [a-z_]+)?|Totales, [a-z_]+( \d+)?)")
+
+
+def _correction_request(problems: list[str]) -> str:
+    """Tells the second attempt which fields failed: repeating the same request would give the same answer.
+
+    Only line numbers and field names are repeated. The values come from the document, which is untrusted and must
+    never reach the instructions.
+    """
+    fields = dict.fromkeys(m.group(0) for p in problems if (m := _FAILED_FIELD.match(p)))
+    return (
+        f"\nTu respuesta anterior no cumplió las reglas en: {'; '.join(list(fields)[:8])}. Revisa esos campos en el "
+        "documento: cada dato sale de su propia columna; 'literal' copia lo escrito en esa columna y 'valor' es esa "
+        "misma cifra con punto decimal. La cantidad es un número de unidades, nunca una palabra como la que ocupa la "
+        "columna de precio. Si una cifra no consta, usa null. Cada línea lleva su evidencia."
+    )
+
+
 class NodosEvaluacion:
     def __init__(
         self,
@@ -78,12 +97,16 @@ class NodosEvaluacion:
         return {"contexto": [r.fragmento.contenido for r in resultados]}
 
     def extraer(self, s: EstadoEvaluacion) -> dict:
+        correction = ""
         for intento in (1, 2):  # un error de lectura se relee una vez antes de pedir revisión
             try:
                 ext = self._modelo.estructurar(
-                    instrucciones=_INSTR_EXTRACCION, contenido_no_confiable=s["texto"], esquema=ExtraccionPropuesta
+                    instrucciones=_INSTR_EXTRACCION + correction,
+                    contenido_no_confiable=s["texto"],
+                    esquema=ExtraccionPropuesta,
                 )
                 if problemas := validar_contrato(ext):  # lo que no es auditable cuenta como error de lectura
+                    correction = _correction_request(problemas)
                     raise ValueError("; ".join(problemas[:5]))
                 return {"extraccion": ext, "error_de_lectura": False}
             except Exception as exc:  # noqa: BLE001 - cualquier fallo del proveedor es de lectura, no de la propuesta

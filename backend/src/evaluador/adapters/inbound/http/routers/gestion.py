@@ -102,6 +102,14 @@ def descargar(proyecto_id: ProyectoId, propuesta_id: ProyectoId, request: Reques
                     headers={"Content-Disposition": f'attachment; filename="{p.archivo}"'})  # fmt: skip
 
 
+@router.get("/proyectos/{proyecto_id}/propuestas/{propuesta_id}/markdown")
+def proposal_markdown(proyecto_id: ProyectoId, propuesta_id: ProyectoId, request: Request, s: Sesion) -> dict:
+    use_case = request.app.state.contenedor.proposal_markdown
+    filename, document = use_case.execute(s.usuario, proyecto_id, propuesta_id)
+    return {"filename": filename, "markdown": document.markdown, "engine": document.engine,
+            "notices": list(document.notices)}  # fmt: skip
+
+
 @router.delete("/proyectos/{proyecto_id}/propuestas/{propuesta_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar(proyecto_id: ProyectoId, propuesta_id: ProyectoId, request: Request, s: Sesion) -> Response:
     _g(request).eliminar_propuesta(s.usuario, proyecto_id, propuesta_id)

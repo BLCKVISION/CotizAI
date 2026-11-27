@@ -10,6 +10,7 @@ from collections.abc import Callable
 from evaluador.adapters.outbound.agente.motor_langgraph import MotorLangGraph
 from evaluador.adapters.outbound.busqueda.openrouter_sonar import OpenRouterMarketSearch
 from evaluador.adapters.outbound.extraccion.lector import leer_documento
+from evaluador.adapters.outbound.extraccion.ocr_tesseract import TesseractOcr
 from evaluador.adapters.outbound.ia.fabrica import crear_modelo
 from evaluador.adapters.outbound.memory.indice_vectorial import IndiceEnMemoria
 from evaluador.application.ports.agente import Embebedor, ModeloDeLenguaje
@@ -32,9 +33,10 @@ def market_search_for(config: Configuracion) -> OpenRouterMarketSearch | None:
 def build_services(config: Configuracion, model: ModeloDeLenguaje, embedder: Embebedor) -> EvaluationServices:
     index = IndiceEnMemoria()  # transient: holds a proposal only while it is being judged
     vision = model if hasattr(model, "estructurar_imagen") else None
+    ocr = TesseractOcr.if_available()  # without it, images go straight to the vision model
     new_id = lambda: str(uuid.uuid4())  # noqa: E731
     evaluator = EvaluarArchivo(
-        leer=lambda name, data: leer_documento(name, data, vision),  # type: ignore[arg-type]
+        leer=lambda name, data: leer_documento(name, data, vision, ocr),  # type: ignore[arg-type]
         embebedor=embedder,
         indice=index,
         motor=MotorLangGraph(model, embedder, index, market_search_for(config)),

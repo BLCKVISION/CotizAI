@@ -111,3 +111,10 @@ describe('partirPorInciertos', () => {
     assert.deepEqual(partirPorInciertos('', ['1']), []);
   });
 });
+
+describe('saltos de línea en celdas', () => {
+  it('convierte <br> en un salto y conserva las barras escapadas', () => {
+    const [tabla] = bloquesDeMarkdown('| Ítem | Detalle |\n| --- | --- |\n| Estación<br>R5 | CPU \\| RAM<BR/>Disco |');
+    assert.deepEqual(tabla, { tipo: 'tabla', cabecera: ['Ítem', 'Detalle'], filas: [['Estación\nR5', 'CPU | RAM\nDisco']] });
+  });
+});

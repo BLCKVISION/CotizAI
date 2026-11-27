@@ -17,7 +17,8 @@ const esFila = (linea: string) => linea.trim().startsWith('|');
 function celdas(linea: string): string[] {
   const sinEscapes = linea.trim().replace(/\\\|/g, BARRA_ESCAPADA);
   const interior = sinEscapes.replace(/^\|/, '').replace(/\|$/, '');
-  return interior.split('|').map((c) => c.trim().split(BARRA_ESCAPADA).join('|'));
+  // «<br>» es el salto de línea dentro de una celda.
+  return interior.split('|').map((c) => c.trim().replace(/<br\s*\/?>/gi, '\n').split(BARRA_ESCAPADA).join('|'));
 }
 
 /** Rellena con vacíos hasta `ancho`: la tabla siempre queda rectangular y nunca se descarta una celda (en un

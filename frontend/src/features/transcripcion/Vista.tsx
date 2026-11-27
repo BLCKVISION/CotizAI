@@ -34,18 +34,21 @@ function ConInciertos({ valor, inciertos, medio = false }: { valor: string; inci
 
 function Tabla({ cabecera, filas, inciertos }: { cabecera: string[]; filas: string[][]; inciertos: string[] }) {
   const t = useTema();
+  // Cada columna ocupa según su texto: en un presupuesto el detalle es mucho más largo que la cantidad.
+  const pesos = cabecera.map((_, i) => Math.min(6, Math.max(1, Math.max(...[cabecera, ...filas].map((f) => Math.max(...(f[i] ?? '').split('\n').map((l) => l.length)))) / 10)));
   const fila = (celdas: string[], clave: string, encabezado = false) => (
     <View key={clave} style={{ flexDirection: 'row', backgroundColor: encabezado ? t.superficieAlta : 'transparent' }}>
       {celdas.map((c, i) => (
-        <View key={i} style={{ minWidth: 120, flex: 1, padding: espacio.sm, borderTopWidth: 1, borderColor: t.borde }}>
+        <View key={i} style={{ minWidth: 112, flex: pesos[i] ?? 1, flexBasis: 0, padding: espacio.sm, borderTopWidth: 1, borderColor: t.borde }}>
           <ConInciertos valor={c} inciertos={inciertos} medio={encabezado} />
         </View>
       ))}
     </View>
   );
+  // `flexGrow` lets a narrow table use the whole width; a wide one still scrolls sideways.
   return (
-    <ScrollView horizontal>
-      <View style={{ borderWidth: 1, borderColor: t.borde, borderRadius: radio.md, overflow: 'hidden', minWidth: '100%' }}>
+    <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={{ borderWidth: 1, borderColor: t.borde, borderRadius: radio.md, overflow: 'hidden', flexGrow: 1, minWidth: '100%' }}>
         {fila(cabecera, 'cabecera', true)}
         {filas.map((f, i) => fila(f, `fila-${i}`))}
       </View>
@@ -53,7 +56,7 @@ function Tabla({ cabecera, filas, inciertos }: { cabecera: string[]; filas: stri
   );
 }
 
-function BloqueVista({ bloque, inciertos }: { bloque: Bloque; inciertos: string[] }) {
+export function BloqueVista({ bloque, inciertos }: { bloque: Bloque; inciertos: string[] }) {
   if (bloque.tipo === 'titulo') {
     return (
       <Texto variante={bloque.nivel === 1 ? 'subtitulo' : 'cuerpoMedio'} accessibilityRole="header">

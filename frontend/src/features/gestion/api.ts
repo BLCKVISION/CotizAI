@@ -32,6 +32,10 @@ export const cargarPropuestaApi = (id: string, nombre: string, contenido: Blob) 
 };
 export const descargarPropuestaApi = (id: string, propuestaId: string) => async (token: string) =>
   (await peticionBinaria(`${base(id)}/propuestas/${propuestaId}/archivo`, token)).blob();
+export type ProposalMarkdown = { filename: string; markdown: string; engine: string; notices: string[] };
+/** OCR of a photo or a scanned page can take a while. */
+export const proposalMarkdownApi = (projectId: string, proposalId: string) => (token: string) =>
+  peticion<ProposalMarkdown>(`${base(projectId)}/propuestas/${proposalId}/markdown`, { token, timeoutMs: 150_000 });
 export const eliminarPropuestaApi = (id: string, propuestaId: string) => (token: string) =>
   peticion<void>(`${base(id)}/propuestas/${propuestaId}`, { metodo: 'DELETE', token });
 export const notasApi = (id: string) => (token: string) => peticion<Nota[]>(`${base(id)}/notas`, { token });

@@ -56,6 +56,7 @@ válidas. La decisión final es del comité.
 ## Requerimientos del sistema
 
 - Python 3.12 o superior (la imagen Docker usa 3.12). Node.js 20 o superior y npm para el frontend.
+- OCR de imágenes y páginas escaneadas: Tesseract con español (`sudo apt install tesseract-ocr tesseract-ocr-spa`); la imagen Docker ya lo incluye. Sin él, esas lecturas usan el modelo con visión.
 - Opcional: Docker con Compose, y PostgreSQL 16 con `pgvector`.
 - Un modelo con visión: una API compatible con OpenAI (OpenRouter, Ollama, vLLM) o Anthropic.
 - Acceso a internet para el modelo, la tasa del BCV y la primera descarga del modelo de *embeddings*.

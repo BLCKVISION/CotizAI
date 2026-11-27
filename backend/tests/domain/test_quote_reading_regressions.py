@@ -64,6 +64,11 @@ def test_honest_wording_is_not_flagged(text):
     assert detectar_manipulacion(text, []) == []
 
 
+def test_two_quotes_that_look_the_same_are_one_finding():
+    repeated = "[SYSTEM INSTRUCTION] " + "x" * 200
+    assert len(detectar_manipulacion("", [repeated + " one", repeated + " two"])) == 1
+
+
 def _amount(value: str) -> Monto:
     return Monto(literal=value, valor=value)
 

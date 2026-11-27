@@ -7,6 +7,7 @@ from pathlib import Path
 
 from evaluador.adapters.outbound.agente.motor_langgraph import MotorLangGraph
 from evaluador.adapters.outbound.extraccion.lector import leer_documento
+from evaluador.adapters.outbound.extraccion.ocr_tesseract import TesseractOcr
 from evaluador.adapters.outbound.ia.embebedor_fastembed import EmbebedorFastEmbed
 from evaluador.adapters.outbound.ia.fabrica import crear_modelo
 from evaluador.adapters.outbound.memory.indice_vectorial import IndiceEnMemoria
@@ -21,8 +22,9 @@ def construir_lote(config: Configuracion, carpeta: Path) -> ProcesarLote:
     embebedor = EmbebedorFastEmbed(config.embeddings_modelo, config.embeddings_cache)
     indice = IndiceEnMemoria()
     vision = modelo if hasattr(modelo, "estructurar_imagen") else None
+    ocr = TesseractOcr.if_available()
     evaluador = EvaluarArchivo(
-        leer=lambda nombre, datos: leer_documento(nombre, datos, vision),  # type: ignore[arg-type]
+        leer=lambda nombre, datos: leer_documento(nombre, datos, vision, ocr),  # type: ignore[arg-type]
         embebedor=embebedor,
         indice=indice,
         motor=MotorLangGraph(modelo, embebedor, indice, market_search_for(config)),

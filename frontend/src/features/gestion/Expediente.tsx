@@ -16,6 +16,7 @@ import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
 import { descargarPropuestaApi, eliminarPropuestaApi, type Propuesta, propuestasApi } from './api';
+import { MarkdownDialog } from './MarkdownDialog';
 
 const ICONOS: Record<string, NombreIcono> = { pdf: 'file-text', jpg: 'image', png: 'message-square', xlsx: 'grid' };
 const MINIMO = 1;
@@ -90,6 +91,9 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
   });
   const subir = (archivos: File[]) => void flow.upload(proyecto.id, archivos);
   const [porEliminar, setPorEliminar] = useState<string | null>(null);
+  const [asMarkdown, setAsMarkdown] = useState<Propuesta | null>(null);
+  // Same rule as downloading the file: the text is its content.
+  const canRead = can(usuario?.rol, 'upload') || can(usuario?.rol, 'seeResults');
   // New offers are accepted until the project is awarded or closed; evaluated evidence cannot be deleted.
   const editable = can(usuario?.rol, 'upload') && (proyecto.estado === 'en_recepcion' || proyecto.estado === 'en_revision_del_comite');
   const removable = editable && proyecto.estado === 'en_recepcion';
@@ -146,6 +150,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
               detalle={porEliminar === p.id ? 'Pulse otra vez la papelera para eliminarla.' : `${p.formato.toUpperCase()} · ${tamano(p.tamano)} · huella ${p.sha256.slice(0, 10)}`}
               derecha={
                 <View style={{ flexDirection: 'row' }}>
+                  {canRead ? <BotonIcono nombre="file-text" etiqueta={`Ver ${p.archivo} en Markdown`} onPress={() => setAsMarkdown(p)} /> : null}
                   {usuario && Platform.OS === 'web' ? <BotonIcono nombre="download" etiqueta={`Descargar ${p.archivo}`} onPress={() => descargar(p)} /> : null}
                   {removable ? <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.archivo}`} onPress={() => eliminar(p)} /> : null}
                 </View>
@@ -154,6 +159,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
         </CollapsibleCard>
       )}
       </View>
+      <MarkdownDialog projectId={proyecto.id} proposal={asMarkdown} onClose={() => setAsMarkdown(null)} />
       <UploadFlow visible={flow.visible} items={flow.items} busy={flow.busy} onClose={flow.close} />
     </View>
   );

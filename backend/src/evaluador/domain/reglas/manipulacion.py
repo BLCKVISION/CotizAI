@@ -50,8 +50,10 @@ def detectar_manipulacion(texto: str, sospechas_del_modelo: list[str]) -> list[H
         s.strip() for s in sospechas_del_modelo if s.strip() and not _is_echo_of_our_instructions(s, document)
     ]
     citas = {c: Origen.REGLA for c in de_regla} | {c: Origen.IA for c in del_modelo if c not in de_regla}
+    # The quote shown is cut to 200 characters: two that look the same are one finding.
+    citas = {c[:200]: origen for c, origen in reversed(citas.items())}
     return [
         Hallazgo(CodigoHallazgo.MANIPULACION, Severidad.CRITICA, True,
                  "Instrucción dirigida a la IA dentro de la propuesta.", cita[:200], origen)
-        for cita, origen in citas.items()
+        for cita, origen in reversed(citas.items())
     ]  # fmt: skip

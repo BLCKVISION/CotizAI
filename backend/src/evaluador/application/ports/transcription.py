@@ -14,6 +14,7 @@ class Transcription:
     uncertain: tuple[str, ...]  # figures a person must check
     quality: Quality
     notices: tuple[str, ...]
+    engine: Literal["ocr", "vision"] = "vision"
 
 
 class ImageTranscriber(Protocol):

@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 from evaluador.adapters.outbound.almacen.cifrado import AlmacenCifrado
 from evaluador.adapters.outbound.exchange_rates.bcv import BcvExchangeRateSource
+from evaluador.adapters.outbound.extraccion.ocr_tesseract import TesseractOcr
+from evaluador.adapters.outbound.extraccion.to_markdown import DocumentToMarkdown
 from evaluador.adapters.outbound.memory.auditoria_log import AuditoriaLog
 from evaluador.adapters.outbound.memory.coleccion import ColeccionEnMemoria
 from evaluador.adapters.outbound.memory.repositorios import (
@@ -29,6 +31,7 @@ from evaluador.application.use_cases.evaluate_project import (
 )
 from evaluador.application.use_cases.exchange_rates import RegisterManualRate, ResolveRates
 from evaluador.application.use_cases.gestion import Gestion
+from evaluador.application.use_cases.proposal_markdown import GetProposalMarkdown
 from evaluador.application.use_cases.proyectos import (
     CrearProyecto,
     ListarProyectos,
@@ -63,6 +66,7 @@ class Contenedor:
     resolve_rates: ResolveRates
     register_manual_rate: RegisterManualRate
     transcribe_image: TranscribeImage
+    proposal_markdown: GetProposalMarkdown
     # Expuestos para scripts de semillas y pruebas
     tenants: TenantsEnMemoria
     usuarios: UsuariosEnMemoria
@@ -121,6 +125,8 @@ def construir_contenedor(
         rate_source or BcvExchangeRateSource(today=lambda: reloj.ahora().date()), rates, reloj
     )
     get_evaluation = GetProjectEvaluation(proyectos, evaluations)
+    ocr = TesseractOcr.if_available()
+    transcriber = lazy_transcriber(config, vision_model, ocr)
     return Contenedor(
         iniciar_sesion=IniciarSesion(tenants, usuarios, sesiones, hasheador, tokens, ids, reloj, auditoria, politica),
         autenticar_token=AutenticarToken(tenants, usuarios, sesiones, tokens, reloj, politica),
@@ -147,7 +153,8 @@ def construir_contenedor(
         ask_project=AskProject(get_evaluation, ai_services, auditoria),
         resolve_rates=resolve_rates,
         register_manual_rate=RegisterManualRate(rates, reloj, auditoria),
-        transcribe_image=TranscribeImage(lazy_transcriber(config, vision_model)),
+        transcribe_image=TranscribeImage(transcriber),
+        proposal_markdown=GetProposalMarkdown(gestion, DocumentToMarkdown(transcriber, lambda: ocr)),
         tenants=tenants,
         usuarios=usuarios,
         hasheador=hasheador,
