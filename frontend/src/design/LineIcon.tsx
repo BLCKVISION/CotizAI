@@ -19,6 +19,7 @@ const GLYPHS = {
   user: 'user',
   play: 'graduation',
   x: 'close',
+  'file-text': 'doc',
 } as const satisfies Record<string, ComponentProps<typeof SimpleLineIcons>['name']>;
 
 export type LineIconName = keyof typeof GLYPHS;
