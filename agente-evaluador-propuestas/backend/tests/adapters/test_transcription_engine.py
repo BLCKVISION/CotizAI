@@ -7,6 +7,7 @@ import pytest
 from PIL import Image
 
 from evaluador.adapters.outbound.ai.fake_model import FakeModel
+from evaluador.adapters.outbound.extraction.image import read_image
 from evaluador.adapters.outbound.extraction.transcription import transcribe_image
 from evaluador.domain.errors import InvalidData
 from evaluador.domain.extraction import ImageTranscription
@@ -113,3 +114,16 @@ def test_corrupt_image_is_invalid_data_and_never_reaches_the_model():
     with pytest.raises(InvalidData):
         transcribe_image(b"\x89PNG\r\n\x1a\nxxxx", "image/png", model)
     assert seen == []
+
+
+def test_read_image_returns_the_markdown_as_text():
+    model, _ = scripted(reading(TABLE))
+    r = read_image(photo(), "image/png", model)
+    assert r.text == TABLE and r.notices == []
+
+
+def test_read_image_unreadable_asks_for_human_review():
+    bad = reading("", unreadable=True, quality="low")
+    model, _ = scripted(bad, bad)
+    r = read_image(photo(), "image/png", model)
+    assert r.text == "" and any("requiere revisión humana" in n for n in r.notices)

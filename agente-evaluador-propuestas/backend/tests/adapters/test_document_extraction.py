@@ -152,17 +152,32 @@ def test_corrupt_pdf_is_rejected():
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 
 
+def real_image(fmt: str) -> bytes:
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (400, 300), (240, 240, 240)).save(buf, format=fmt)
+    return buf.getvalue()
+
+
 def test_image_is_transcribed_with_the_vision_model():
     display = FakeModel({ImageTranscription: ImageTranscription(text="Teclado 11 x 20,00")})
-    r = read_document("foto.png", PNG, vision=display)
+    r = read_document("foto.png", real_image("PNG"), vision=display)
     assert "Teclado 11 x 20,00" in r.text
     assert display.image_calls and display.image_calls[0][1] == "image/png"
 
 
 def test_unreadable_image_leaves_notice_instead_of_inventing():
     display = FakeModel({ImageTranscription: ImageTranscription(text="", unreadable=True)})
-    r = read_document("foto.jpg", b"\xff\xd8\xff" + b"\x00" * 20, vision=display)
+    r = read_document("foto.jpg", real_image("JPEG"), vision=display)
     assert r.text == "" and any("ilegible" in a for a in r.notices)
+
+
+def test_image_with_valid_signature_but_broken_body_is_invalid_data():
+    display = FakeModel({ImageTranscription: ImageTranscription(text="no debe llegar")})
+    with pytest.raises(InvalidData):
+        read_document("foto.png", PNG, vision=display)
+    assert display.image_calls == []
 
 
 def test_image_without_vision_model_is_error():
