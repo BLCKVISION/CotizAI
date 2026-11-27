@@ -1,5 +1,6 @@
 /** The proposal as Markdown, next to its evaluation, with the problematic parts marked. */
-import { View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, View } from 'react-native';
 
 import { useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
@@ -14,7 +15,35 @@ import { splitHighlights } from './flow';
 
 const HIDDEN_TITLE = 'Texto oculto detectado';
 
-export function DocumentPanel({ projectId, proposalId, filename, terms }: { projectId: string; proposalId: Propuesta['id']; filename: string; terms: string[] }) {
+type Props = { projectId: string; proposalId: Propuesta['id']; filename: string; terms: string[] };
+
+/** Folded by default: the document is evidence to open when needed, not the first thing to read. */
+export function DocumentPanel(props: Props) {
+  const t = useTema();
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ borderRadius: radio.xl, backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${open ? 'Contraer' : 'Ver'} el documento ${props.filename}`}
+        accessibilityState={{ expanded: open }}
+        aria-expanded={open}
+        onPress={() => setOpen((v) => !v)}
+        style={(e: { pressed: boolean; focused?: boolean; hovered?: boolean }) => ({ flexDirection: 'row', alignItems: 'center', gap: espacio.md, padding: espacio.md, borderWidth: 2, borderRadius: radio.xl, borderColor: e.focused ? t.foco : 'transparent', backgroundColor: e.hovered ? t.superficieAlta : 'transparent' })}
+      >
+        <Icono nombre="file-text" />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Texto variante="etiqueta">Documento</Texto>
+          <Texto variante="pequeno" suave numberOfLines={1}>{props.filename}</Texto>
+        </View>
+        <Icono nombre={open ? 'chevron-up' : 'chevron-down'} tamano="sm" />
+      </Pressable>
+      {open ? <DocumentBody {...props} /> : null}
+    </View>
+  );
+}
+
+function DocumentBody({ projectId, proposalId, filename, terms }: Props) {
   const t = useTema();
   const { datos, error, recargar } = useDatos(proposalMarkdownApi(projectId, proposalId), proposalId);
   const split = (value: string) => splitHighlights(value, terms).map((f) => ({ texto: f.text, incierto: f.marked }));
@@ -25,7 +54,7 @@ export function DocumentPanel({ projectId, proposalId, filename, terms }: { proj
   const draw = (list: Bloque[]) => list.map((block, i) => <BloqueVista key={i} bloque={block} inciertos={[]} partir={split} minimoDeColumna={64} />);
 
   return (
-    <View style={{ gap: espacio.md, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: '#FFFFFF' }}>
+    <View style={{ gap: espacio.md, padding: espacio.lg, paddingTop: espacio.sm }}>
       <View style={{ gap: 2 }}>
         <Texto variante="subtitulo" accessibilityRole="header">
           Documento
