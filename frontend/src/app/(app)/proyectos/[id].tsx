@@ -90,11 +90,12 @@ function Dato({ icono, etiqueta, valor }: { icono: Parameters<typeof Icono>[0]['
 export default function DetalleProyecto() {
   const t = useTema();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
   const { conSesion } = useSesion();
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pestana, setPestana] = useState<'propuestas' | 'ficha' | 'revision'>('propuestas');
+  // `?tab=revision` lets a task open the tab where it is done.
+  const [pestana, setPestana] = useState<'propuestas' | 'ficha' | 'revision'>(tab === 'revision' ? 'revision' : 'propuestas');
   const { usuario } = useSesion();
   const pestanas = [
     { id: 'propuestas', etiqueta: 'Propuestas' },

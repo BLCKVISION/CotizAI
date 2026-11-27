@@ -1,8 +1,7 @@
 import { type Href, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, View, type ViewStyle } from 'react-native';
+import { Pressable, View, type ViewStyle } from 'react-native';
 
-import { ACCEPT_DOCUMENTS, ACCEPT_PHOTOS, pickFiles } from '@/core/files';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
@@ -13,9 +12,9 @@ import { FixedPage, Pagina } from '@/design/layout';
 import { espacio } from '@/design/tokens';
 import { estadisticasApi, type Estadisticas } from '@/features/gestion/api';
 import { ActivityCard } from '@/features/home/ActivityCard';
-import { buildJourney, type Step } from '@/features/home/journey';
 import { ProjectsCard } from '@/features/home/ProjectsCard';
 import { SummaryCard } from '@/features/home/SummaryCard';
+import { buildTasks, pickFocus } from '@/features/home/tasks';
 import { TodoCard } from '@/features/home/TodoCard';
 import { useProposalUpload } from '@/features/home/useProposalUpload';
 import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
@@ -64,19 +63,10 @@ export default function Home() {
   const userName = usuario?.display_name || (usuario?.correo ?? '').split('@')[0];
   const name = userName ? userName.charAt(0).toUpperCase() + userName.slice(1) : '';
 
-  const journey = datos ? buildJourney(role, datos.projects, datos.stats.propuestas_por_proyecto) : null;
-  const focus = journey?.focus ?? null;
-  const canUpload = canEdit && focus?.estado === 'en_recepcion' && Platform.OS === 'web';
+  const tasks = datos ? buildTasks(role, datos.projects, datos.stats.propuestas_por_proyecto) : [];
+  const focus = datos ? pickFocus(datos.projects) : null;
   const sendFiles = (files: File[]) => {
     if (focus) void upload(focus.id, files);
-  };
-
-  const runStep = (step: Step) => {
-    if (step.target === 'audit') return go('/auditoria');
-    if (canEdit && !focus) return setCreating(true);
-    if (canEdit && step.target === 'create' && focus?.estado !== 'en_recepcion') return setCreating(true);
-    if (step.target === 'upload' && canUpload) return pickFiles(`${ACCEPT_PHOTOS},${ACCEPT_DOCUMENTS}`, sendFiles);
-    go(focus ? `/proyectos/${focus.id}` : '/proyectos');
   };
 
   const cell = (flex: number): ViewStyle => (wide ? { flex, minWidth: 0, minHeight: 0 } : { minHeight: 340 });
@@ -107,7 +97,7 @@ export default function Home() {
       </View>
 
       {error ? <ErrorConReintento texto={error} onReintentar={recargar} /> : null}
-      {!datos || !journey ? (
+      {!datos ? (
         error ? null : <Cargando />
       ) : (
         <View style={wide ? { flex: 1, gap: 20, minHeight: 0 } : { gap: espacio.md }}>
@@ -133,7 +123,7 @@ export default function Home() {
           </View>
           <View style={row(1)}>
             <Entrada indice={2} estilo={cell(0.56)}>
-              <TodoCard journey={journey} onSelect={runStep} />
+              <TodoCard tasks={tasks} hasProjects={datos.projects.length > 0} canCreate={canEdit} onOpen={go} onCreate={() => setCreating(true)} />
             </Entrada>
             <Entrada indice={3} estilo={cell(1)}>
               <SummaryCard stats={datos.stats} onOpen={() => go('/estadisticas')} />
