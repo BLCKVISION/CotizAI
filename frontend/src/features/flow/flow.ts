@@ -2,7 +2,7 @@
 /** The guided path of a purchase and the fixed "why yes / why no" template. Only the information changes. */
 export const MIN_PROPOSALS = 1;
 /** The server rejects larger batches. */
-export const MAX_PER_RUN = 5;
+export const MAX_PER_RUN = 20;
 
 export const STEPS = [
   { id: 'project', label: 'Proyecto' },

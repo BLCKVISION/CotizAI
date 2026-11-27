@@ -144,7 +144,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
       {!datos ? (
         error ? null : <Cargando />
       ) : (
-        <CollapsibleCard title={`Propuestas (${n} de ${MAXIMO})`} detail={n < MINIMO ? 'Agregue al menos una para analizar.' : 'Se analizan hasta 5 por tanda.'} defaultOpen={n > 0 && n <= 3}>
+        <CollapsibleCard title={`Propuestas (${n} de ${MAXIMO})`} detail={n < MINIMO ? 'Agregue al menos una para analizar.' : 'Se analizan hasta 20 a la vez.'} defaultOpen={n > 0 && n <= 3}>
           <View style={{ height: 10, borderRadius: radio.pildora, backgroundColor: t.superficieAlta, overflow: 'hidden' }}>
             <View style={{ height: 10, width: `${Math.min(100, (n / MINIMO) * 100)}%`, backgroundColor: t.primario }} />
           </View>

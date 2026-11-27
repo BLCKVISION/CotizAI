@@ -40,7 +40,7 @@ export function PreparationHero({ title, detail, blocker, canEvaluate, running, 
             {running ? (
               <Boton large etiqueta={`Ver el proceso (${elapsed} s)`} icono="activity" onPress={onShowProcess} />
             ) : canEvaluate ? (
-              <Boton large etiqueta="Evaluar" icono="cpu" deshabilitado={blocker !== null} onPress={onEvaluate} />
+              <Boton large etiqueta="Evaluar Propuestas de Servicios" icono="cpu" deshabilitado={blocker !== null} onPress={onEvaluate} />
             ) : null}
           </View>
           {blocker && !running ? (

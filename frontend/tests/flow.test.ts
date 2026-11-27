@@ -44,16 +44,16 @@ describe('template', () => {
 
 describe('selection', () => {
   const ids = (n: number) => Array.from({ length: n }, (_, i) => `p${i}`);
-  it('selects at most five, starting with what has not been analysed', () => {
+  it('selects at most twenty, starting with what has not been analysed', () => {
     assert.deepEqual(defaultSelection(['a', 'b'], []), ['a', 'b']);
-    assert.equal(defaultSelection(ids(12), []).length, 5);
+    assert.equal(defaultSelection(ids(25), []).length, 20);
     assert.deepEqual(defaultSelection(ids(7), ids(5)), ['p5', 'p6']);
     assert.deepEqual(defaultSelection(['a'], ['a']), ['a']);
   });
-  it('allows from one to five per batch', () => {
+  it('allows from one to twenty per batch', () => {
     assert.equal(selectionProblem(1, 1), null);
-    assert.equal(selectionProblem(5, 20), null);
-    assert.match(selectionProblem(6, 20) ?? '', /Máximo 5/);
+    assert.equal(selectionProblem(20, 20), null);
+    assert.match(selectionProblem(21, 25) ?? '', /Máximo 20/);
     assert.match(selectionProblem(0, 3) ?? '', /al menos una/);
     assert.match(selectionProblem(0, 0) ?? '', /al menos una propuesta/);
   });

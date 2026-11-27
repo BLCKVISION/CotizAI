@@ -17,7 +17,7 @@ const VISIBLE_PROJECTS = 3;
 
 const GUIDE = [
   { title: 'Cree el proyecto', detail: 'Requerimiento, ubicación y presupuesto.' },
-  { title: 'Suba las propuestas', detail: 'Desde 1 archivo; se analizan hasta 5 por tanda.' },
+  { title: 'Suba las propuestas', detail: 'Desde 1 archivo; se analizan hasta 20 a la vez.' },
   { title: 'Evalúe', detail: 'Ordena las ofertas válidas por puntaje y costo real, con evidencia.' },
   { title: 'Decida', detail: 'El comité revisa y aprueba. La decisión es humana.' },
 ];

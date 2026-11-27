@@ -37,8 +37,8 @@ válidas. La decisión final es del comité.
 **Implementado**
 
 - Proyectos con estados, usuarios con cuatro roles, directorio de proveedores y auditoría con huellas encadenadas.
-- Carga de hasta 20 propuestas por proyecto, cifradas con AES-256-GCM. En la plataforma se analizan por tandas de 1 a 5
-  (los resultados se acumulan y se ordenan juntos); el modo lote procesa todos los archivos.
+- Carga de hasta 20 propuestas por proyecto, cifradas con AES-256-GCM. La plataforma analiza hasta 20 a la vez; el modo
+  lote procesa todos los archivos.
 - Lectura de PDF, PDF escaneado, imágenes y XLSX (incluye contenido oculto).
 - Reglas de descarte: alcance, compatibilidad, capacidad, calidad, costos abusivos, aritmética y manipulación.
 - Costo real paso a paso, tasa del BCV o manual, ranking, antecedentes de descarte del proveedor.
@@ -46,13 +46,15 @@ válidas. La decisión final es del comité.
   lote que genera `salida.json`.
 - Registro de cuentas: cada una recibe su propia organización aislada (se puede desactivar con
   `EVALUADOR_REGISTRATION_ENABLED=false`).
-- Búsqueda web de precios de mercado, **desactivada por defecto** (`EVALUADOR_MARKET_SEARCH_ENABLED=true`).
+- Búsqueda web de precios de mercado (Perplexity Sonar): activa en los despliegues con Docker Compose y
+  desactivable con `EVALUADOR_MARKET_SEARCH_ENABLED=false`. Consulta hasta 5 líneas por propuesta.
+- Traza por propuesta con los pasos que ejecutó el agente, sus hallazgos, el costo y el veredicto.
 
 **Limitaciones**
 
 - No hay envío de correos: la contraseña la restablece un administrador y el correo de las cuentas nuevas no se verifica.
 - El asistente conversacional con herramientas (`docs/ASISTENTE.md`) está desactivado: falta validarlo con el modelo real.
-- La interfaz muestra el tiempo transcurrido de la evaluación, no la traza paso a paso del agente.
+- Durante la evaluación el avance mostrado es una estimación; la traza real aparece al terminar.
 - El cifrado en reposo de la aplicación cubre los documentos originales, no la base de datos ni la auditoría.
 - Sin PostgreSQL, los datos se pierden al reiniciar la API. El índice de preguntas está siempre en memoria: tras un
   reinicio hay que volver a evaluar.
