@@ -35,6 +35,16 @@ def allowed_extensions() -> frozenset[str]:
     return frozenset(_EXTENSIONS)
 
 
+def detect_type(data: bytes) -> str | None:
+    """Tipo real por la firma del contenido (`pdf`, `xlsx`, `png`, `jpeg`, `webp`) o None si no se reconoce."""
+    return _type_by_content(data)
+
+
+def type_by_extension(name: str) -> str | None:
+    """Tipo que anuncia la extensión, solo si está admitida (.xlsm, .xls, etc. devuelven None)."""
+    return _EXTENSIONS.get(PurePath(name).suffix.lower())
+
+
 def read_document(name: str, data: bytes, vision: VisionModel | None = None) -> ReadContent:
     expected = _EXTENSIONS.get(PurePath(name).suffix.lower())
     if expected is None:
