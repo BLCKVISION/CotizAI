@@ -37,3 +37,16 @@ Login de desarrollo: solo **correo y contraseña**. Usuarios `<role>@demo.local`
 ## Modelos de IA
 
 Por defecto usa **Ollama** (gratis, local): `ollama pull qwen2.5:7b`. Para cambiar de modelo o proveedor edite `EVALUADOR_IA_*` en `.env`; no hay que tocar código. Los embeddings son locales y gratuitos (`fastembed`, multilingüe).
+
+## Transcripción de presupuestos (imagen → Markdown)
+
+`POST /api/v1/transcriptions?archivo=<nombre.png|jpg|jpeg|webp>` (permiso de carga, cuerpo binario crudo, hasta 25 MiB) devuelve:
+
+```json
+{ "markdown": "...", "uncertain": ["1.1?0,00"], "quality": "high|medium|low", "notices": ["..."] }
+```
+
+- Lee fotos o capturas, también algo borrosas: mejora la imagen (orientación, escala, contraste, nitidez) y, si la primera lectura es dudosa, hace una segunda sobre la original. Las cifras que difieren entre lecturas se marcan en `uncertain`; **nunca se adivina un valor ilegible**.
+- `quality: low` o `notices` con «requiere revisión humana» indican que hay que revisar a mano.
+- Requiere un modelo **con visión** (`EVALUADOR_IA_*`). El `qwen2.5:7b` por defecto de Ollama no lee imágenes: sin un modelo de visión el endpoint responde `503 service_unavailable`.
+- En el frontend: menú **Transcribir** (sube la imagen, muestra las tablas y resalta las cifras inciertas).
