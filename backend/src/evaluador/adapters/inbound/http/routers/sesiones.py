@@ -13,7 +13,7 @@ router = APIRouter(tags=["sesiones"])
 
 @router.post("/sesiones", status_code=status.HTTP_201_CREATED, dependencies=[Depends(limitar_login)])
 def iniciar_sesion(dto: IniciarSesionDto, request: Request) -> SesionRespuesta:
-    """Inicia sesión con correo y contraseña. El tenant se deduce del usuario. Devuelve un token opaco de corta vida."""
+    """Inicia sesión con correo y contraseña. El tenant se deduce del usuario. Devuelve un JWT firmado de corta vida."""
     r = request.app.state.contenedor.iniciar_sesion.ejecutar(dto.correo, dto.contrasena.get_secret_value())
     return SesionRespuesta(token_acceso=r.token, expira=r.expira, usuario=UsuarioRespuesta.desde_dominio(r.usuario))
 

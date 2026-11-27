@@ -126,7 +126,7 @@ Las versiones exactas están en [`backend/requirements.txt`](backend/requirement
 - Agente y RAG: LangGraph, FastEmbed, NumPy, pgvector.
 - Datos: Psycopg, SQLAlchemy, Alembic.
 - Documentos: pdfplumber, pypdfium2 y Pillow (instalados con pdfplumber), openpyxl, defusedxml.
-- Seguridad: argon2-cffi, cryptography.
+- Seguridad: argon2-cffi, cryptography, PyJWT.
 - Calidad: pytest, pytest-asyncio, Ruff, mypy.
 
 **Frontend**

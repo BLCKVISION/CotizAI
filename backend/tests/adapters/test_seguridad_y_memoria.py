@@ -1,7 +1,7 @@
 from evaluador.adapters.outbound.memory.indice_vectorial import IndiceEnMemoria
 from evaluador.adapters.outbound.memory.repositorios import ProyectosEnMemoria, UsuariosEnMemoria
 from evaluador.adapters.outbound.security.argon2_hasheador import Argon2Hasheador
-from evaluador.adapters.outbound.security.tokens import IdsUuid, TokensSeguros
+from evaluador.adapters.outbound.security.tokens import IdsUuid, JwtTokens
 from evaluador.domain.identidad import Rol, Usuario
 from evaluador.domain.rag import Fragmento
 
@@ -17,12 +17,10 @@ def test_argon2_hash_verifica_y_rechaza():
     h.verificar_ficticio("x")
 
 
-def test_tokens_unicos_de_256_bits_y_huella_determinista():
-    t = TokensSeguros()
-    a, b = t.nuevo(), t.nuevo()
-    assert a != b and len(a) >= 43
-    assert t.huella(a) == t.huella(a) != t.huella(b)
-    assert a not in t.huella(a) and len(t.huella(a)) == 64
+def test_token_fingerprint_is_deterministic_and_ids_are_unique():
+    t = JwtTokens()
+    assert t.huella("a") == t.huella("a") != t.huella("b")
+    assert len(t.huella("a")) == 64
     assert IdsUuid().nuevo() != IdsUuid().nuevo()
 
 

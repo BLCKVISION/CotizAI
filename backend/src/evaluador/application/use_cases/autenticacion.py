@@ -14,6 +14,7 @@ from evaluador.application.ports.salida import (
     Reloj,
     SesionRepositorio,
     TenantRepositorio,
+    TokenClaims,
     UsuarioRepositorio,
 )
 from evaluador.domain.errores import CredencialesInvalidas, SesionInvalida
@@ -86,14 +87,25 @@ class IniciarSesion:
             usuario = usuario.con_hash(self._hasheador.hashear(contrasena))
         self._usuarios.guardar(usuario)
 
-        token = self._tokens.nuevo()
+        session_id = self._ids.nuevo()
+        expires_at = ahora + timedelta(hours=self._politica.horas_de_vida_maxima)
+        token = self._tokens.issue(
+            TokenClaims(
+                user_id=usuario.id,
+                tenant_id=tenant.id,
+                session_id=session_id,
+                role=usuario.rol.value,
+                issued_at=ahora,
+                expires_at=expires_at,
+            )
+        )
         sesion = Sesion(
-            id=self._ids.nuevo(),
+            id=session_id,
             tenant_id=tenant.id,
             usuario_id=usuario.id,
             token_hash=self._tokens.huella(token),
             creada=ahora,
-            expira=ahora + timedelta(hours=self._politica.horas_de_vida_maxima),
+            expira=expires_at,
             ultima_actividad=ahora,
         )
         self._sesiones.guardar(sesion)
@@ -128,8 +140,11 @@ class AutenticarToken:
 
     def ejecutar(self, token: str) -> SesionAutenticada:
         ahora = self._reloj.ahora()
+        claims = self._tokens.verify(token, ahora)  # forged or expired tokens never reach the store
         sesion = self._sesiones.por_token_hash(self._tokens.huella(token))
         if sesion is None or not sesion.es_valida(ahora, self._politica):
+            raise SesionInvalida("Sesión inválida o expirada.")
+        if (claims.session_id, claims.user_id, claims.tenant_id) != (sesion.id, sesion.usuario_id, sesion.tenant_id):
             raise SesionInvalida("Sesión inválida o expirada.")
         tenant = self._tenants.por_id(sesion.tenant_id)
         usuario = self._usuarios.por_id(sesion.tenant_id, sesion.usuario_id)

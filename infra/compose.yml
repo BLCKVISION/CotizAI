@@ -35,6 +35,7 @@ services:
       EVALUADOR_ENTORNO: produccion
       EVALUADOR_PERSISTENCIA: postgres
       EVALUADOR_CLAVE_CIFRADO: ${EVALUADOR_CLAVE_CIFRADO:-}
+      EVALUADOR_JWT_SECRET: ${EVALUADOR_JWT_SECRET:?defina EVALUADOR_JWT_SECRET en infra/.env}
       EVALUADOR_CONFIAR_EN_PROXY: "true"
       EVALUADOR_ORIGENES_CORS: '["https://hackathon.exmachina.systems","https://cotiz-ai.exmachina.systems","http://hackathon.exmachina.systems","http://cotiz-ai.exmachina.systems"]'
       EVALUADOR_SEMILLA_CLAVE: ${EVALUADOR_SEMILLA_CLAVE:-}

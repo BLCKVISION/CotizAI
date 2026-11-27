@@ -92,7 +92,8 @@ SOLID: **S** un nodo/caso de uso = una responsabilidad · **O** proveedores y re
 - Si el tenant del usuario está inactivo, el login falla con el mismo 401 genérico. Todos los puertos de lectura reciben `tenant_id` y el adaptador **debe** filtrar por él (también el índice vectorial).
 - Un recurso de otro tenant responde **404**, igual que uno inexistente.
 - Contraseñas con **Argon2id** + rehash automático si cambian los parámetros.
-- Token de sesión **opaco de 256 bits**; en el almacén solo se guarda su **SHA-256**. Expira por inactividad (30 min) y por vida máxima (8 h); logout lo revoca.
+- Token de sesión **JWT firmado (HS256)** con `EVALUADOR_JWT_SECRET` (mínimo 32 bytes, obligatorio en producción). Se rechaza si la firma, el emisor, la audiencia o la vigencia no son válidos; el algoritmo es fijo.
+- La sesión se conserva en el servidor (del token solo se guarda su **SHA-256**): expira por inactividad (30 min) y por vida máxima (8 h), y logout la revoca aunque el JWT no haya vencido.
 - **Sin enumeración:** usuario inexistente, tenant inactivo, clave errónea, cuenta inactiva o bloqueada → mismo 401, mismo mensaje y mismo coste de tiempo (verificación ficticia).
 - **Bloqueo** tras 5 fallos (15 min) + límite de 10 intentos/min por IP.
 - **Autorización por permisos** (matriz por rol, mínimo privilegio) en dos capas: guard HTTP y caso de uso.

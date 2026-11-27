@@ -13,6 +13,8 @@ class Configuracion(BaseSettings):
     nivel_de_log: str = "INFO"
     origenes_cors: list[str] = []  # lista explícita; nunca "*" con credenciales
     confiar_en_proxy: bool = False  # solo si Caddy es el único que llega a la API
+    # Signs the session tokens (JWT). At least 32 bytes; required in production.
+    jwt_secret: SecretStr | None = None
     limite_login_por_minuto: int = 10
     max_bytes_payload: int = 1_048_576  # 1 MiB para peticiones JSON
 

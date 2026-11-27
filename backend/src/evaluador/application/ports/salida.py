@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 
@@ -46,8 +47,23 @@ class HasheadorDeContrasenas(Protocol):
     def requiere_rehash(self, hash_almacenado: str) -> bool: ...
 
 
+@dataclass(frozen=True, slots=True)
+class TokenClaims:
+    """What a signed session token states about its bearer."""
+
+    user_id: str
+    tenant_id: str
+    session_id: str
+    role: str
+    issued_at: datetime
+    expires_at: datetime
+
+
 class GeneradorDeTokens(Protocol):
-    def nuevo(self) -> str: ...
+    def issue(self, claims: TokenClaims) -> str: ...
+    def verify(self, token: str, now: datetime) -> TokenClaims:
+        """Raises SesionInvalida when the token is forged, altered or expired."""
+
     def huella(self, token: str) -> str:
         """Huella irreversible: en el almacén solo se guarda la huella, nunca el token."""
 

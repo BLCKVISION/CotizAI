@@ -17,7 +17,7 @@ from evaluador.adapters.outbound.memory.repositorios import (
 from evaluador.adapters.outbound.persistence.coleccion_postgres import ColeccionPostgres, preparar_esquema
 from evaluador.adapters.outbound.persistence.exchange_rate_collection import CollectionExchangeRates, RateRecord
 from evaluador.adapters.outbound.security.argon2_hasheador import Argon2Hasheador
-from evaluador.adapters.outbound.security.tokens import IdsUuid, RelojSistema, TokensSeguros
+from evaluador.adapters.outbound.security.tokens import IdsUuid, JwtTokens, RelojSistema
 from evaluador.application.ports.exchange_rates import ExchangeRateSource
 from evaluador.application.use_cases.autenticacion import AutenticarToken, CerrarSesion, IniciarSesion
 from evaluador.application.use_cases.evaluate_project import (
@@ -81,6 +81,13 @@ def _colecciones(config: Configuracion | None) -> dict:
     return {nombre: ColeccionEnMemoria() for nombre in tipos}
 
 
+def _session_tokens(config: Configuracion | None) -> JwtTokens:
+    secret = config.jwt_secret.get_secret_value() if config is not None and config.jwt_secret else ""
+    if not secret and config is not None and config.es_produccion:
+        raise ValueError("EVALUADOR_JWT_SECRET es obligatorio en producción.")
+    return JwtTokens(secret or None)
+
+
 def construir_contenedor(
     politica: PoliticaDeSesion | None = None,
     config: Configuracion | None = None,
@@ -89,7 +96,7 @@ def construir_contenedor(
     rate_source: ExchangeRateSource | None = None,
 ) -> Contenedor:
     politica = politica or PoliticaDeSesion()
-    reloj, ids, tokens, hasheador = RelojSistema(), IdsUuid(), TokensSeguros(), Argon2Hasheador()
+    reloj, ids, tokens, hasheador = RelojSistema(), IdsUuid(), _session_tokens(config), Argon2Hasheador()
     tenants, usuarios, sesiones = TenantsEnMemoria(), UsuariosEnMemoria(), SesionesEnMemoria()
     datos = _colecciones(config)
     proyectos = datos["proyectos"]
