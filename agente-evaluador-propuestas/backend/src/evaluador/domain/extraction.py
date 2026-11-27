@@ -85,3 +85,6 @@ class ImageTranscription(_Base):
 
     text: str = ""
     unreadable: bool = False  # True si la imagen no permite leer con fiabilidad: se pide revisión, no se inventa
+    markdown: str = ""  # transcripción en Markdown (tablas como tablas); vacío = usar `text`
+    uncertain: list[str] = Field(default_factory=list)  # cifras o fragmentos dudosos, tal como se marcaron con «?»
+    quality: Literal["high", "medium", "low"] = "high"
