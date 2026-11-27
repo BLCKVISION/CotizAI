@@ -115,3 +115,4 @@ def test_provider_failure_is_503_without_leaking_its_detail(container):
     r = send(c, png())
     assert r.status_code == 503 and r.json()["code"] == "service_unavailable"
     assert "sk-secreta" not in r.text
+    assert "admita imágenes" in r.json()["message"]  # pista útil: el fallo típico es un modelo sin visión

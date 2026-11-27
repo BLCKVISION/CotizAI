@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
 from evaluador.adapters.outbound.extraction.reader import MAX_BYTES, detect_type, type_by_extension
 from evaluador.adapters.outbound.extraction.transcription import Transcription, transcribe_image
 from evaluador.application.ports.agent import VisionModel
 from evaluador.domain.errors import DomainError, InvalidData, PayloadTooLarge, ServiceUnavailable
 from evaluador.domain.identity import Permission, User
 
+_log = logging.getLogger("evaluador.transcription")
 _IMAGE_MIME = {"png": "image/png", "jpeg": "image/jpeg", "webp": "image/webp"}
 
 
@@ -33,4 +36,8 @@ class TranscribeImage:
         except DomainError:
             raise
         except Exception as exc:  # noqa: BLE001 - el detalle del proveedor (claves, URLs) nunca llega al cliente
-            raise ServiceUnavailable("El modelo de visión no pudo responder. Intente de nuevo.") from exc
+            _log.warning("transcription_provider_failed", extra={"type": type(exc).__name__})  # pista para el operador
+            raise ServiceUnavailable(
+                "El modelo de visión no pudo responder. Compruebe que el modelo configurado (EVALUADOR_IA_*) "
+                "admita imágenes, o reintente."
+            ) from exc

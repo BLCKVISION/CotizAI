@@ -13,7 +13,7 @@ from PIL import Image, ImageFilter, ImageOps
 from evaluador.domain.errors import InvalidData
 
 MIN_LONG_SIDE = 1600  # por debajo, se amplía: las cifras pequeñas de una foto reducida se leen mal
-MAX_PIXELS = 50_000_000  # protege la memoria frente a imágenes diseñadas para descomprimirse a un tamaño enorme
+MAX_PIXELS = 30_000_000  # una foto de móvil ronda 12-24 MP; el resto es memoria (varias copias por petición)
 
 
 def _flatten(img: Image.Image) -> Image.Image:

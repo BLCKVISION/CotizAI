@@ -27,14 +27,17 @@ def reading(markdown="", *, text="", uncertain=(), quality="high", unreadable=Fa
     )
 
 
-def scripted(*responses: ImageTranscription) -> tuple[FakeModel, list[str]]:
+def scripted(*responses: ImageTranscription | Exception) -> tuple[FakeModel, list[str]]:
     """Modelo que devuelve las lecturas en orden y guarda la imagen que recibió cada llamada."""
-    queue: Iterator[ImageTranscription] = iter(responses)
+    queue: Iterator[ImageTranscription | Exception] = iter(responses)
     seen: list[str] = []
 
     def respond(image: str) -> ImageTranscription:
         seen.append(image)
-        return next(queue)
+        r = next(queue)
+        if isinstance(r, Exception):
+            raise r
+        return r
 
     return FakeModel({ImageTranscription: respond}), seen
 
@@ -72,7 +75,7 @@ def test_figures_that_differ_between_reads_become_uncertain():
 def test_matching_figures_are_not_uncertain():
     model, _ = scripted(reading(TABLE, quality="medium"), reading(TABLE, quality="high"))
     r = transcribe_image(photo(), "image/png", model)
-    assert r.uncertain == () and r.quality == "medium"
+    assert r.uncertain == () and r.quality == "high"
 
 
 def test_uncertain_marks_declared_by_the_model_are_kept():
@@ -127,3 +130,34 @@ def test_read_image_unreadable_asks_for_human_review():
     model, _ = scripted(bad, bad)
     r = read_image(photo(), "image/png", model)
     assert r.text == "" and any("requiere revisión humana" in n for n in r.notices)
+
+
+def test_the_better_read_is_returned_not_the_first_one():
+    model, _ = scripted(reading("ruido ilegible", quality="low"), reading(TABLE, quality="high"))
+    r = transcribe_image(photo(), "image/png", model)
+    assert r.markdown == TABLE and r.quality == "high"
+
+
+def test_a_failing_second_read_keeps_the_first_with_a_notice():
+    model, _ = scripted(reading(TABLE, quality="medium"), RuntimeError("proveedor caído"))
+    r = transcribe_image(photo(), "image/png", model)
+    assert r.markdown == TABLE and r.quality == "medium"
+    assert any("segunda lectura" in n for n in r.notices)
+
+
+def test_a_marked_figure_the_model_did_not_list_is_uncertain_and_triggers_the_second_read():
+    marked = "| Monitor | 1.1?0,00 |"
+    model, seen = scripted(reading(marked, quality="high"), reading(marked, quality="high"))
+    r = transcribe_image(photo(), "image/png", model)
+    assert len(seen) == 2 and "1.1?0,00" in r.uncertain and r.quality == "medium"
+
+
+def test_declared_uncertainty_never_leaves_quality_high():
+    first = reading("| Monitor | 1.1?0,00 |", uncertain=["1.1?0,00"], quality="high")
+    model, _ = scripted(first, first)
+    assert transcribe_image(photo(), "image/png", model).quality == "medium"
+
+
+def test_single_digit_differences_are_not_uncertain():
+    model, _ = scripted(reading("| 3 | 100,00 |", quality="medium"), reading("| 4 | 100,00 |", quality="medium"))
+    assert transcribe_image(photo(), "image/png", model).uncertain == ()

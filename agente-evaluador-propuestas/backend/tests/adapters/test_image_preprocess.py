@@ -52,3 +52,8 @@ def test_garbage_bytes_raise_invalid_data():
 def test_pixel_bomb_is_rejected():
     with pytest.raises(InvalidData, match="demasiado grande"):
         enhance(encode(Image.new("1", (8000, 8000))))
+
+
+def test_limit_is_thirty_megapixels():
+    with pytest.raises(InvalidData, match="demasiado grande"):
+        enhance(encode(Image.new("1", (6000, 6000))))  # 36 MP

@@ -48,5 +48,5 @@ Por defecto usa **Ollama** (gratis, local): `ollama pull qwen2.5:7b`. Para cambi
 
 - Lee fotos o capturas, también algo borrosas: mejora la imagen (orientación, escala, contraste, nitidez) y, si la primera lectura es dudosa, hace una segunda sobre la original. Las cifras que difieren entre lecturas se marcan en `uncertain`; **nunca se adivina un valor ilegible**.
 - `quality: low` o `notices` con «requiere revisión humana» indican que hay que revisar a mano.
-- Requiere un modelo **con visión** (`EVALUADOR_IA_*`). El `qwen2.5:7b` por defecto de Ollama no lee imágenes: sin un modelo de visión el endpoint responde `503 service_unavailable`.
+- Requiere un modelo **con visión** (`EVALUADOR_IA_*`). El `qwen2.5:7b` por defecto de Ollama no lee imágenes: con un modelo sin visión (o sin proveedor) el endpoint responde `503 service_unavailable` indicando que se revise el modelo configurado, y el operador ve el tipo de fallo en el log (`transcription_provider_failed`).
 - En el frontend: menú **Transcribir** (sube la imagen, muestra las tablas y resalta las cifras inciertas).
