@@ -1,4 +1,5 @@
 /** Coti: floating assistant with a chat. It answers about the quotes of the project that is open, from the evaluated documents. */
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { usePathname } from 'expo-router';
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
@@ -15,6 +16,7 @@ type Message = { id: number; from: 'coti' | 'user'; text: string; sources?: stri
 
 const GREETING =
   '¡Hola! Soy Coti, tu asistente de CotizAI. Te ayudo a analizar las cotizaciones de tus proyectos: costos, descartes y ranking. ¿Qué necesitas saber?';
+const SUGGESTIONS = ['¿Cuál es la mejor cotización?', '¿Qué cotizaciones se descartaron y por qué?', '¿Cuál tiene el menor costo total?'];
 const NO_PROJECT =
   'Para ayudarte con las cotizaciones, abre primero un proyecto con su evaluación y luego pregúntame lo que necesites.';
 
@@ -67,6 +69,7 @@ export function CotiChat() {
     const saved = loadMessages(projectId);
     skipSave.current = true;
     nextId.current = Math.max(...saved.map((m) => m.id)) + 1;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reload the saved chat when the project changes
     setMessages(saved);
     setDraft('');
   }, [projectId]);
@@ -81,8 +84,8 @@ export function CotiChat() {
 
   const push = (m: Omit<Message, 'id'>) => setMessages((all) => [...all, { ...m, id: nextId.current++ }]);
 
-  const send = async () => {
-    const text = draft.trim();
+  const send = async (override?: string) => {
+    const text = (override ?? draft).trim();
     if (thinking || text.length < 2) return;
     setDraft('');
     push({ from: 'user', text });
@@ -113,7 +116,7 @@ export function CotiChat() {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: espacio.md, gap: espacio.sm, borderBottomWidth: 1, borderBottomColor: t.borde }}>
             <View style={{ width: 36, height: 36, borderRadius: radio.pildora, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>
-              <Icono nombre="message-circle" color={t.onAccent} />
+              <MaterialCommunityIcons name="robot-happy-outline" size={22} color={t.onAccent} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
             </View>
             <View style={{ flex: 1 }}>
               <Texto variante="etiqueta">Coti</Texto>
@@ -150,6 +153,14 @@ export function CotiChat() {
             </View>
           </ScrollView>
 
+          {projectId && messages.length === 1 && !thinking ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.xs, paddingHorizontal: espacio.md, paddingBottom: espacio.sm }}>
+              {SUGGESTIONS.map((q) => (
+                <Boton key={q} etiqueta={q} variante="secundario" onPress={() => void send(q)} />
+              ))}
+            </View>
+          ) : null}
+
           <View style={{ padding: espacio.md, gap: espacio.sm, borderTopWidth: 1, borderTopColor: t.borde }}>
             <CampoDeTexto etiqueta="Mensaje para Coti" value={draft} onChangeText={setDraft} maxLength={500} onSubmitEditing={() => void send()} />
             <Boton etiqueta="Enviar" icono="send" cargando={thinking} deshabilitado={draft.trim().length < 2} onPress={() => void send()} />
@@ -174,7 +185,11 @@ export function CotiChat() {
           ...soloWeb({ boxShadow: '0 8px 24px rgba(15,23,42,0.22)', transitionProperty: 'background-color', transitionDuration: '160ms' }),
         })}
       >
-        <Icono nombre={open ? 'x' : 'message-circle'} tamano="lg" color={t.onAccent} />
+        {open ? (
+          <Icono nombre="x" tamano="lg" color={t.onAccent} />
+        ) : (
+          <MaterialCommunityIcons name="robot-happy-outline" size={30} color={t.onAccent} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />
+        )}
       </Pressable>
     </View>
   );
