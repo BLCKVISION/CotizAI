@@ -1,49 +1,49 @@
 {
   "reto": "propuesta_servicios",
-  "repositorio": "blckvisions/cotizai",
-  "commit": "8462f1fe1d1d25a3093b63cf5c2e3342d1cfeaaa",
-  "inicio": "2026-11-27T16:34:53-04:00",
-  "fin": "2026-11-27T16:35:51-04:00",
+  "repositorio": "grupo/unc/unc_grupo6/propuesta_servicios",
+  "commit": "f2e55b9648104c751a6b044ad515d58e4835c666",
+  "inicio": "2026-11-27T17:47:47-04:00",
+  "fin": "2026-11-27T17:48:46-04:00",
   "procesados": [
     {
       "archivo": "Propuesta_147_Oficina_Basica_Tech_CA.png",
-      "hora": "2026-11-27T16:35:10-04:00"
+      "hora": "2026-11-27T17:48:04-04:00"
     },
     {
       "archivo": "Propuesta_195_Consorcio_Enterprise_Caracas_SA.pdf",
-      "hora": "2026-11-27T16:35:22-04:00"
+      "hora": "2026-11-27T17:48:14-04:00"
     },
     {
       "archivo": "Propuesta_284_Licencias__Hardware_Global_CA.pdf",
-      "hora": "2026-11-27T16:35:18-04:00"
+      "hora": "2026-11-27T17:48:13-04:00"
     },
     {
       "archivo": "Propuesta_376_Soluciones_Tecnologicas_Merida_CA.png",
-      "hora": "2026-11-27T16:35:14-04:00"
+      "hora": "2026-11-27T17:48:08-04:00"
     },
     {
       "archivo": "Propuesta_519_Saldos__Remates_TI_CA.png",
-      "hora": "2026-11-27T16:35:20-04:00"
+      "hora": "2026-11-27T17:48:13-04:00"
     },
     {
       "archivo": "Propuesta_628_DataCenter__Workstations_CA.xlsx",
-      "hora": "2026-11-27T16:35:35-04:00"
+      "hora": "2026-11-27T17:48:28-04:00"
     },
     {
       "archivo": "Propuesta_712_MegaPC_Directo_CA.jpg",
-      "hora": "2026-11-27T16:35:26-04:00"
+      "hora": "2026-11-27T17:48:21-04:00"
     },
     {
       "archivo": "Propuesta_761_NovaTech_Soluciones_Integrales_CA.png",
-      "hora": "2026-11-27T16:35:51-04:00"
+      "hora": "2026-11-27T17:48:46-04:00"
     },
     {
       "archivo": "Propuesta_853_Importadora_Relampago_Logistic_CA.xlsx",
-      "hora": "2026-11-27T16:35:38-04:00"
+      "hora": "2026-11-27T17:48:31-04:00"
     },
     {
       "archivo": "Propuesta_904_Vertice_Sistemas_Integrados_CA.jpg",
-      "hora": "2026-11-27T16:35:37-04:00"
+      "hora": "2026-11-27T17:48:30-04:00"
     }
   ],
   "ranking": [
