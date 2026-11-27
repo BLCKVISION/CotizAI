@@ -3,14 +3,14 @@
  * y vista de tabla. Sin leyenda porque el título nombra la serie. Con un solo eje.
  */
 import { useState } from 'react';
-import { Pressable, type PressableStateCallbackType, View } from 'react-native';
+import { Pressable, type PressableStateCallbackType, ScrollView, View } from 'react-native';
 
-import { CollapsibleCard } from './Collapsible';
 import { Chip, Texto } from './componentes';
-import { soloWeb } from './efectos';
+import { soloWeb, vidrio } from './efectos';
 import { useTema } from './tema';
 import { espacio, radio } from './tokens';
 
+const CHART_CARD_HEIGHT = 372;
 export type Dato = { etiqueta: string; valor: number };
 type Estado = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
 const TONO = '#1D4ED8';
@@ -23,14 +23,12 @@ export function TarjetaDeGrafico({
   datos,
   forma = 'barras',
   vacio = 'Aún no hay datos.',
-  abierta = false,
 }: {
   titulo: string;
   unidad: string;
   datos: Dato[];
   forma?: 'barras' | 'columnas';
   vacio?: string;
-  abierta?: boolean;
 }) {
   const t = useTema();
   const [tabla, setTabla] = useState(false);
@@ -42,12 +40,20 @@ export function TarjetaDeGrafico({
   const eventos = (i: number) => ({ onHoverIn: () => setActivo(i), onHoverOut: () => setActivo(null), onPress: () => setActivo(i) });
 
   return (
-    <CollapsibleCard title={titulo} detail={total > 0 ? detalle : vacio} defaultOpen={abierta}>
-      {total > 0 ? (
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-          <Chip etiqueta={tabla ? 'Ver gráfico' : 'Ver tabla'} seleccionado={false} onPress={() => setTabla((v) => !v)} />
+    // Fixed height so every chart card in a grid looks the same; long lists scroll inside.
+    <View style={{ ...vidrio({ radio: radio.xl }), height: CHART_CARD_HEIGHT, padding: espacio.lg, gap: espacio.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: espacio.sm }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Texto variante="cuerpoMedio" accessibilityRole="header" numberOfLines={1} style={{ fontFamily: 'Urbanist_600SemiBold' }}>
+            {titulo}
+          </Texto>
+          <Texto variante="pequeno" suave numberOfLines={1}>
+            {total > 0 ? detalle : vacio}
+          </Texto>
         </View>
-      ) : null}
+        {total > 0 ? <Chip etiqueta={tabla ? 'Ver gráfico' : 'Ver tabla'} seleccionado={false} onPress={() => setTabla((v) => !v)} /> : null}
+      </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: forma === 'columnas' && !tabla ? 'flex-end' : 'flex-start' }}>
       {total === 0 ? (
         <Texto suave style={{ paddingVertical: espacio.lg }}>
           {vacio}
@@ -95,6 +101,7 @@ export function TarjetaDeGrafico({
           ))}
         </View>
       )}
-    </CollapsibleCard>
+      </ScrollView>
+    </View>
   );
 }

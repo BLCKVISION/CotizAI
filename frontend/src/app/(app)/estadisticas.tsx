@@ -2,18 +2,29 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { useDatos } from '@/core/useDatos';
-import { Aviso, Cargando, Columna, ErrorConReintento, Rejilla } from '@/design/bloques';
+import { Aviso, Cargando, ErrorConReintento, Rejilla } from '@/design/bloques';
 import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
+import { useDispositivo } from '@/design/dispositivo';
 import { TarjetaDeGrafico } from '@/design/graficos';
 import { EncabezadoDePagina, Metrica, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import { estadisticasApi } from '@/features/gestion/api';
+import { estadisticasApi, type Estadisticas } from '@/features/gestion/api';
 import { porEstado, porFormato, porMes, porUbicacion } from '@/features/gestion/datosDeGraficos';
 import { SAMPLE_STATS } from '@/features/gestion/sampleStats';
 import { formatoMonto } from '@/features/proyectos/estados';
 
 const CURRENCY_NAME: Record<string, string> = { USD: 'Dólares (USD)', VES: 'Bolívares (VES)' };
+
+/** Four in a row on wide screens, two by two on laptops, one per row on phones. */
+const FOUR_COLUMNS_FROM = 1500;
+
+const charts = (e: Estadisticas) => [
+  { titulo: 'Proyectos por estado', unidad: 'proyectos', datos: porEstado(e) },
+  { titulo: 'Proyectos creados por mes', unidad: 'proyectos', forma: 'columnas' as const, datos: porMes(e) },
+  { titulo: 'Proyectos por ubicación', unidad: 'proyectos', datos: porUbicacion(e) },
+  { titulo: 'Propuestas por formato', unidad: 'propuestas', forma: 'columnas' as const, datos: porFormato(e) },
+];
 
 function Budgets({ budgets }: { budgets: Record<string, string> }) {
   const t = useTema();
@@ -54,6 +65,8 @@ function Budgets({ budgets }: { budgets: Record<string, string> }) {
 export default function StatisticsScreen() {
   const { datos, error, recargar } = useDatos(estadisticasApi);
   const [sample, setSample] = useState(false);
+  const { ancho, dispositivo } = useDispositivo();
+  const chartColumns = dispositivo === 'movil' ? 1 : ancho >= FOUR_COLUMNS_FROM ? 4 : 2;
   const e = sample ? SAMPLE_STATS : datos;
   return (
     <Pagina>
@@ -76,20 +89,14 @@ export default function StatisticsScreen() {
             <Metrica etiqueta="Proveedores" valor={e.total_proveedores} icono="briefcase" />
           </Rejilla>
           <Budgets budgets={e.presupuestos} />
-          <Rejilla>
-            <Columna>
-              <TarjetaDeGrafico abierta titulo="Proyectos por estado" unidad="proyectos" datos={porEstado(e)} />
-            </Columna>
-            <Columna>
-              <TarjetaDeGrafico abierta titulo="Proyectos creados por mes" unidad="proyectos" forma="columnas" datos={porMes(e)} />
-            </Columna>
-            <Columna>
-              <TarjetaDeGrafico abierta titulo="Proyectos por ubicación" unidad="proyectos" datos={porUbicacion(e)} />
-            </Columna>
-            <Columna>
-              <TarjetaDeGrafico abierta titulo="Propuestas por formato" unidad="propuestas" forma="columnas" datos={porFormato(e)} />
-            </Columna>
-          </Rejilla>
+          {/* A real grid: equal widths in every row, never three on top and one stretched below. */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -espacio.sm, rowGap: espacio.md }}>
+            {charts(e).map((chart) => (
+              <View key={chart.titulo} style={{ width: `${100 / chartColumns}%`, paddingHorizontal: espacio.sm }}>
+                <TarjetaDeGrafico {...chart} />
+              </View>
+            ))}
+          </View>
           <Aviso tono="info" texto="Los resultados de cada evaluación (válidas, descartes y costo real) se consultan dentro de su proyecto." />
         </View>
       )}

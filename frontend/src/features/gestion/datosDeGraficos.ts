@@ -12,5 +12,6 @@ export const porUbicacion = (e: Estadisticas): Dato[] =>
 export const porMes = (e: Estadisticas): Dato[] =>
   Object.entries(e.por_mes).map(([m, valor]) => {
     const [anio, mes] = m.split('-').map(Number);
-    return { etiqueta: new Date(anio, mes - 1, 1).toLocaleDateString('es-VE', { month: 'short', year: '2-digit' }), valor };
+    const month = new Date(anio, mes - 1, 1).toLocaleDateString('es-VE', { month: 'short' }).replace('.', '');
+    return { etiqueta: `${month} ${anio}`, valor }; // full year, so it does not read as a day
   });
