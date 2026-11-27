@@ -64,13 +64,13 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 ## 3. Frontend (React Native + Expo + TypeScript)
 
 ### Estructura
-`app/` (rutas Expo Router, finas) → `features/<dominio>/` (pantallas, hooks, servicios) → `core/` (cliente API, sesión, config) → `design/` (tokens + componentes base). Una feature no importa de otra; comparten por `core/` o `design/`.
+`app/` (rutas Expo Router, finas) → `features/<dominio>/` (pantallas, hooks, servicios) → `core/` (cliente API, sesión, config) → `design/` (tokens + componentes base). Una feature no importa de otra; comparten por `core/` o `design/`. `core/` y `design/` no importan de `features/`: lo que una pieza compartida necesita de una feature se le pasa desde la ruta. ESLint lo verifica.
 
 ### Código
 - TypeScript **estricto** (`strict: true`, sin `any`; `unknown` + validación en el borde). ESLint + Prettier sin avisos.
 - Componentes funcionales y pequeños; la lógica de datos va en **hooks**, no en el JSX. Props tipadas.
 - Estado de servidor separado del estado de UI. Sin estado global innecesario.
-- Sin valores crudos: colores, espaciado y tipografía salen de **tokens** (`design/tokens.ts`). Sin hex ni px sueltos en componentes.
+- Sin valores crudos: colores (`design/tema.ts`), espaciado y tipografía (`design/tokens.ts`) salen de **tokens**. Sin hex ni px sueltos en componentes. ESLint verifica los colores.
 - Una única capa de API (`core/api`) que añade `Authorization` y `X-Track-Id`, tipa respuestas y traduce errores.
 
 ### UX y accesibilidad (skill `ui-ux-pro-max`, sistema en `design-system/`)
@@ -87,8 +87,9 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 - La UI **no decide permisos**: oculta lo no permitido por UX, pero la autoridad es el backend.
 
 ### Pruebas
-- Jest + React Native Testing Library para hooks y componentes; consultas por rol/etiqueta (accesibilidad), no por `testID` salvo necesidad.
-- E2E (Playwright en web) de login y flujo de proyecto.
+- Hoy: la lógica pura se prueba con el *test runner* de Node (`npm test`).
+- Pendiente: Jest + React Native Testing Library para hooks y componentes; consultas por rol/etiqueta (accesibilidad), no por `testID` salvo necesidad.
+- Pendiente: E2E (Playwright en web) de login y flujo de proyecto.
 
 ## 4. Git y revisión
 
@@ -101,7 +102,7 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 Cumple su criterio · integrado en `main` · con commit · **otra persona lo probó** · pruebas y linters en verde · documentación actualizada si cambió un contrato.
 
 ### Checklist de PR (autor)
-- [ ] Pruebas nuevas/ajustadas; CI en verde (`ruff`, `mypy`, `pytest` / `tsc`, `eslint`, `jest`)
+- [ ] Pruebas nuevas/ajustadas; CI en verde (`ruff`, `mypy`, `pytest` / `tsc`, `eslint`, `npm test`)
 - [ ] Sin secretos, sin datos reales, sin `print`/`console.log`
 - [ ] Contratos y docs actualizados (`SYSTEM_DESIGN.md` si cambia la arquitectura)
 - [ ] Captura o descripción del cambio visible (frontend)
@@ -122,8 +123,10 @@ Cumple su criterio · integrado en `main` · con commit · **otra persona lo pro
 # Backend
 ruff check . && ruff format --check . && mypy src && pytest --cov=src --cov-fail-under=80
 # Frontend
-npx tsc --noEmit && npx eslint . && npx jest
+npm run typecheck && npm run lint && npm test
 # Imágenes
 docker compose -f infra/compose.yml config -q
 ```
-Los hooks de `pre-commit` ejecutan formato y lint; el CI repite todo y bloquea el merge si falla.
+El CI ejecuta las verificaciones de backend y frontend en GitHub ([`ci.yml`](../.github/workflows/ci.yml)) y en GitLab
+([`.gitlab-ci.yml`](../.gitlab-ci.yml)). Para que un fallo bloquee el merge hay que exigirlo en el repositorio: protección
+de la rama `main` en GitHub u opción «Pipelines must succeed» en GitLab.

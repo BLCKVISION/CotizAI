@@ -44,8 +44,8 @@ válidas. La decisión final es del comité.
 - Costo real paso a paso, tasa del BCV o manual, ranking, antecedentes de descarte del proveedor.
 - Informe en PDF (con espacio para firmas), Excel y Markdown; preguntas sobre un proyecto evaluado con citas, y modo
   lote que genera `salida.json`.
-- Registro de cuentas: cada una recibe su propia organización aislada (se puede desactivar con
-  `EVALUADOR_REGISTRATION_ENABLED=false`).
+- Registro de cuentas: cada una recibe su propia organización aislada. Está **desactivado por defecto** porque cada
+  cuenta puede gastar saldo de IA; se activa con `EVALUADOR_REGISTRATION_ENABLED=true`.
 - Búsqueda web de precios de mercado (Perplexity Sonar): **activa por defecto** en los despliegues con Docker Compose;
   tiene costo por consulta y `EVALUADOR_MARKET_SEARCH_ENABLED=false` la apaga. Fuera de Compose, el modo lote incluido,
   se activa con `EVALUADOR_MARKET_SEARCH_ENABLED=true`. Consulta hasta 5 líneas por propuesta.
@@ -56,7 +56,8 @@ válidas. La decisión final es del comité.
 - No hay envío de correos: la contraseña la restablece un administrador y el correo de las cuentas nuevas no se verifica.
 - El asistente conversacional con herramientas (`docs/ASISTENTE.md`) está desactivado: falta validarlo con el modelo real.
 - Durante la evaluación el avance mostrado es una estimación; la traza real aparece al terminar.
-- El cifrado en reposo de la aplicación cubre los documentos originales, no la base de datos ni la auditoría.
+- El cifrado en reposo (documentos originales, registros de la base de datos y auditoría) requiere
+  `EVALUADOR_CLAVE_CIFRADO`; sin la clave, los registros se guardan sin cifrar.
 - Sin PostgreSQL, los datos se pierden al reiniciar la API. El índice de preguntas está siempre en memoria: tras un
   reinicio hay que volver a evaluar.
 
@@ -120,8 +121,9 @@ PYTHONPATH=src .venv/bin/python -m evaluador.lote --lote RUTA/lote/propuestas \
 ### Verificación
 
 ```bash
-cd backend && .venv/bin/pytest && .venv/bin/ruff check src tests scripts && .venv/bin/python scripts/calibrate_samples.py
-cd frontend && npm run typecheck && npm run lint && bash tests/run.sh
+cd backend && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy src \
+  && .venv/bin/pytest --cov=src --cov-fail-under=80 && .venv/bin/python scripts/calibrate_samples.py
+cd frontend && npm run typecheck && npm run lint && npm test
 ```
 
 ## Recursos, librerías y APIs declarados
