@@ -4,6 +4,7 @@ import { Animated, Pressable, View } from 'react-native';
 import { Sheen, useAttention, wiggle } from '@/design/Attention';
 import { Icono, Texto } from '@/design/componentes';
 import { soloWeb } from '@/design/efectos';
+import { isKeyboardFocus } from '@/design/focusModality';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import type { Proveedor } from '@/features/gestion/api';
@@ -23,12 +24,12 @@ export function ProviderCard({ provider, onPress, index = 0 }: { provider: Prove
       accessibilityLabel={`${provider.nombre}. RIF ${provider.rif}. ${provider.ubicacion}`}
       onPress={onPress}
       style={(e: PressState) => {
-        const active = Boolean(e.hovered || e.focused);
+        const active = Boolean(e.hovered) || isKeyboardFocus(e.focused);
         return {
           height: PROVIDER_CARD_HEIGHT,
           borderRadius: 30,
           borderWidth: 2,
-          borderColor: e.focused ? t.foco : 'rgba(255,255,255,0.85)',
+          borderColor: isKeyboardFocus(e.focused) ? t.foco : 'rgba(255,255,255,0.85)',
           backgroundColor: active ? '#A6E6F4' : 'rgba(255,255,255,0.9)',
           overflow: 'hidden',
           padding: espacio.md + 4,
@@ -43,7 +44,7 @@ export function ProviderCard({ provider, onPress, index = 0 }: { provider: Prove
       }}
     >
       {({ hovered, focused }: PressState) => {
-        const active = Boolean(hovered || focused);
+        const active = Boolean(hovered) || isKeyboardFocus(focused);
         return (
           <>
             <Animated.View style={[{ alignSelf: 'flex-start' }, wiggle(pulse)]}>

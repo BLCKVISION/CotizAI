@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 
 import { Icono, type NombreIcono } from './componentes';
 import { soloWeb } from './efectos';
+import { isKeyboardFocus } from './focusModality';
 import { RollingLabel } from './RollingLabel';
 import { useTema } from './tema';
 import { espacio, radio, texto } from './tokens';
@@ -16,7 +17,7 @@ export function NewItemTile({ label, icon, onPress, minHeight = 104 }: { label: 
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={(e: PressState) => ({ flex: 1, minHeight, alignItems: 'center', justifyContent: 'center', gap: espacio.sm, padding: espacio.sm, borderRadius: 22, borderWidth: 2, borderStyle: 'dashed', borderColor: e.focused ? t.foco : e.hovered ? t.accentStrong : '#CBD3DE', backgroundColor: e.hovered ? '#F0FBFE' : 'rgba(255,255,255,0.5)', ...soloWeb({ transitionProperty: 'border-color, background-color', transitionDuration: '260ms' }) })}
+      style={(e: PressState) => ({ flex: 1, minHeight, alignItems: 'center', justifyContent: 'center', gap: espacio.sm, padding: espacio.sm, borderRadius: 22, borderWidth: 2, borderStyle: 'dashed', borderColor: isKeyboardFocus(e.focused) ? t.foco : e.hovered ? t.accentStrong : '#CBD3DE', backgroundColor: e.hovered ? '#F0FBFE' : 'rgba(255,255,255,0.5)', ...soloWeb({ transitionProperty: 'border-color, background-color', transitionDuration: '260ms' }) })}
     >
       {({ hovered }: PressState) => (
         <>

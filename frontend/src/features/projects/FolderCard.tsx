@@ -4,6 +4,7 @@ import { Animated, Platform, Pressable, View, type ViewStyle } from 'react-nativ
 import { Sheen, useAttention, wiggle } from '@/design/Attention';
 import { Texto } from '@/design/componentes';
 import { soloWeb } from '@/design/efectos';
+import { isKeyboardFocus } from '@/design/focusModality';
 import { useTema } from '@/design/tema';
 import { espacio } from '@/design/tokens';
 
@@ -37,14 +38,14 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
       accessibilityLabel={`${title}. ${count}. ${footer}`}
       onPress={onPress}
       style={(e: PressState): ViewStyle => {
-        const active = Boolean(e.hovered || e.focused);
+        const active = Boolean(e.hovered) || isKeyboardFocus(e.focused);
         return {
           height: m.height,
           flex: compact ? 1 : undefined,
           minHeight: compact ? 118 : undefined,
           borderRadius: m.radius,
           borderWidth: 2,
-          borderColor: e.focused ? t.foco : 'rgba(255,255,255,0.85)',
+          borderColor: isKeyboardFocus(e.focused) ? t.foco : 'rgba(255,255,255,0.85)',
           backgroundColor: active ? '#8FD6FA' : '#E1E5EC',
           overflow: 'hidden',
           opacity: e.pressed ? 0.9 : 1,
@@ -57,7 +58,7 @@ export function FolderCard({ title, count, footer, preview, onPress, compact = f
       }}
     >
       {({ hovered, focused }: PressState) => {
-        const active = Boolean(hovered || focused);
+        const active = Boolean(hovered) || isKeyboardFocus(focused);
         return (
           <>
             {/* Papers peek out and rock while the periodic light passes. */}
