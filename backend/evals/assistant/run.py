@@ -207,7 +207,8 @@ def main() -> int:
                 for turn in case.turns:
                     reply = container.ask_assistant.execute(user, turn, conversation)
                     conversation = reply.conversation_id
-                assert reply is not None
+                if reply is None:
+                    raise ValueError("the case has no turns")
                 problems = check(case, reply)
                 shown = f"[{reply.refusal or 'ok'}] tools={list(reply.tools_used)}\n{reply.answer}"
             except Exception as exc:  # noqa: BLE001 - one broken case must not hide the others

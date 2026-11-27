@@ -35,11 +35,11 @@ _DECLARED_NEW = re.compile(
 )
 # Only with the maker's wording: a supplier's own product name may look like a model number.
 _OLD_PROCESSORS = (
-    re.compile(r"\b(?:intel\s+(?:core\s+)?|core\s+)i[3579]\s*-?\s*[2-7]\d{3}(?!\d)[a-z]{0,2}"),  # 2nd to 7th gen
-    re.compile(r"\bxeon\s+e[357]\s*-?\s*\d{4}l?\s*v[1-4]\b"),
+    re.compile(r"\b(?:intel\s+(?:core\s+)?|core\s+)i[3579]\s*(?:-\s*)?[2-7]\d{3}(?!\d)[a-z]{0,2}"),  # 2nd to 7th gen
+    re.compile(r"\bxeon\s+e[357]\s*(?:-\s*)?\d{4}l?\s*v[1-4]\b"),
     re.compile(r"\barquitectura\s*(?:de\s*)?(?:200\d|201[0-7])\b"),
 )
-_OLD_MEMORY = re.compile(r"\bddr\s*-?\s*([23])(?!\d)")
+_OLD_MEMORY = re.compile(r"\bddr\s*(?:-\s*)?([23])(?!\d)")
 _NEW_VALUE = re.compile(r"\b(?:nuev[oa]s?|new)\b")
 
 

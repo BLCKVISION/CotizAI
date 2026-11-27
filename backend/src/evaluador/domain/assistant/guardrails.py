@@ -87,7 +87,7 @@ def parse_scope_label(reply: str) -> RefusalCategory | None:
 
 
 # ---------- Untrusted data going into the model ----------
-_DATA_TAGS = re.compile(r"<\s*/?\s*(datos|documento|system|sistema|instrucciones)\b[^>]*>", re.IGNORECASE)
+_DATA_TAGS = re.compile(r"<\s*(?:/\s*)?(datos|documento|system|sistema|instrucciones)\b[^<>]*>", re.IGNORECASE)
 WITHHELD = "[texto retirado: contenía instrucciones dirigidas a la IA]"
 
 

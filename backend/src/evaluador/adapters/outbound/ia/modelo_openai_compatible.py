@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 
 import httpx
 from pydantic import BaseModel
@@ -24,7 +25,7 @@ class ModeloOpenAICompatible:
 
     def estructurar(
         self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
-    ):
+    ) -> Any:
         r = post_with_retry(lambda: self._http.post(
             "/chat/completions",
             json={
@@ -41,7 +42,10 @@ class ModeloOpenAICompatible:
             return validate_reply(choice["message"]["content"] or "", esquema)
         except (ValueError, json.JSONDecodeError):
             # finish_reason "length" means the answer was cut off by the token cap: the JSON is incomplete, not wrong.
-            _log.warning("respuesta_no_valida", extra={"finish_reason": choice.get("finish_reason"), "caracteres": len(choice["message"]["content"] or "")})
+            length = len(choice["message"]["content"] or "")
+            _log.warning(
+                "respuesta_no_valida", extra={"finish_reason": choice.get("finish_reason"), "caracteres": length}
+            )
             raise
 
     def estructurar_imagen(

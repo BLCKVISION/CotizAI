@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -15,7 +16,7 @@ class ModeloFalso:
 
     def estructurar(
         self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
-    ):
+    ) -> Any:
         self.llamadas.append((instrucciones, contenido_no_confiable))
         r = self._respuestas[esquema]
         return r(contenido_no_confiable) if callable(r) else r

@@ -1,0 +1,27 @@
+# Optional: TLS between the API and PostgreSQL, with the API verifying the server certificate.
+#   ./infra/scripts/generate-db-certs.sh
+#   docker compose -f infra/compose.yml -f infra/compose.db-tls.yml --env-file infra/.env up -d
+# To go back, start again with infra/compose.yml alone.
+services:
+  db:
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_min_protocol_version=TLSv1.2
+      - -c
+      - ssl_cert_file=/certs/server.crt
+      - -c
+      - ssl_key_file=/certs/server.key
+      - -c
+      - hba_file=/certs/pg_hba.conf
+    volumes:
+      - ./db/certs/server.crt:/certs/server.crt:ro
+      - ./db/certs/server.key:/certs/server.key:ro
+      - ./db/certs/pg_hba.conf:/certs/pg_hba.conf:ro
+  api:
+    environment:
+      EVALUADOR_BASE_DE_DATOS_URL: postgresql://evaluador:${POSTGRES_PASSWORD}@db:5432/evaluador?sslmode=verify-full&sslrootcert=/certs/ca.crt
+    volumes:
+      - ./db/certs/ca.crt:/certs/ca.crt:ro

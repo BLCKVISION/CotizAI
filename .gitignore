@@ -16,4 +16,10 @@ Today/
 # Private notes kept next to the project: never publish.
 ignorar/
 # Local test images: not part of the delivery.
+datasets/
 Datasets/
+# Test coverage reports.
+coverage.xml
+.coverage
+# Database TLS certificates and keys: generated on each server, never published.
+infra/db/certs/

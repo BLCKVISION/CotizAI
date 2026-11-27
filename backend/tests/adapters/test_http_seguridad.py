@@ -1,6 +1,9 @@
 import pytest
+from fastapi.testclient import TestClient
 
+from evaluador.adapters.inbound.http.aplicacion import crear_aplicacion
 from evaluador.adapters.inbound.http.guards import LimitadorDeVentana
+from evaluador.composition.configuracion import Configuracion
 from tests.conftest import CLAVE, cabecera, login
 
 
@@ -164,3 +167,15 @@ def test_docs_no_llevan_csp_estricta_en_desarrollo_pero_si_en_produccion(contene
     assert "content-security-policy" not in dev.get("/api/docs").headers
     prod = TestClient(crear_aplicacion(Configuracion(nivel_de_log="CRITICAL", entorno="Production"), contenedor))
     assert "strict-transport-security" in prod.get("/api/v1/salud").headers
+
+
+def test_rejections_made_before_the_route_still_reach_the_browser(contenedor):
+    """Without CORS headers the browser hides the answer, so the person never reads why the upload failed."""
+    config = Configuracion(_env_file=None, nivel_de_log="CRITICAL", origenes_cors=["https://app.test"])
+    client = TestClient(crear_aplicacion(config, contenedor))
+    too_big = client.post("/api/v1/transcriptions?archivo=a.jpg", content=b"0" * (10 * 1024 * 1024 + 1),
+                          headers={"Origin": "https://app.test"})  # fmt: skip
+    assert too_big.status_code == 413 and too_big.headers["access-control-allow-origin"] == "https://app.test"
+    assert too_big.headers["x-track-id"] and too_big.headers["x-content-type-options"] == "nosniff"
+    stranger = client.post("/api/v1/sesiones", json={}, headers={"Origin": "https://otro.test"})
+    assert "access-control-allow-origin" not in stranger.headers

@@ -8,8 +8,8 @@ export type Bloque =
 export type Segmento = { texto: string; incierto: boolean };
 
 // Fila separadora de tabla Markdown: |---|:---:|---:|
-const SEPARADOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
-const ENCABEZADO = /^(#{1,6})\s+(.*)$/;
+const SEPARADOR = /^\s*(?:\|\s*)?:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*(?:\|\s*)?$/;
+const ENCABEZADO = /^(#{1,6})\s+(?!\s)(.*)$/;
 const BARRA_ESCAPADA = '\u0000';
 
 const esFila = (linea: string) => linea.trim().startsWith('|');

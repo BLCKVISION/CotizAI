@@ -9,7 +9,7 @@ import { espacio } from '@/design/tokens';
 import { type AuthMode, authColor, FormHeading, LineField, type Notice, NoticeBox, SubmitButton, TextLink } from './authParts';
 
 const USERNAME_KEY = 'cotizai.login.username';
-const IDENTIFIER = /^([^@\s]+@[^@\s]+\.[^@\s]+|[A-Za-z0-9._-]{3,64})$/;
+const IDENTIFIER = /^([^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+|[A-Za-z0-9._-]{3,64})$/;
 
 /** Only the user name may be remembered. The password and the session token are never stored. */
 const rememberedUsername = () => {

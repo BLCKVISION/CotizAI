@@ -32,29 +32,29 @@ class Run:
 
     @property
     def left(self) -> float:
-        return min(c["x0"] for c in self.chars)
+        return float(min(c["x0"] for c in self.chars))
 
     @property
     def right(self) -> float:
-        return max(c["x1"] for c in self.chars)
+        return float(max(c["x1"] for c in self.chars))
 
     @property
     def top(self) -> float:
-        return self.chars[0]["top"]
+        return float(self.chars[0]["top"])
 
     @property
     def size(self) -> float:
-        return self.chars[0]["size"]
+        return float(self.chars[0]["size"])
 
 
 def _copy(a: Char, b: Char) -> bool:
     near = _tolerance(a["size"])
-    return a["text"] == b["text"] and abs(a["x0"] - b["x0"]) <= near and abs(a["top"] - b["top"]) <= near
+    return bool(a["text"] == b["text"] and abs(a["x0"] - b["x0"]) <= near and abs(a["top"] - b["top"]) <= near)
 
 
 def _continues(previous: Char, char: Char) -> bool:
     gap = char["x0"] - previous["x1"]
-    return (abs(char["top"] - previous["top"]) < 0.05 and abs(char["size"] - previous["size"]) < 0.05
+    return bool((abs(char["top"] - previous["top"]) < 0.05 and abs(char["size"] - previous["size"]) < 0.05)
             and -0.25 * char["size"] <= gap <= 1.2 * char["size"])  # fmt: skip
 
 

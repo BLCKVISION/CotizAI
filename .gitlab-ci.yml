@@ -1,0 +1,50 @@
+# Quality gate for every push: tests with coverage, types, lint, dependency and secret scan, and SonarQube.
+stages: [test, security, quality]
+
+backend:
+  stage: test
+  image: python:3.12-slim
+  variables: { PIP_DISABLE_PIP_VERSION_CHECK: "1", PIP_NO_CACHE_DIR: "1" }
+  before_script:
+    # The batch mode writes the commit hash into salida.json, and its tests run git.
+    - apt-get update -qq && apt-get install -qq -y --no-install-recommends git > /dev/null
+    - cd backend
+    - pip install -q -r requirements-dev.txt
+  script:
+    - ruff check src tests scripts
+    - mypy src
+    - pytest -q --cov=src/evaluador --cov-branch --cov-report=term --cov-report=xml:coverage.xml --cov-fail-under=85
+  coverage: '/^TOTAL.*\s(\d+(?:\.\d+)?)%$/'
+  artifacts:
+    paths: [backend/coverage.xml]
+    expire_in: 1 week
+
+frontend:
+  stage: test
+  image: node:22-alpine
+  before_script:
+    - cd frontend
+    - npm ci --no-audit --no-fund
+  script:
+    - npx tsc --noEmit
+    - npx eslint .
+    - npx tsc -p tests/tsconfig.json
+    - node --require ./tests/setup.js --test .test-build/tests/*.test.js
+
+trivy:
+  stage: security
+  image: { name: "aquasec/trivy:0.76.2", entrypoint: [""] }
+  variables: { TRIVY_DISABLE_TELEMETRY: "true" }
+  script:
+    # Fails only on problems that have a fix available.
+    - trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 .
+
+# Needs the CI variables SONAR_HOST_URL and SONAR_TOKEN (masked); skipped without them.
+sonarqube:
+  stage: quality
+  image: { name: "sonarsource/sonar-scanner-cli:latest", entrypoint: [""] }
+  needs: [backend]
+  rules:
+    - if: $SONAR_HOST_URL && $SONAR_TOKEN
+  script:
+    - sonar-scanner -Dsonar.qualitygate.wait=true

@@ -9,6 +9,7 @@ from evaluador.application.ports.market_search import MarketPriceFinder
 from evaluador.domain.decision_trace import TraceStep, describe_node
 from evaluador.domain.evaluacion import ResultadoEvaluacion
 
+from .estado import EstadoEvaluacion
 from .grafo import construir_grafo
 from .nodos import NodosEvaluacion
 
@@ -24,7 +25,7 @@ class MotorLangGraph:
         self._grafo = construir_grafo(NodosEvaluacion(modelo, embebedor, indice, market_finder=market_finder))
 
     def evaluar(self, *, tenant_id: str, propuesta_id: str, requerimiento: str, texto: str) -> ResultadoEvaluacion:
-        initial = {
+        initial: EstadoEvaluacion = {
             "tenant_id": tenant_id,
             "propuesta_id": propuesta_id,
             "requerimiento": requerimiento,

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # Etapa 1: dependencias (capa cacheable mientras no cambie package-lock.json)
-FROM node:20-alpine AS dependencias
+FROM node:22-alpine AS dependencias
 WORKDIR /w
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund

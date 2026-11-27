@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from evaluador.adapters.outbound.almacen.cifrado import AlmacenCifrado
 from evaluador.adapters.outbound.exchange_rates.bcv import BcvExchangeRateSource
@@ -119,7 +120,7 @@ def _record_cipher(config: Configuracion) -> RecordCipher | None:
     return RecordCipher(key)
 
 
-def _colecciones(config: Configuracion | None) -> dict:
+def _colecciones(config: Configuracion | None) -> dict[str, Any]:
     tipos = {
         "proyectos": Proyecto,
         "propuestas": Propuesta,
@@ -231,6 +232,16 @@ def construir_contenedor(
         enabled=config.registration_enabled if config else True,
         max_accounts=config.registration_max_accounts if config else 25,
     )
+    evaluate_project = EvaluateProject(
+        projects=proyectos,
+        gestion=gestion,
+        evaluations=evaluations,
+        services=ai_services,
+        resolve_rates=resolve_rates,
+        clock=reloj,
+        audit=auditoria,
+        parallelism=config.evaluation_parallelism if config else 3,
+    )
     return Contenedor(
         ask_assistant=ask_assistant,
         register_account=register_account,
@@ -242,16 +253,7 @@ def construir_contenedor(
         obtener_proyecto=ObtenerProyecto(proyectos),
         transicionar_proyecto=TransicionarProyecto(proyectos, auditoria),
         gestion=gestion,
-        evaluate_project=EvaluateProject(
-            projects=proyectos,
-            gestion=gestion,
-            evaluations=evaluations,
-            services=ai_services,
-            resolve_rates=resolve_rates,
-            clock=reloj,
-            audit=auditoria,
-            parallelism=config.evaluation_parallelism if config else 3,
-        ),
+        evaluate_project=evaluate_project,
         get_project_evaluation=get_evaluation,
         review_proposals=review_proposals,
         ask_portfolio=AskPortfolio(
@@ -268,12 +270,12 @@ def construir_contenedor(
         proposal_markdown=proposal_markdown,
         delete_proposal=DeleteProposal(
             projects=proyectos, management=gestion, evaluations=evaluations, decisions=reviews, audit=auditoria,
-            forget_text=proposal_markdown.forget,
+            forget_text=proposal_markdown.forget, exclusive=evaluate_project.exclusive,
         ),
         delete_project=DeleteProject(
             projects=proyectos, proposals=datos["propuestas"], notes=datos["notas"], evaluations=evaluations,
             decisions=reviews, store=gestion, audit=auditoria, forget_text=proposal_markdown.forget,
-            forget_runs=evaluations.forget_runs,
+            forget_runs=evaluations.forget_runs, exclusive=evaluate_project.exclusive,
         ),
         evaluation_history=EvaluationHistory(proyectos, evaluations, gestion),
         supplier_directory=GetSupplierDirectory(proyectos, evaluations, datos["proveedores"]),

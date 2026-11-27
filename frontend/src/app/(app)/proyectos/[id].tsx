@@ -111,7 +111,7 @@ export default function DetalleProyecto() {
 
   useEffect(() => {
     let vigente = true;
-    (async () => {
+    void (async () => {
       try {
         const datos = await conSesion(obtenerProyectoApi(String(id)));
         if (vigente) {

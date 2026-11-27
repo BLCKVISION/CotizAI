@@ -68,7 +68,7 @@ def _is_spreadsheet_formula(literal: str) -> bool:
 
 def says_it_is_free(literal: str) -> bool:
     """Only without any figure and without a condition: "gratis desde $500" is not free."""
-    conditional = re.search(r"\b(si|desde|a partir|solo|s[oó]lo|if|over|above)\b", literal, re.IGNORECASE)
+    conditional = re.search(r"\b(si|desde|a partir|s[oó]lo|if|over|above)\b", literal, re.IGNORECASE)
     return not any(c.isdigit() for c in literal) and bool(_ZERO_WORDS.search(literal)) and not conditional
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -14,28 +15,30 @@ def construir_mensajes(instrucciones: str, contenido: str, esquema: type[BaseMod
         f"{json.dumps(esquema.model_json_schema(), ensure_ascii=False)}"
     )
     # El documento no puede cerrar ni reabrir su propio delimitador.
-    seguro = re.sub(r"<\s*/?\s*documento\s*>", "[delimitador-eliminado]", contenido, flags=re.IGNORECASE)
+    seguro = re.sub(r"<\s*(?:/\s*)?documento\s*>", "[delimitador-eliminado]", contenido, flags=re.IGNORECASE)
     usuario = f"<documento>\n{seguro}\n</documento>"
     return [{"role": "system", "content": sistema}, {"role": "user", "content": usuario}]
 
 
-def extraer_json(texto: str) -> dict:
+def extraer_json(texto: str) -> dict[str, Any]:
     """Tolera cercas de código o texto alrededor; falla (ValueError) si no hay JSON válido."""
     m = re.search(r"\{.*\}", texto, re.DOTALL)
     if not m:
         raise ValueError("La respuesta del modelo no contiene JSON.")
     try:
-        return json.loads(m.group(0))
+        data: dict[str, Any] = json.loads(m.group(0))
+        return data
     except json.JSONDecodeError:
         # Valid JSON followed by leftovers: keep the first complete object.
-        return json.JSONDecoder().raw_decode(m.group(0))[0]
+        first: dict[str, Any] = json.JSONDecoder().raw_decode(m.group(0))[0]
+        return first
 
 
 def _is_schema_node(value: object) -> bool:
     return isinstance(value, dict) and ("type" in value or "$ref" in value or "anyOf" in value)
 
 
-def unwrap_schema_echo(data: dict, fields: set[str]) -> dict:
+def unwrap_schema_echo(data: dict[str, Any], fields: set[str]) -> dict[str, Any]:
     """Small models sometimes answer inside the shape of the schema: {"properties": {<the real answer>}}.
 
     Only the real answer is taken: if "properties" holds schema definitions instead of values, nothing changes.

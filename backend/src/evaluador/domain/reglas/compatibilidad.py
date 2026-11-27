@@ -72,7 +72,7 @@ def _comparar_texto(n: int, linea: Linea, par: _ParDeTexto) -> list[Hallazgo]:
 
 # After the word "socket" any family counts; alone, only the unmistakable ones ("(AM5)", "LGA1700").
 _STATED_SOCKET = re.compile(
-    r"\b(?:(?:socket|zocalo)\s*:?\s*((?:lga|am|fm|str|tr|sp)\s*-?\s*\d{1,4}[a-z]?)|(am[45]|lga\s*-?\s*\d{4}))\b"
+    r"\b(?:(?:socket|zocalo)\s*(?::\s*)?((?:lga|am|fm|str|tr|sp)\s*(?:-\s*)?\d{1,4}[a-z]?)|(am[45]|lga\s*(?:-\s*)?\d{4}))\b"
 )
 _PROCESSOR_WORDS = re.compile(
     r"\b(?:cpu|procesador|ryzen|athlon|threadripper|xeon|pentium|celeron|core\s+(?:ultra|i\d)|i[3579]-\d{4,5}[a-z]{0,2})\b"
@@ -118,12 +118,12 @@ def _stated_sockets(linea: Linea) -> dict[str, str]:
 # Platforms whose processors accept a single memory generation. Others (e.g. LGA1700) accept two.
 _ONLY_MEMORY = {"am4": "ddr4", "am5": "ddr5", "lga1851": "ddr5"}
 _RAM_WORDS = re.compile(r"\b(?:ram|memoria)\b")
-_GENERATION = re.compile(r"\bddr\s*-?\s*([2-5])(?![0-9])")  # not GDDR (graphics) nor LPDDR
-_SIZE_AND_GENERATION = re.compile(r"\b\d{1,3}\s*gb\s*\(?\s*(?:de\s+)?ddr\s*-?\s*[2-5]")
+_GENERATION = re.compile(r"\bddr\s*(?:-\s*)?([2-5])(?![0-9])")  # not GDDR (graphics) nor LPDDR
+_SIZE_AND_GENERATION = re.compile(r"\b\d{1,3}\s*gb\s*(?:\(\s*)?(?:de\s+)?ddr\s*(?:-\s*)?[2-5]")
 _BOARD_SUFFIX = re.compile(r"\bd([45])\b")  # board models such as "B760M-A D4"
 _MODULES = re.compile(r"\b([1-8])\s*x\s*(\d{1,3})\s*gb\b")
-_SLOTS = re.compile(r"\b([1-8])\s*x?\s*dimm\b|\b([1-8])\s+(?:slots?|ranuras?)\b(?!\s+libres)")
-_BOARD_MAXIMUM = re.compile(r"\bmax(?:imo)?\.?\s*:?\s*(\d{1,4})\s*gb\b")
+_SLOTS = re.compile(r"\b([1-8])\s*(?:x\s*)?dimm\b|\b([1-8])\s+(?:slots?|ranuras?)\b(?!\s+libres)")
+_BOARD_MAXIMUM = re.compile(r"\bmax(?:imo)?\.?\s*(?::\s*)?(\d{1,4})\s*gb\b")
 _CAPABILITY_WORDS = re.compile(r"\b(?:soporta|compatible|admite|hasta|expandible|ampliable|slots?|ranuras?)\b")
 
 

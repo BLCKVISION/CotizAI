@@ -53,7 +53,14 @@ _COMPONENTS = {
         r"\b(?:protector(?:es|s)?|regulador(?:es)?|avr|ups|supresor(?:es)?|proteccion electrica)\b"
     ),
 }
-_COMPUTER = re.compile(r"\b(?:pcs?|computador(?:as?|es)?|workstations?|estacion(?:es)?|estudiantes?|docente)\b")
+_COMPUTER = re.compile(r"\b(?:pcs?|computador(?:as?|es)?|workstations?|estacion(?:es)?)\b")
+_STATION = re.compile(r"\b(?:estudiantes?|docentes?)\b")  # who the line is for, which says nothing about what it is
+_ACCESSORY = re.compile(
+    r"\b(?:escritorios?|mesas?|sillas?|muebles?|cables?|mousepads?|alfombrillas?|audifonos?|auriculares|camaras?|"
+    r"webcams?|impresoras?|routers?|switch(?:es)?|licencias?|software|instalacion|flete|envio|garantia|soporte|"
+    r"servicios?|capacitacion)\b"
+)
+_PERIPHERALS = ("monitor", "teclado", "raton", "protector")
 _INSTALLATION = re.compile(r"\b(?:instalacion|installation|puesta en marcha)\b")
 _EXCLUDED_NAMES = {**_COMPONENTS, "instalación": _INSTALLATION}
 
@@ -79,7 +86,17 @@ def _excluded(document: str) -> list[Hallazgo]:
 
 
 def _is_computer(line: Linea) -> bool:
-    return bool(_COMPUTER.search(plain(f"{line.categoria} {line.descripcion}")))
+    """What the line sells is what it names first: «PC con monitor» is a computer, «monitor para la PC» is not."""
+    text = plain(line.descripcion)
+    patterns = [*(_COMPONENTS[name] for name in _PERIPHERALS), _ACCESSORY]
+    other = min((m.start() for pattern in patterns if (m := pattern.search(text))), default=None)
+    computer = _COMPUTER.search(text)
+    if computer is not None:
+        return other is None or computer.start() < other
+    if other is not None or normalizar_categoria(line.categoria) in _PERIPHERALS:
+        return False
+    # Only the hardware is described: «Estudiantes Ryzen 5 7600, 16GB» or a line the category calls a computer.
+    return bool(_COMPUTER.search(plain(line.categoria)) or _STATION.search(text))
 
 
 def _is_included_set(line: Linea) -> bool:
@@ -176,11 +193,14 @@ def validar_alcance_fijo(
         stated = [units for line in mentioning if (units := _units(line)) is not None]
         if sum(stated, Decimal(0)) >= equipos:
             continue
-        if len(stated) < len(mentioning) or _COMPONENTS[name].search(notes):
+        if len(stated) < len(mentioning):
             if computer_units < equipos:
                 unclear.append(name)
         elif mentioning:
-            missing.append(name)
+            missing.append(name)  # every quantity is readable and they fall short: a note cannot change that
+        elif _COMPONENTS[name].search(notes):
+            if computer_units < equipos:
+                unclear.append(name)
         else:
             unmentioned.append(name)
     if unmentioned and computers:

@@ -9,7 +9,7 @@ from evaluador.adapters.outbound.extraccion.transcription import transcribe_imag
 from evaluador.adapters.outbound.ia.fabrica import crear_modelo
 from evaluador.application.ports.agente import ModeloConVision
 from evaluador.application.ports.documentos import OcrEngine
-from evaluador.application.ports.transcription import ImageTranscriber, Transcription
+from evaluador.application.ports.transcription import ImageTranscriber, Quality, Transcription
 from evaluador.composition.configuracion import Configuracion
 from evaluador.domain.errores import DatoInvalido, ServicioNoDisponible
 
@@ -43,7 +43,7 @@ def lazy_transcriber(
             read = ocr(data) if ocr is not None else None
             if read is None or not read.text.strip():
                 raise
-            quality = "medium" if read.reliable or read.readable else "low"
+            quality: Quality = "medium" if read.reliable or read.readable else "low"
             return Transcription(read.markdown, read.doubtful_figures, quality, (_OCR_NOTICE,), "ocr")
 
     return transcribe

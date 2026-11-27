@@ -24,13 +24,50 @@ def visible_text(document: str) -> str:
     return document.split(_HIDDEN_MARK, 1)[0]
 
 
+_UNFINISHED = re.compile(
+    r"(?:,|\b(?:ni|y|o|el|la|los|las|de|del)|\b(?:no\s+(?:se\s+)?incluyen?|no\s+incluid[oa]s?|sin\s+incluir|"
+    r"not\s+include[ds]?)\s*:?)$"
+)
+_BULLET = re.compile(r"^[-*•·]\s*")
+
+
+def _sentences(text: str) -> list[str]:
+    """Lines of the document, joining the ones a sentence or a list of exclusions continues on."""
+    joined: list[str] = []
+    listing = False  # inside «no incluye:» followed by one item per line
+    for raw in text.splitlines():
+        current = plain(raw)
+        if not current:
+            continue
+        bullet = bool(_BULLET.match(current))
+        if joined and listing and bullet:
+            joined[-1] += " " + _BULLET.sub("", current) + ","
+            continue
+        # A line that starts in lowercase is a wrapped sentence: it still belongs to an open exclusion.
+        wrapped = (
+            bool(joined) and raw.lstrip()[0].islower() and not joined[-1].endswith((".", ";"))
+            and bool(_EXCLUSION.search(joined[-1]))
+        )  # fmt: skip
+        if joined and not listing and (wrapped or _UNFINISHED.search(joined[-1])):
+            joined[-1] += " " + current
+        else:
+            joined.append(current)
+        match = _EXCLUSION.search(joined[-1])
+        listing = bool(match) and joined[-1].endswith(":")
+    return [sentence.rstrip(",") for sentence in joined]
+
+
 def exclusions(document: str) -> list[str]:
     """What the proposal says it does not include, one entry per sentence."""
-    return [m.group(0).strip() for m in _EXCLUSION.finditer(plain(visible_text(document)))]
+    return [
+        m.group(0).strip()
+        for sentence in _sentences(visible_text(document))
+        for m in _EXCLUSION.finditer(sentence)
+    ]
 
 
 def without_exclusions(text: str) -> str:
-    return _EXCLUSION.sub(" ", plain(text))
+    return " ".join(" ".join(_EXCLUSION.sub(" ", sentence) for sentence in _sentences(text)).split())
 
 
 def line_text(line: Linea) -> str:

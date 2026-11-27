@@ -19,9 +19,11 @@ def test_argon2_hash_verifica_y_rechaza():
 
 def test_token_fingerprint_is_deterministic_and_ids_are_unique():
     t = JwtTokens()
-    assert t.huella("a") == t.huella("a") != t.huella("b")
+    first, again = t.huella("a"), t.huella("a")
+    assert first == again != t.huella("b")
     assert len(t.huella("a")) == 64
-    assert IdsUuid().nuevo() != IdsUuid().nuevo()
+    first_id, second_id = IdsUuid().nuevo(), IdsUuid().nuevo()
+    assert first_id != second_id
 
 
 def test_usuarios_aislados_por_tenant():

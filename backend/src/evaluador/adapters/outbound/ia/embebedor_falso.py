@@ -18,7 +18,7 @@ class EmbebedorFalso:
     def _vec(self, texto: str) -> list[float]:
         v = [0.0] * self._dim
         for palabra in re.findall(r"\w+", texto.lower()):
-            v[int(hashlib.md5(palabra.encode()).hexdigest(), 16) % self._dim] += 1.0  # noqa: S324
+            v[int(hashlib.sha256(palabra.encode()).hexdigest(), 16) % self._dim] += 1.0
         norma = math.sqrt(sum(x * x for x in v)) or 1.0
         return [x / norma for x in v]
 

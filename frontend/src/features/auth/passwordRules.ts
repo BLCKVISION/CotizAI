@@ -16,4 +16,4 @@ export function checkPassword(password: string, email: string): PasswordRule[] {
 }
 
 export const isStrongPassword = (password: string, email: string) => checkPassword(password, email).every((r) => r.passes);
-export const isEmail = (value: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value.trim());
+export const isEmail = (value: string) => /^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$/.test(value.trim());

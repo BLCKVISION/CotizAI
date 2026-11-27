@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path, Request, status
 from pydantic import Field, SecretStr
@@ -29,13 +29,13 @@ class MemberChangeDto(DtoEntrada):
     active: bool | None = None
 
 
-def _member(member: Usuario, actor: Usuario) -> dict:
+def _member(member: Usuario, actor: Usuario) -> dict[str, Any]:
     return {"id": member.id, "email": member.correo, "display_name": member.display_name, "role": member.rol,
             "active": member.activo, "is_you": member.id == actor.id}  # fmt: skip
 
 
 @router.get("")
-def team(request: Request, session: Session) -> dict:
+def team(request: Request, session: Session) -> dict[str, Any]:
     actor = session.usuario
     members = request.app.state.contenedor.team.members(actor)
     return {
@@ -47,7 +47,7 @@ def team(request: Request, session: Session) -> dict:
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def add_member(dto: NewMemberDto, request: Request, session: Session) -> dict:
+def add_member(dto: NewMemberDto, request: Request, session: Session) -> dict[str, Any]:
     member = request.app.state.contenedor.team.add(
         session.usuario, display_name=dto.display_name, email=dto.email,
         password=dto.password.get_secret_value(), role=dto.role,
@@ -56,6 +56,6 @@ def add_member(dto: NewMemberDto, request: Request, session: Session) -> dict:
 
 
 @router.post("/{member_id}")
-def change_member(member_id: MemberId, dto: MemberChangeDto, request: Request, session: Session) -> dict:
+def change_member(member_id: MemberId, dto: MemberChangeDto, request: Request, session: Session) -> dict[str, Any]:
     member = request.app.state.contenedor.team.update(session.usuario, member_id, role=dto.role, active=dto.active)
     return _member(member, session.usuario)

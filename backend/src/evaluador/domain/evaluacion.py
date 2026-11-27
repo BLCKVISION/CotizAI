@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
+from typing import Any
 
 from .extraccion import ExtraccionPropuesta
 
@@ -53,4 +54,4 @@ class ResultadoEvaluacion:
     veredicto: Veredicto
     hallazgos: tuple[Hallazgo, ...] = field(default_factory=tuple)
     extraccion: ExtraccionPropuesta | None = None
-    trace: tuple = ()  # TraceStep items; the module that defines them imports this one
+    trace: tuple[Any, ...] = ()  # TraceStep items; the module that defines them imports this one

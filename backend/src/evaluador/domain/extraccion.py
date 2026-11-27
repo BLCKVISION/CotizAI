@@ -31,6 +31,19 @@ def _blank_amount_as_missing(value: object) -> object:
     return value
 
 
+_BLANKS = ("", "null", "none")
+
+
+def _blank_condition(value: object) -> object:
+    """Like `_blank_amount_as_missing`, but «a convenir» with no figure is a real charge: kept as undetermined."""
+    if not isinstance(value, dict):
+        return value
+    literal, figure = (str(value.get(k) if value.get(k) is not None else "").strip() for k in ("literal", "valor"))
+    literal = "" if literal.lower() in _BLANKS else literal
+    figure = "" if figure.lower() in _BLANKS else figure
+    return {"literal": literal or figure, "valor": figure} if literal or figure else None
+
+
 _INCLUDED_WORDS = frozenset({"incluido", "incluida", "incluidos", "incluidas", "included"})
 
 
@@ -105,6 +118,8 @@ class Recargo(_Base):
     monto: Monto | None = None
     porcentaje: Monto | None = None  # sobre el subtotal
 
+    _blank = field_validator("monto", "porcentaje", mode="before")(_blank_condition)
+
 
 class Condiciones(_Base):
     """Costos y cláusulas fuera de las líneas. `None` = no consta; un Monto con `valor` no numérico = «a convenir»."""
@@ -115,6 +130,8 @@ class Condiciones(_Base):
     garantia: str | None = None
     soporte: str | None = None
     software: list[str] = Field(default_factory=list)
+
+    _blank = field_validator("flete", "instalacion", mode="before")(_blank_condition)
 
 
 class ExtraccionPropuesta(_Base):

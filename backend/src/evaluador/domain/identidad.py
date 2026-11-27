@@ -93,6 +93,8 @@ class Usuario:
     intentos_fallidos: int = 0
     bloqueado_hasta: datetime | None = None
     display_name: str = ""  # how the UI greets the person; empty falls back to the user name
+    seed_role: str = ""  # role the server settings gave a seeded account
+    disabled_by_seed: bool = False  # disabled because its seed settings were removed, not by the team
 
     def esta_bloqueado(self, ahora: datetime) -> bool:
         return self.bloqueado_hasta is not None and ahora < self.bloqueado_hasta

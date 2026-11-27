@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 from evaluador.domain.document_text import has_priced_line, is_recurring, is_single_charge
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severidad
 from evaluador.domain.extraccion import ExtraccionPropuesta, Monto
-from evaluador.domain.montos import is_descriptive
+from evaluador.domain.montos import a_centavos, is_descriptive
 
 
 def _d(m: Monto | None) -> Decimal | None:
@@ -25,6 +25,18 @@ def _hallazgo(motivo: str, evidencia: str) -> Hallazgo:
     return Hallazgo(CodigoHallazgo.ARITMETICA, Severidad.CRITICA, True, motivo, evidencia, Origen.REGLA)
 
 
+def _surcharges(e: ExtraccionPropuesta, base: Decimal) -> list[Decimal]:
+    """Declared surcharges, which the printed total may already include."""
+    amounts: list[Decimal] = []
+    for surcharge in e.condiciones.recargos:
+        amount, rate = _d(surcharge.monto), _d(surcharge.porcentaje)
+        if amount is not None:
+            amounts.append(amount)
+        elif rate is not None:
+            amounts.append(a_centavos(base * rate / 100))
+    return amounts
+
+
 def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
     hallazgos: list[Hallazgo] = []
     suma = Decimal(0)
@@ -36,7 +48,7 @@ def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
         if is_single_charge(ln) and total is not None and (ln.precio_unitario is None or precio == total):
             suma += total  # a single charge, such as freight
             continue
-        if None in (cant, precio, total):
+        if cant is None or precio is None or total is None:
             hallazgos.append(
                 Hallazgo(
                     CodigoHallazgo.LECTURA,
@@ -77,6 +89,7 @@ def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
                                           ("instalacion", _d(e.condiciones.instalacion)))
                 if value is not None and not has_priced_line(e, kind)
             ]  # fmt: skip
+            extras += _surcharges(e, suma)
             plausible = {esperado}
             for extra in extras:
                 plausible |= {amount + extra for amount in plausible}

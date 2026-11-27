@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -28,7 +30,13 @@ _ESTADO: dict[type[e.ErrorDeDominio], int] = {
 }
 
 
-def _respuesta(estado: int, codigo: str, mensaje: str, extra: dict | None = None, cabeceras: dict | None = None):
+def _respuesta(
+    estado: int,
+    codigo: str,
+    mensaje: str,
+    extra: dict[str, Any] | None = None,
+    cabeceras: Mapping[str, str] | None = None,
+) -> JSONResponse:
     cuerpo = {"codigo": codigo, "mensaje": mensaje, "track_id": contexto.obtener().track_id}
     if extra:
         cuerpo.update(extra)
@@ -37,23 +45,23 @@ def _respuesta(estado: int, codigo: str, mensaje: str, extra: dict | None = None
 
 def registrar_manejadores(app: FastAPI) -> None:
     @app.exception_handler(e.ErrorDeDominio)
-    async def _dominio(_: Request, exc: e.ErrorDeDominio):
+    async def _dominio(_: Request, exc: e.ErrorDeDominio) -> JSONResponse:
         estado = _ESTADO.get(type(exc), 400)
         cab = {"WWW-Authenticate": "Bearer"} if estado == 401 else None
         return _respuesta(estado, exc.codigo, str(exc), cabeceras=cab)
 
     @app.exception_handler(RequestValidationError)
-    async def _validacion(_: Request, exc: RequestValidationError):
+    async def _validacion(_: Request, exc: RequestValidationError) -> JSONResponse:
         # Solo ubicación y tipo del error: FastAPI incluiría 'input' (p. ej. la contraseña).
         campos = [{"campo": ".".join(str(p) for p in err["loc"][1:]), "error": err["type"]} for err in exc.errors()]
         return _respuesta(422, "payload_invalido", "El payload no es válido.", {"errores": campos})
 
     @app.exception_handler(StarletteHTTPException)  # incluye los 404/405 del enrutador, además de HTTPException
-    async def _http(_: Request, exc: StarletteHTTPException):
+    async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:
         return _respuesta(exc.status_code, f"http_{exc.status_code}", str(exc.detail), cabeceras=exc.headers)
 
     @app.exception_handler(Exception)
-    async def _inesperado(request: Request, exc: Exception):
+    async def _inesperado(request: Request, exc: Exception) -> JSONResponse:
         _log.error("error_inesperado", extra={"tipo": type(exc).__name__}, exc_info=exc)
         # Este handler corre fuera de los interceptores: la trazabilidad y las cabeceras se añaden aquí.
         cab = {"X-Track-Id": contexto.obtener().track_id} | cabeceras_de_seguridad(

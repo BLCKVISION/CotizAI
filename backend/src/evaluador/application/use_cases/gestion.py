@@ -5,15 +5,39 @@ from __future__ import annotations
 import hashlib
 from collections import Counter
 from decimal import Decimal
+from typing import Any
 
+from evaluador.application.ports.records import DocumentStore, Records
+from evaluador.application.ports.salida import Auditoria, GeneradorDeIds, ProyectoRepositorio, Reloj, UsuarioRepositorio
 from evaluador.domain.errores import DatoInvalido, NoEncontrado, ServicioNoDisponible, TransicionInvalida
-from evaluador.domain.gestion import MAX_PROPUESTAS, Nota, Propuesta, Proveedor, sanitize_filename, validar_documento
+from evaluador.domain.gestion import (
+    MAX_PROPUESTAS,
+    Evento,
+    Nota,
+    Propuesta,
+    Proveedor,
+    sanitize_filename,
+    validar_documento,
+)
 from evaluador.domain.identidad import Permiso, Usuario
 from evaluador.domain.proyecto import EstadoProyecto, Proyecto
 
 
 class Gestion:
-    def __init__(self, *, proyectos, propuestas, proveedores, notas, eventos, usuarios, almacen, ids, reloj, auditoria):
+    def __init__(
+        self,
+        *,
+        proyectos: ProyectoRepositorio,
+        propuestas: Records[Propuesta],
+        proveedores: Records[Proveedor],
+        notas: Records[Nota],
+        eventos: Records[Evento],
+        usuarios: UsuarioRepositorio,
+        almacen: DocumentStore | None,
+        ids: GeneradorDeIds,
+        reloj: Reloj,
+        auditoria: Auditoria,
+    ) -> None:
         self._proyectos, self._propuestas, self._proveedores = proyectos, propuestas, proveedores
         self._notas, self._eventos, self._usuarios, self._almacen = notas, eventos, usuarios, almacen
         self._ids, self._reloj, self._auditoria = ids, reloj, auditoria
@@ -128,13 +152,13 @@ class Gestion:
         self._auditar(actor, "nota_agregada", proyecto_id)
         return nota
 
-    def historial(self, actor: Usuario, proyecto_id: str):
+    def historial(self, actor: Usuario, proyecto_id: str) -> list[Evento]:
         actor.exigir(Permiso.VER_RESULTADOS)
         self._proyecto(actor, proyecto_id)
         propios = [e for e in self._eventos.listar(actor.tenant_id) if e.detalle.split(":")[0] == proyecto_id]
         return sorted(propios, key=lambda e: e.secuencia, reverse=True)
 
-    def auditoria(self, actor: Usuario):
+    def auditoria(self, actor: Usuario) -> list[Evento]:
         actor.exigir(Permiso.VER_AUDITORIA)
         return sorted(self._eventos.listar(actor.tenant_id), key=lambda e: e.secuencia, reverse=True)
 
@@ -157,7 +181,7 @@ class Gestion:
         return p
 
     # ---------- Estadísticas (solo datos reales) ----------
-    def estadisticas(self, actor: Usuario) -> dict:
+    def estadisticas(self, actor: Usuario) -> dict[str, Any]:
         actor.exigir(Permiso.VER_ESTADO)
         proyectos = self._proyectos.listar(actor.tenant_id)
         vigentes = {p.id for p in proyectos}

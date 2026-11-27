@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 import psycopg
 from pgvector.psycopg import register_vector
@@ -38,7 +40,7 @@ class IndicePgVector:
             "SELECT id, tenant_id, propuesta_id, orden, contenido, 1 - (embedding <=> %s) AS puntaje "
             "FROM fragmentos WHERE tenant_id = %s"  # el tenant SIEMPRE va en el WHERE
         )
-        params: list = [v, tenant_id]
+        params: list[Any] = [v, tenant_id]
         if propuesta_id is not None:
             sql += " AND propuesta_id = %s"
             params.append(propuesta_id)

@@ -44,7 +44,7 @@ export function SelectBox({ proposal, selection }: { proposal: Propuesta; select
         aria-checked={on}
         hitSlop={8}
         onPress={() => toggleSelection(selection, proposal.id)}
-        style={(e: PressState) => ({ width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 2 : 2, borderColor: e.focused ? t.foco : on ? t.accent : t.bordeControl, backgroundColor: on ? t.accent : 'transparent' })}
+        style={(e: PressState) => ({ width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: e.focused ? t.foco : on ? t.accent : t.bordeControl, backgroundColor: on ? t.accent : 'transparent' })}
       >
         {on ? <Icono nombre="check" tamano="sm" color={t.onAccent} /> : null}
       </Pressable>

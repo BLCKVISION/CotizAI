@@ -7,7 +7,7 @@ import re
 from .errores import DatoInvalido
 
 MAX_MEMBERS = 25
-_EMAIL = re.compile(r"^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$")
+_EMAIL = re.compile(r"^[^@\s<>]+@[^@\s<>.]+(?:\.[^@\s<>.]+)+$")
 
 
 def require_valid_email(email: str) -> None:

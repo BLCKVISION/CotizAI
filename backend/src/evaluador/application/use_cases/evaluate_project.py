@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import logging
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from contextvars import copy_context
 from dataclasses import dataclass
 from decimal import Decimal
@@ -110,13 +111,21 @@ class EvaluateProject:
     def execute(self, actor: Usuario, project_id: str, selected: list[str] | None = None) -> ProjectEvaluation:
         """Evaluates all proposals, or only `selected`; the rest keep their previous result and all are re-ranked."""
         actor.exigir(Permiso.INICIAR_EVALUACION)
-        key = (actor.tenant_id, project_id)
+        with self.exclusive(actor.tenant_id, project_id):
+            return self._run(actor, project_id, selected)
+
+    @contextmanager
+    def exclusive(self, tenant_id: str, project_id: str) -> Iterator[None]:
+        """One evaluation or deletion at a time per project, so a run cannot bring back what was just deleted."""
+        key = (tenant_id, project_id)
         with self._guard:
             if key in self._running:
-                raise TransicionInvalida("Ya hay una evaluación en curso para este proyecto.")
+                raise TransicionInvalida(
+                    "Hay una evaluación u otro cambio en curso en este proyecto. Espere a que termine."
+                )
             self._running.add(key)
         try:
-            return self._run(actor, project_id, selected)
+            yield
         finally:
             with self._guard:
                 self._running.discard(key)

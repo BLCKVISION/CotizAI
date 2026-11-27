@@ -41,10 +41,10 @@ CLAVES_CANONICAS = (
 VATIOS: Mapping[str, Decimal] = {"w": Decimal(1), "kw": Decimal(1000)}
 MILIMETROS: Mapping[str, Decimal] = {"mm": Decimal(1), "cm": Decimal(10), "m": Decimal(1000)}
 
-_MEDIDA = re.compile(r"^\s*(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)\s*([a-zA-Z]{0,3})\s*$")
+_MEDIDA = re.compile(r"^\s*(\d{1,3}(?:[.,]\d{3})+|\d+(?:[.,]\d+)?)\s*(?:([a-zA-Z]{1,3})\s*)?$")
 _MILES = re.compile(r"^[1-9]\d{0,2}(?:[.,]\d{3})+$")
-_DDR = re.compile(r"(lp)?ddr\s*-?\s*(\d)")
-_SOCKET = re.compile(r"\b(lga|pga|bga|fclga|am|fm|str|sp|tr)\s*-?\s*(\d{1,4}[a-z]?)\b")
+_DDR = re.compile(r"(lp)?ddr\s*(?:-\s*)?(\d)")
+_SOCKET = re.compile(r"\b(lga|pga|bga|fclga|am|fm|str|sp|tr)\s*(?:-\s*)?(\d{1,4}[a-z]?)\b")
 _ANIO = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
 _MAX_EXPONENTE = 30
 

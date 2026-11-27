@@ -34,9 +34,9 @@ def _luminance(color: Any) -> float:
     if len(color) == 1:
         return float(color[0])
     if len(color) == 3:
-        return 0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2]
+        return float(0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2])
     if len(color) == 4:
-        return (1 - color[3]) * (1 - (0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2]))
+        return float((1 - color[3]) * (1 - (0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2])))
     return 1.0
 
 

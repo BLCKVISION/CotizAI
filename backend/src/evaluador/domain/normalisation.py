@@ -10,9 +10,9 @@ import re
 from decimal import Decimal
 
 from .contrato import readings
-from .document_text import plain
+from .document_text import has_priced_line, plain
 from .extraccion import ExtraccionPropuesta, Linea, Monto
-from .montos import leer_monto
+from .montos import a_centavos, base_de, leer_monto
 
 _FIGURE = re.compile(r"\d(?:[\d.,]*\d)?")
 # A surcharge for paying in bolívares does not apply to a quote in dollars.
@@ -67,4 +67,37 @@ def normalise(e: ExtraccionPropuesta, document: str) -> ExtraccionPropuesta:
         applicable = [r for r in conditions.recargos if not _ONLY_IF_PAID_IN_BS.search(plain(r.concepto))]
         conditions = conditions.model_copy(update={"recargos": applicable})
     lines = [_line(line, figures) for line in e.lineas]
-    return e.model_copy(update={"lineas": lines, "totales": totals, "condiciones": conditions})
+    clean = e.model_copy(update={"lineas": lines, "totales": totals, "condiciones": conditions})
+    return _with_percentage_tax(clean, document)
+
+
+_TAX = r"(?:iva|i\.v\.a\.?|impuestos?|vat|tax)"
+_RATE = r"(\d{1,2}(?:[.,]\d{1,2})?)\s*%"
+_TAX_RATE = re.compile(rf"\b{_TAX}[^\n%\d]{{0,25}}{_RATE}|{_RATE}\s*(?:de\s+|of\s+)?{_TAX}\b")
+
+
+def _with_percentage_tax(e: ExtraccionPropuesta, document: str) -> ExtraccionPropuesta:
+    """«IVA 16%» without its amount: add it only if it explains the printed total to the cent, so it hides nothing."""
+    total = leer_monto(e.totales.total)
+    if total is None or e.totales.impuestos:
+        return e
+    rates = {Decimal((a or b).replace(",", ".")) for a, b in _TAX_RATE.findall(plain(document))}
+    base = base_de(e)
+    if not rates or base is None:
+        return e
+    extras = [
+        value for kind, amount in (("flete", e.condiciones.flete), ("instalacion", e.condiciones.instalacion))
+        if (value := leer_monto(amount)) is not None and not has_priced_line(e, kind)
+    ]  # fmt: skip
+    bases = {base}
+    for extra in extras:
+        bases |= {amount + extra for amount in bases}
+    if total in bases:
+        return e  # the total already matches without tax
+    for rate in sorted(rates):
+        for amount in sorted(bases):
+            tax = a_centavos(amount * rate / 100)
+            if tax > 0 and amount + tax == total:
+                added = _computed(tax, f"calculado: {rate} % de {amount}")
+                return e.model_copy(update={"totales": e.totales.model_copy(update={"impuestos": [added]})})
+    return e

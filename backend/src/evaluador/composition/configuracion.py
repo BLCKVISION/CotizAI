@@ -36,7 +36,8 @@ class Configuracion(BaseSettings):
     ia_api_key: SecretStr = SecretStr("")
     embeddings_modelo: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     embeddings_cache: str | None = None
-    base_de_datos_url: SecretStr = SecretStr("postgresql://evaluador:evaluador@localhost:5432/evaluador")
+    # No default connection in the code: set EVALUADOR_BASE_DE_DATOS_URL (empty = libpq's PG* variables).
+    base_de_datos_url: SecretStr = SecretStr("")
 
     # --- Modo lote (CLI) ---
     lote_paralelo: int = 4  # archivos procesados a la vez (límite configurable; el tiempo es desempate)

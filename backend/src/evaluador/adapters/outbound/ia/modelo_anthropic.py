@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 from pydantic import BaseModel
 
@@ -19,7 +21,7 @@ class ModeloAnthropic:
 
     def estructurar(
         self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
-    ):
+    ) -> Any:
         sistema, usuario = construir_mensajes(instrucciones, contenido_no_confiable, esquema)
         r = self._http.post(
             "/v1/messages",

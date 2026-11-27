@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 from evaluador.application.ports.agente import Embebedor, IndiceVectorial, ModeloDeLenguaje
 from evaluador.application.ports.market_search import MarketPriceFinder
@@ -87,6 +88,14 @@ _INSTR_COMPONENTS = (
 _MAX_JUDGE_CHARS = 20_000
 
 
+def _read(state: EstadoEvaluacion) -> ExtraccionPropuesta:
+    """The graph reaches the rules only after a successful reading."""
+    extraction = state.get("extraccion")
+    if extraction is None:
+        raise RuntimeError("rules reached without an extraction")
+    return extraction
+
+
 class NodosEvaluacion:
     def __init__(
         self,
@@ -108,7 +117,7 @@ class NodosEvaluacion:
             _log.warning("market_search_failed", extra={"tipo": type(exc).__name__})
             return {}
 
-    def recuperar_contexto(self, s: EstadoEvaluacion) -> dict:
+    def recuperar_contexto(self, s: EstadoEvaluacion) -> dict[str, Any]:
         """RAG: evidencia más cercana al requerimiento, dentro del tenant y de la propuesta."""
         consulta = f"{s['requerimiento']} instalación garantía soporte equipos nuevos"
         resultados = self._indice.buscar(
@@ -119,7 +128,7 @@ class NodosEvaluacion:
         )
         return {"contexto": [r.fragmento.contenido for r in resultados]}
 
-    def extraer(self, s: EstadoEvaluacion) -> dict:
+    def extraer(self, s: EstadoEvaluacion) -> dict[str, Any]:
         correction = ""
         for intento in (1, 2):  # un error de lectura se relee una vez antes de pedir revisión
             try:
@@ -170,15 +179,15 @@ class NodosEvaluacion:
         """What the rules read: only totals printed in the document, and derived line totals computed by code."""
         return normalise(extraction, text)
 
-    def manipulacion(self, s: EstadoEvaluacion) -> dict:
-        return {"hallazgos": detectar_manipulacion(s["texto"], s["extraccion"].sospechas_de_manipulacion)}
+    def manipulacion(self, s: EstadoEvaluacion) -> dict[str, Any]:
+        return {"hallazgos": detectar_manipulacion(s["texto"], _read(s).sospechas_de_manipulacion)}
 
-    def aritmetica(self, s: EstadoEvaluacion) -> dict:
-        return {"hallazgos": validar_aritmetica(s["extraccion"])}
+    def aritmetica(self, s: EstadoEvaluacion) -> dict[str, Any]:
+        return {"hallazgos": validar_aritmetica(_read(s))}
 
-    def reglas_tecnicas(self, s: EstadoEvaluacion) -> dict:
+    def reglas_tecnicas(self, s: EstadoEvaluacion) -> dict[str, Any]:
         """COMPAT, CAPACIDAD, CALIDAD y ABUSIVO: reglas deterministas sobre la extracción (sin modelo)."""
-        e = s["extraccion"]
+        e = _read(s)
         # Sin precios de mercado (búsqueda desactivada o sin resultados), ABUSIVO solo juzga flete y cláusulas.
         references = self._market_references(e)
         return {
@@ -207,10 +216,10 @@ class NodosEvaluacion:
             return set()
         return quoted_components(evidence, asked, document)
 
-    def alcance(self, s: EstadoEvaluacion) -> dict:
+    def alcance(self, s: EstadoEvaluacion) -> dict[str, Any]:
         document = s.get("texto", "")
-        quoted = self._components_by_quote(s["extraccion"], document)
-        hallazgos = validar_alcance_fijo(s["extraccion"], document=document, quoted=quoted)
+        quoted = self._components_by_quote(_read(s), document)
+        hallazgos = validar_alcance_fijo(_read(s), document=document, quoted=quoted)
         contexto = "\n---\n".join(s.get("contexto", []))
         if not contexto.strip():  # sin evidencia recuperada no se puede juzgar: revisión humana, no descarte
             hallazgos.append(Hallazgo(CodigoHallazgo.LECTURA, Severidad.ADVERTENCIA, False,
@@ -236,7 +245,7 @@ class NodosEvaluacion:
                                       "No se pudo juzgar el alcance cualitativo.", "", Origen.REGLA))  # fmt: skip
         return {"hallazgos": hallazgos}
 
-    def decidir(self, s: EstadoEvaluacion) -> dict:
+    def decidir(self, s: EstadoEvaluacion) -> dict[str, Any]:
         """Decisión en código: solo hallazgos que descartan, o error de lectura -> revisión humana."""
         hallazgos = s.get("hallazgos", [])
         if s.get("error_de_lectura"):

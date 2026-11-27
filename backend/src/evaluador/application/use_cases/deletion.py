@@ -6,17 +6,22 @@ The audit trail is never touched: it keeps who deleted what, with the fingerprin
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from dataclasses import replace
 
+from evaluador.application.ports.records import Records
 from evaluador.application.ports.salida import Auditoria, ProyectoRepositorio
 from evaluador.application.use_cases.gestion import Gestion
 from evaluador.domain.errores import NoEncontrado, TransicionInvalida
-from evaluador.domain.gestion import Propuesta
+from evaluador.domain.gestion import Nota, Propuesta
 from evaluador.domain.identidad import Permiso, Usuario
+from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
 from evaluador.domain.proyecto import EstadoProyecto, Proyecto
 
 # Called with (tenant_id, sha256) so that text extracted from a deleted file does not stay in memory.
 ForgetText = Callable[[str, str], None]
+# Called with (tenant_id, project_id): holds the project while something is removed from it.
+Exclusive = Callable[[str, str], AbstractContextManager[None]]
 
 
 def _project(projects: ProyectoRepositorio, actor: Usuario, project_id: str) -> Proyecto:
@@ -35,15 +40,21 @@ def _require_deletable(project: Proyecto) -> None:
 
 class DeleteProposal:
     def __init__(
-        self, *, projects: ProyectoRepositorio, management: Gestion, evaluations, decisions, audit: Auditoria,
-        forget_text: ForgetText,
+        self, *, projects: ProyectoRepositorio, management: Gestion,
+        evaluations: Records[ProjectEvaluation], decisions: Records[ReviewDecision], audit: Auditoria,
+        forget_text: ForgetText, exclusive: Exclusive,
     ) -> None:  # fmt: skip
+        self._exclusive = exclusive
         self._projects, self._management = projects, management
         self._evaluations, self._decisions = evaluations, decisions
         self._audit, self._forget_text = audit, forget_text
 
     def execute(self, actor: Usuario, project_id: str, proposal_id: str) -> None:
         actor.exigir(Permiso.CARGAR_DOCUMENTOS)
+        with self._exclusive(actor.tenant_id, project_id):
+            self._delete(actor, project_id, proposal_id)
+
+    def _delete(self, actor: Usuario, project_id: str, proposal_id: str) -> None:
         project = _project(self._projects, actor, project_id)
         _require_deletable(project)
         if project.estado is EstadoProyecto.CERRADO:
@@ -78,9 +89,13 @@ class DeleteProposal:
 
 class DeleteProject:
     def __init__(
-        self, *, projects: ProyectoRepositorio, proposals, notes, evaluations, decisions, store, audit: Auditoria,
+        self, *, projects: ProyectoRepositorio, proposals: Records[Propuesta],
+        notes: Records[Nota], evaluations: Records[ProjectEvaluation], decisions: Records[ReviewDecision],
+        store: Gestion, audit: Auditoria,
         forget_text: ForgetText, forget_runs: Callable[[str, str], None],
+        exclusive: Exclusive,
     ) -> None:  # fmt: skip
+        self._exclusive = exclusive
         self._forget_runs = forget_runs
         self._projects, self._proposals, self._notes = projects, proposals, notes
         self._evaluations, self._decisions, self._store = evaluations, decisions, store
@@ -88,6 +103,10 @@ class DeleteProject:
 
     def execute(self, actor: Usuario, project_id: str) -> None:
         actor.exigir(Permiso.CREAR_PROYECTO)
+        with self._exclusive(actor.tenant_id, project_id):
+            self._delete(actor, project_id)
+
+    def _delete(self, actor: Usuario, project_id: str) -> None:
         project = _project(self._projects, actor, project_id)
         _require_deletable(project)
         # The project goes last: if anything fails, it is still listed and deleting it can be retried.

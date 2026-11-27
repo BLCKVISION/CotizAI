@@ -19,7 +19,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>({ listo: false, token: null, usuario: null });
 
   useEffect(() => {
-    (async () => {
+    const restore = async () => {
       // Si el usuario ya inició sesión mientras se restauraba, no se pisa su estado.
       const aplicar = (nuevo: Estado) => setEstado((actual) => (actual.listo ? actual : nuevo));
       const token = await almacenDeToken.leer();
@@ -35,7 +35,9 @@ export function SesionProvider({ children }: { children: ReactNode }) {
           aplicar({ listo: true, token, usuario: null });
         }
       }
-    })();
+    };
+    // If the browser storage fails, the person gets the sign-in screen instead of an endless loading one.
+    restore().catch(() => setEstado((current) => (current.listo ? current : { listo: true, token: null, usuario: null })));
   }, []);
 
   const iniciarSesion = useCallback<Contexto['iniciarSesion']>(async (correo, contrasena) => {

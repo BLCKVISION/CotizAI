@@ -124,7 +124,7 @@ export function plainProblems(item: ItemLike): string[] {
 function whyRejected<I extends ItemLike>(o: Outcome<I>): string {
   const problems = plainProblems(o.item);
   const comment = o.changed || problems.length === 0 ? o.reason : '';
-  if (problems.length === 0) return `Motivo registrado en la verificación: «${comment.replace(/[.\s]+$/, '')}».`;
+  if (problems.length === 0) return `Motivo registrado en la verificación: «${comment.replace(/(?<![.\s])[.\s]+$/, '')}».`;
   return `No la recomendamos porque ${joinList(problems)}.`;
 }
 
@@ -162,7 +162,7 @@ export function finalAnswer<I extends ItemLike>(list: Outcome<I>[], costOf: (ite
       : `${reviewed}: ${approved} ${approved === 1 ? 'quedó aprobada' : 'quedaron aprobadas'} y ${total - approved} ${total - approved === 1 ? 'rechazada' : 'rechazadas'}.`,
     `La opción recomendada es ${nameOf(best.item)}${figures.length > 0 ? `, con ${figures.join(' y ')}` : ''}.`,
   ];
-  if (best.changed) paragraphs.push(`La IA no la daba por válida; la persona que verificó la aprobó y explicó: «${best.reason.replace(/[.\s]+$/, '')}».`);
+  if (best.changed) paragraphs.push(`La IA no la daba por válida; la persona que verificó la aprobó y explicó: «${best.reason.replace(/(?<![.\s])[.\s]+$/, '')}».`);
   const unverified = CHECKS.filter((c) => best.item.unverified?.includes(c.code)).map((c) => UNVERIFIED[c.code]).filter(Boolean);
   if (unverified.length > 0) paragraphs.push(`Antes de adjudicar, confirme lo que no se pudo verificar: ${joinList(unverified)}.`);
   return { approved: true, label: 'Propuesta recomendada', headline: nameOf(best.item), paragraphs };
@@ -189,8 +189,8 @@ export type Issue = { code: string; title: string; meaning: string | null; point
 
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 const readable = (reason: string) => {
-  const line = /^(Línea \d+):\s*(.*)$/s.exec(reason);
-  return line ? `${sentence(line[2].replace(/\.$/, ''))} (${line[1].toLowerCase()} del presupuesto).` : sentence(reason);
+  const line = /^(Línea \d+):(.*)$/s.exec(reason);
+  return line ? `${sentence(line[2].trim().replace(/\.$/, ''))} (${line[1].toLowerCase()} del presupuesto).` : sentence(reason);
 };
 const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
 
