@@ -127,6 +127,7 @@ class NodosEvaluacion:
                     instrucciones=_INSTR_EXTRACCION + correction,
                     contenido_no_confiable=s["texto"],
                     esquema=ExtraccionPropuesta,
+                    temperature=0.0 if intento == 1 else 0.3,  # the same request at 0 would fail the same way
                 )
                 if problemas := validar_contrato(ext):  # lo que no es auditable cuenta como error de lectura
                     correction = _correction_request(problemas)

@@ -17,7 +17,7 @@ class Model:
     def __init__(self, *replies):
         self.replies, self.instructions = list(replies), []
 
-    def estructurar(self, *, instrucciones, contenido_no_confiable, esquema):
+    def estructurar(self, *, instrucciones, contenido_no_confiable, esquema, temperature=0):
         self.instructions.append(instrucciones)
         return self.replies.pop(0)
 

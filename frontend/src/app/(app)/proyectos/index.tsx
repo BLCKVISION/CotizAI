@@ -7,7 +7,7 @@ import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
 import { BackButton } from '@/design/BackButton';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
-import { Boton, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
+import { Boton, BotonIcono, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb } from '@/design/efectos';
 import { FixedPage } from '@/design/layout';
@@ -167,7 +167,7 @@ export default function Projects() {
                   {/* A sibling of the folder, not inside it: pressing it must not open the project. */}
                   {canCreate && canBeDeleted(p) ? (
                     <View style={{ alignItems: 'center', paddingTop: espacio.sm }}>
-                      <PillButton icon="trash-2" label="Eliminar proyecto" accessibilityLabel={`Eliminar proyecto ${p.nombre}`} onPress={() => setDeleting(p)} />
+                      <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.nombre}`} onPress={() => setDeleting(p)} />
                     </View>
                   ) : null}
                 </Entrada>

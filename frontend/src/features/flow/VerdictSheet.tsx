@@ -37,6 +37,16 @@ function SectionTitle({ children }: { children: string }) {
   );
 }
 
+function Stat({ label, value, tone }: { label: string; value: string; tone?: string }) {
+  const t = useTema();
+  return (
+    <View style={{ flexGrow: 1, flexBasis: 130, gap: 2, padding: espacio.md, borderRadius: radio.lg, borderWidth: 1, borderColor: t.borde, backgroundColor: '#FFFFFF' }}>
+      <Texto variante="pequeno" suave>{label}</Texto>
+      <Texto variante="cuerpoMedio" color={tone} numberOfLines={2} style={{ fontFamily: 'Urbanist_700Bold' }}>{value}</Texto>
+    </View>
+  );
+}
+
 function IssueCard({ issue }: { issue: Issue }) {
   const t = useTema();
   return (
@@ -77,7 +87,7 @@ const TRACE_LOOK = {
 function DecisionTrace({ steps }: { steps: NonNullable<ProposalEvaluationItem['trace']> }) {
   const t = useTema();
   return (
-    <CollapsibleCard title="Cómo se decidió, paso a paso" detail={`${steps.length} pasos registrados del agente`} defaultOpen>
+    <CollapsibleCard title="Cómo se decidió, paso a paso" detail={`${steps.length} pasos registrados del agente`}>
       {steps.map((step, i) => {
         const look = TRACE_LOOK[step.status] ?? TRACE_LOOK.info;
         const last = i === steps.length - 1;
@@ -113,6 +123,7 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
   const tone = t[look.tone];
   const problems = issues(item, true);
   const doubts = issues(item, false);
+  const checks = checklist(item);
   const cost = item.converted_cost !== null ? formatMoney(item.converted_cost, item.converted_currency) : item.real_cost !== null ? formatMoney(item.real_cost, item.currency) : 'No determinado';
 
   return (
@@ -128,11 +139,12 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
           </Texto>
         </View>
         <Texto>{answer.detail}</Texto>
-        <Texto variante="etiqueta">
-          {item.supplier ?? item.filename} · Costo real: {cost}
-          {item.score !== null ? ` · ${Number(item.score)} de 100` : ''}
-          {item.over_budget ? ' · supera el presupuesto' : ''}
-        </Texto>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
+        <Stat label="Proveedor" value={item.supplier ?? item.filename} />
+        <Stat label="Costo real" value={cost} />
+        <Stat label="Puntaje" value={item.score !== null ? `${Number(item.score)} de 100` : 'Sin puntaje'} />
+        <Stat label="Presupuesto" value={item.over_budget ? 'Lo supera' : 'Dentro'} tone={item.over_budget ? t.aviso.texto : t.exito.texto} />
       </View>
       {decision ? (
         <View style={{ flexDirection: 'row', gap: espacio.sm, alignItems: 'center', padding: espacio.sm + 4, borderRadius: radio.lg, backgroundColor: t.superficieAlta }}>
@@ -174,9 +186,9 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
       ) : null}
 
       {/* 3. The same questions for everyone */}
-      <SectionTitle>Requisitos revisados</SectionTitle>
+      <CollapsibleCard title="Requisitos revisados" detail={`${checks.filter((c) => c.state === 'yes').length} de ${checks.length} cumplen`} defaultOpen>
       <View style={{ borderRadius: radio.lg, borderWidth: 1, borderColor: t.borde, backgroundColor: '#FFFFFF' }}>
-        {checklist(item).map((c, i) => {
+        {checks.map((c, i) => {
           const state = CHECK_LOOK[c.state];
           return (
             <View key={c.code} accessible accessibilityLabel={`${c.question} ${state.label}`} style={{ flexDirection: 'row', alignItems: 'center', gap: espacio.sm, minHeight: 44, paddingHorizontal: espacio.sm + 4, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: t.borde }}>
@@ -193,11 +205,11 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
           );
         })}
       </View>
+      </CollapsibleCard>
 
       {/* 4. How the real cost is reached */}
       {item.cost_steps.length > 0 ? (
-        <>
-          <SectionTitle>Costo real, paso a paso</SectionTitle>
+        <CollapsibleCard title="Costo real, paso a paso" detail={`${item.cost_steps.length} conceptos`}>
           {item.cost_steps.map((s, i) => (
             <View key={`${s.concept}-${i}`} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: espacio.md, paddingVertical: 3, borderBottomWidth: 1, borderBottomColor: t.borde }}>
               <Texto variante="pequeno" style={{ flex: 1 }}>
@@ -207,7 +219,7 @@ export function VerdictSheet({ item, decision }: { item: ProposalEvaluationItem;
               <Texto variante="etiqueta">{s.amount === null ? 'No determinado' : formatMoney(s.amount, item.currency)}</Texto>
             </View>
           ))}
-        </>
+        </CollapsibleCard>
       ) : null}
       {item.supplier_history.map((h) => (
         <Texto key={h} variante="pequeno" color={t.aviso.texto}>

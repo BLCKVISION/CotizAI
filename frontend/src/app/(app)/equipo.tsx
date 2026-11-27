@@ -132,7 +132,7 @@ export default function Equipo() {
               <MemberRow key={m.id} member={m} canManage={data.can_manage && !m.is_you} onRole={() => setEditing({ member: m, role: m.role })} onToggle={() => setToggling(m)} />
             ))}
           </CollapsibleCard>
-          <CollapsibleCard title="Qué puede hacer cada rol" detail="El servidor aplica estos permisos" defaultOpen>
+          <CollapsibleCard title="Qué puede hacer cada rol" detail="El servidor aplica estos permisos">
             {ROLE_ORDER.map((role) => {
               const permissions = data.roles.find((r) => r.role === role)?.permissions ?? [];
               return (

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import logging
+
 import httpx
 from pydantic import BaseModel
 
@@ -10,6 +13,7 @@ from ._retry import post_with_retry
 
 # Without a cap the provider reserves the model's whole output window and may refuse a low-credit account (402).
 MAX_ANSWER_TOKENS = 8000
+_log = logging.getLogger("evaluador.ia")
 
 
 class ModeloOpenAICompatible:
@@ -32,7 +36,13 @@ class ModeloOpenAICompatible:
             },
         ))
         r.raise_for_status()
-        return validate_reply(r.json()["choices"][0]["message"]["content"], esquema)
+        choice = r.json()["choices"][0]
+        try:
+            return validate_reply(choice["message"]["content"] or "", esquema)
+        except (ValueError, json.JSONDecodeError):
+            # finish_reason "length" means the answer was cut off by the token cap: the JSON is incomplete, not wrong.
+            _log.warning("respuesta_no_valida", extra={"finish_reason": choice.get("finish_reason"), "caracteres": len(choice["message"]["content"] or "")})
+            raise
 
     def estructurar_imagen(
         self, *, instrucciones: str, imagen: bytes, mime: str, esquema: type[BaseModel]
