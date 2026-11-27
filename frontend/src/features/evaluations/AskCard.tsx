@@ -41,6 +41,10 @@ export function AskCard({ projectId }: { projectId: string }) {
 
   return (
     <CollapsibleCard title="Pregunte sobre las propuestas" detail="Respuestas con cita de los documentos">
+      <Texto>
+        ¡Hola! Soy Coti, el asistente de CotizAI, y te ayudo a analizar las cotizaciones de este proyecto: costos, descartes y
+        ranking. ¿Qué necesitas saber?
+      </Texto>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
         {SUGGESTIONS.map((s) => (
           <Chip key={s} etiqueta={s} seleccionado={false} onPress={() => void ask(s)} />
