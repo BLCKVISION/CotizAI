@@ -59,6 +59,7 @@ class ProposalEvaluationResponseDto(DtoSalida):
     reading_warnings: list[str]
     over_budget: bool
     supplier_history: list[str]
+    unverified: list[str]
 
 
 class ExchangeRateSnapshotDto(DtoSalida):

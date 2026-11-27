@@ -37,6 +37,8 @@ export type ProposalEvaluationItem = {
   reading_warnings: string[];
   over_budget: boolean;
   supplier_history: string[];
+  /** Control questions without enough data. Absent in results saved before it existed. */
+  unverified?: string[];
 };
 
 export type ExchangeRate = {

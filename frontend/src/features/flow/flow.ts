@@ -17,7 +17,7 @@ export const EVALUATION_STEPS = STEPS.slice(2);
 
 type Verdict = 'valida' | 'descartada' | 'pendiente_de_revision';
 type FindingLike = { code: string; discards: boolean; reason: string; evidence: string; origin: string };
-export type ItemLike = { proposal_id: string; filename: string; supplier: string | null; verdict: Verdict; findings: FindingLike[] };
+export type ItemLike = { proposal_id: string; filename: string; supplier: string | null; verdict: Verdict; findings: FindingLike[]; unverified?: string[] };
 export type DecisionLike = { proposal_id: string; approved: boolean; comment: string };
 
 type Progress = { proposalCount: number; hasEvaluation: boolean; items: ItemLike[]; decisions: DecisionLike[] };
@@ -52,7 +52,9 @@ export function checklist(item: ItemLike): Check[] {
   const unreadable = item.verdict === 'pendiente_de_revision' && item.findings.every((f) => f.code === 'LECTURA');
   return CHECKS.map((c) => {
     const reasons = item.findings.filter((f) => f.code === c.code);
-    const state: CheckState = reasons.some((f) => f.discards) ? 'no' : reasons.length > 0 ? 'doubt' : unreadable ? 'unchecked' : 'yes';
+    // Without a finding, "yes" only when the server had the data to check it.
+    const unknown = unreadable || (item.unverified?.includes(c.code) ?? false);
+    const state: CheckState = reasons.some((f) => f.discards) ? 'no' : reasons.length > 0 ? 'doubt' : unknown ? 'unchecked' : 'yes';
     return { code: c.code, question: c.question, state, reasons };
   });
 }
@@ -126,6 +128,11 @@ function whyRejected<I extends ItemLike>(o: Outcome<I>): string {
   return `No la recomendamos porque ${joinList(problems)}.`;
 }
 
+const UNVERIFIED: Record<string, string> = {
+  CAPACIDAD: 'que la energía soporte los equipos',
+  CALIDAD: 'que los equipos sean nuevos',
+};
+
 export type FinalAnswer = { approved: boolean; label: string; headline: string; paragraphs: string[] };
 
 const nameOf = (i: ItemLike) => i.supplier ?? i.filename;
@@ -156,5 +163,7 @@ export function finalAnswer<I extends ItemLike>(list: Outcome<I>[], costOf: (ite
     `La opción recomendada es ${nameOf(best.item)}${figures.length > 0 ? `, con ${figures.join(' y ')}` : ''}.`,
   ];
   if (best.changed) paragraphs.push(`La IA no la daba por válida; la persona que verificó la aprobó y explicó: «${best.reason.replace(/[.\s]+$/, '')}».`);
+  const unverified = CHECKS.filter((c) => best.item.unverified?.includes(c.code)).map((c) => UNVERIFIED[c.code]).filter(Boolean);
+  if (unverified.length > 0) paragraphs.push(`Antes de adjudicar, confirme lo que no se pudo verificar: ${joinList(unverified)}.`);
   return { approved: true, label: 'Propuesta recomendada', headline: nameOf(best.item), paragraphs };
 }

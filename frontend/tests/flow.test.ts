@@ -96,3 +96,20 @@ describe('final answer', () => {
     assert.match(answer.paragraphs[2], /La IA no la daba por válida.*«Flete aclarado»/);
   });
 });
+
+describe('unverified questions', () => {
+  const pending = { ...item('a'), unverified: ['CAPACIDAD'] };
+  it('shows "sin verificar" instead of yes when there was no data', () => {
+    const checks = checklist(pending);
+    assert.equal(checks.find((c) => c.code === 'CAPACIDAD')?.state, 'unchecked');
+    assert.equal(checks.find((c) => c.code === 'CALIDAD')?.state, 'yes');
+  });
+  it('keeps "no" when a rule did find a problem', () => {
+    const failed = { ...item('a', 'descartada', [finding('CAPACIDAD')]), unverified: ['CAPACIDAD'] };
+    assert.equal(checklist(failed).find((c) => c.code === 'CAPACIDAD')?.state, 'no');
+  });
+  it('tells the reader what to confirm about the recommended proposal', () => {
+    const answer = finalAnswer(outcomes([pending], [{ proposal_id: 'a', approved: true, comment: '' }]), () => null);
+    assert.equal(answer.paragraphs.at(-1), 'Antes de adjudicar, confirme lo que no se pudo verificar: que la energía soporte los equipos.');
+  });
+});

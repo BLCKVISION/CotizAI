@@ -14,6 +14,10 @@ from decimal import Decimal
 from evaluador.domain.project_evaluation import ProjectEvaluation, ProposalEvaluationItem
 
 _VERDICTS = {"valida": "Válida", "descartada": "Descartada", "pendiente_de_revision": "Pendiente de revisión"}
+_UNVERIFIED = {
+    "CAPACIDAD": "que la energía soporte los equipos",
+    "CALIDAD": "que los equipos sean nuevos",
+}
 _CRITERIA = {
     "rendimiento": "Rendimiento",
     "proteccion_y_perifericos": "Protección y periféricos",
@@ -93,6 +97,9 @@ def render_markdown_report(evaluation: ProjectEvaluation, project_name: str) -> 
         if item.over_budget:
             lines.append("Supera el presupuesto referencial del proyecto.")
         lines += [f"Antecedente: {_text(h)}" for h in item.supplier_history]
+        if item.unverified:
+            pending = "; ".join(_UNVERIFIED.get(code, code) for code in item.unverified)
+            lines.append(f"Sin verificar por falta de datos: {pending}.")
         if item.cost_steps:
             lines += ["", "**Costo real, paso a paso**", ""]
             lines += [

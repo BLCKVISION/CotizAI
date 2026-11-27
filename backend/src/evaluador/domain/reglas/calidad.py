@@ -27,6 +27,13 @@ _AMBIGUO = re.compile(r"\b(usad\w*|used|renovad\w*|reciclad\w*|reutilizad\w*)\b"
 # «no/sin/nunca/ni/jamás» antes de la mención y en la misma oración (sin cruzar . ; : ni comas).
 _NEGACION = re.compile(r"\b(no|sin|nunca|ni|jamas)\b[^.;:,]*$")
 _ANIO_PLAUSIBLE = range(1980, 2101)
+# "new" said about the goods, so that "Nuevo Circo" or "nueva propuesta" do not count.
+_DECLARED_NEW = re.compile(
+    r"\b(?:condicion|estado)\s*:?\s*(?:100\s*%\s*)?nuev[oa]s?\b"
+    r"|\b(?:equipos?|productos?|componentes?|hardware)\b[^.;|]{0,30}?\bnuev[oa]s?\b"
+    r"|\bnuev[oa]s?\s+(?:de\s+(?:paquete|fabrica|caja)|y\s+sellad\w*)\b"
+)
+_NEW_VALUE = re.compile(r"\b(?:nuev[oa]s?|new)\b")
 
 
 @dataclass(frozen=True, slots=True)
@@ -102,3 +109,17 @@ def validar_calidad(e: ExtraccionPropuesta, p: ParametrosDeCalidad | None = None
                 _hallazgo(f"Nota de la propuesta {texto} ('{esp.recortar(mencion)}').", nota, descarta=descarta)
             )
     return hallazgos
+
+
+def declares_new_equipment(e: ExtraccionPropuesta) -> bool:
+    """True when the proposal says its goods are new. Silence is not proof that they are."""
+    for line in e.lineas:
+        for key, value in line.especificaciones.items():
+            if esp.normalizar_texto(key) in ("condicion", "estado") and _mencion(_NEW_VALUE, value):
+                return True
+    texts = [t for line in e.lineas for t in (line.descripcion, line.evidencia.texto)] + e.notas_literales
+    for text in texts:
+        mention = _mencion(_DECLARED_NEW, text)
+        if mention and not re.search(r"\b(?:no|sin)\b", mention):
+            return True
+    return False

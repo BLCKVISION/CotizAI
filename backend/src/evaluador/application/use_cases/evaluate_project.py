@@ -43,6 +43,7 @@ from evaluador.domain.proyecto import EstadoProyecto, Proyecto
 from evaluador.domain.puntaje import Pesos
 from evaluador.domain.rag import Fragmento, fragmentar
 from evaluador.domain.ranking import Candidata, ordenar_ranking
+from evaluador.domain.verification import unverified_checks
 
 _log = logging.getLogger("evaluador.evaluations")
 _EVALUABLE_STATES = frozenset(
@@ -373,6 +374,7 @@ class EvaluateProject:
                 over_budget=budget is not None and converted is not None and converted > budget,
                 supplier_history=tuple(history.get(_supplier_key(supplier), [])[:5]) if supplier else (),
                 evaluated_at=self._clock.ahora(),
+                unverified=unverified_checks(extraction) if extraction else (),
             ),
             used,
         )

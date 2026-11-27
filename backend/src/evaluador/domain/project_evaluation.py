@@ -50,6 +50,7 @@ class ProposalEvaluationItem:
     over_budget: bool = False
     supplier_history: tuple[str, ...] = ()  # earlier discards of the same supplier in this organisation
     evaluated_at: datetime | None = None  # when this proposal was read; a selective run keeps the older ones
+    unverified: tuple[str, ...] = ()  # control questions without enough data to answer
 
 
 @dataclass(frozen=True, slots=True)

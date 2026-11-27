@@ -126,3 +126,26 @@ def validar_capacidad(e: ExtraccionPropuesta, p: ParametrosDeCapacidad | None = 
         if _es_ups(linea):
             hallazgos += _validar_ups(n, linea, peor_consumo, p)
     return hallazgos
+
+
+def capacity_was_compared(e: ExtraccionPropuesta, p: ParametrosDeCapacidad | None = None) -> bool:
+    """True only when some power supply or UPS was really weighed against an estimated consumption.
+
+    Finding no problem because there was nothing to compare must never be reported as "the power is enough".
+    """
+    p = p or ParametrosDeCapacidad()
+    consumptions = [_consumo_del_equipo(line, p)[0] for line in e.lineas]
+    if all(c is None for c in consumptions):
+        return False
+    for line in e.lineas:
+        if esp.leer_medida(line.especificaciones.get(esp.POTENCIA_FUENTE_W), esp.VATIOS) is not None:
+            return True
+        units = leer_monto(line.cantidad)
+        if (
+            _es_ups(line)
+            and esp.leer_medida(line.especificaciones.get(esp.POTENCIA_UPS_W), esp.VATIOS) is not None
+            and units is not None
+            and units > 0
+        ):
+            return True
+    return False
