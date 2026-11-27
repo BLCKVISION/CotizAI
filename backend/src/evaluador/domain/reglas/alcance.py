@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from decimal import Decimal, InvalidOperation
 
+from evaluador.domain.document_text import exclusions, line_text, plain, visible_text, without_exclusions
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severidad
-from evaluador.domain.extraccion import ExtraccionPropuesta
+from evaluador.domain.extraccion import ComponentEvidence, ExtraccionPropuesta, Linea
+from evaluador.domain.montos import leer_monto
 
 EQUIPOS_REQUERIDOS = 11
 CATEGORIAS_REQUERIDAS = ("gabinete", "monitor", "teclado", "raton", "protector")
@@ -41,57 +44,133 @@ def _cantidad(valor: str) -> Decimal | None:
     return d if d.is_finite() and d >= 0 and d.adjusted() <= 30 else None
 
 
-def validar_alcance_fijo(e: ExtraccionPropuesta, equipos: int = EQUIPOS_REQUERIDOS) -> list[Hallazgo]:
-    por_categoria: dict[str, Decimal] = {}
-    con_cantidad_ilegible: set[str] = set()
-    for ln in e.lineas:
-        categoria = normalizar_categoria(ln.categoria)
-        cantidad = _cantidad(ln.cantidad.valor if ln.cantidad else "")
-        if cantidad is None:
-            con_cantidad_ilegible.add(categoria)
+_COMPONENTS = {
+    "gabinete": re.compile(r"\b(?:gabinetes?|case|torres?|chasis)\b"),
+    "monitor": re.compile(r"\b(?:monitor(?:es|s)?|pantallas?)\b"),
+    "teclado": re.compile(r"\b(?:teclados?|keyboards?)\b"),
+    "raton": re.compile(r"\b(?:raton(?:es)?|mouse)\b"),
+    "protector": re.compile(
+        r"\b(?:protector(?:es|s)?|regulador(?:es)?|avr|ups|supresor(?:es)?|proteccion electrica)\b"
+    ),
+}
+_COMPUTER = re.compile(r"\b(?:pcs?|computador(?:as?|es)?|workstations?|estacion(?:es)?|estudiantes?|docente)\b")
+_INSTALLATION = re.compile(r"\b(?:instalacion|installation|puesta en marcha)\b")
+_EXCLUDED_NAMES = {**_COMPONENTS, "instalación": _INSTALLATION}
+
+
+def _discard(reason: str, quote: str) -> Hallazgo:
+    return Hallazgo(CodigoHallazgo.ALCANCE, Severidad.CRITICA, True, reason, quote[:200], Origen.REGLA)
+
+
+def _review(reason: str, quote: str) -> Hallazgo:
+    return Hallazgo(CodigoHallazgo.LECTURA, Severidad.ADVERTENCIA, False, reason, quote, Origen.REGLA)
+
+
+def _excluded(document: str) -> list[Hallazgo]:
+    """A proposal that says it leaves out something required is incomplete, whatever its lines list."""
+    found: list[Hallazgo] = []
+    named: set[str] = set()
+    for sentence in exclusions(document):
+        names = [name for name, pattern in _EXCLUDED_NAMES.items() if pattern.search(sentence) and name not in named]
+        if names:
+            named.update(names)
+            found.append(_discard(f"El presupuesto dice que no incluye: {', '.join(names)}.", sentence))
+    return found
+
+
+def _is_computer(line: Linea) -> bool:
+    return bool(_COMPUTER.search(plain(f"{line.categoria} {line.descripcion}")))
+
+
+def _is_included_set(line: Linea) -> bool:
+    """Several components in one line that charges nothing: a set for each station, however its count was read."""
+    total = leer_monto(line.total_linea)
+    free = total is None and line.precio_unitario is None or total == 0
+    text = line_text(line)
+    return free and sum(bool(pattern.search(text)) for pattern in _COMPONENTS.values()) >= 3
+
+
+def _units(line: Linea) -> Decimal | None:
+    units = _cantidad(line.cantidad.valor) if line.cantidad else None
+    if units is not None and units <= 1 and _is_included_set(line):
+        return None
+    return units
+
+
+def unlisted_components(e: ExtraccionPropuesta) -> list[str]:
+    """Required components that no line or note names: quotes often give only a brand and model."""
+    texts = [line_text(line) for line in e.lineas] + [without_exclusions(" ".join(e.notas_literales))]
+    has_computer = any(_is_computer(line) for line in e.lineas)
+    return [
+        name for name in CATEGORIAS_REQUERIDAS
+        if not (name == "gabinete" and has_computer)
+        and not any(_COMPONENTS[name].search(text) for text in texts)
+        and not any(normalizar_categoria(line.categoria) == name for line in e.lineas)
+    ]  # fmt: skip
+
+
+def quoted_components(evidence: ComponentEvidence, asked: list[str], document: str) -> set[str]:
+    """Only the components whose quote is really in the document: the model cannot invent one."""
+    text = without_exclusions(visible_text(document))
+    return {
+        name
+        for item in evidence.found
+        if (name := normalizar_categoria(item.component)) in asked
+        and len(plain(item.quote)) >= 5
+        and plain(item.quote) in text
+    }
+
+
+def validar_alcance_fijo(
+    e: ExtraccionPropuesta,
+    equipos: int = EQUIPOS_REQUERIDOS,
+    document: str = "",
+    quoted: frozenset[str] | set[str] = frozenset(),
+) -> list[Hallazgo]:
+    """Each required component, wherever the proposal mentions it.
+
+    A component listed without its own quantity next to enough complete computers is read as one per station, which
+    is how chat quotes are written.
+    """
+    hallazgos = _excluded(document)
+    texts = [(line, line_text(line)) for line in e.lineas]
+    notes = without_exclusions(" ".join(e.notas_literales))
+    computers = [line for line in e.lineas if _is_computer(line)]
+    computer_units = sum((_units(line) or Decimal(0) for line in computers), Decimal(0))
+    missing: list[str] = []
+    unclear: list[str] = []
+    unmentioned: list[str] = []
+    for name in CATEGORIAS_REQUERIDAS:
+        if name in quoted and computer_units >= equipos:
+            continue  # offered, shown with a quote, next to enough complete computers: one per station
+        mentioning = [
+            line for line, text in texts
+            if _COMPONENTS[name].search(text) or normalizar_categoria(line.categoria) == name
+            or (name == "gabinete" and _is_computer(line))
+        ]  # fmt: skip
+        stated = [units for line in mentioning if (units := _units(line)) is not None]
+        if sum(stated, Decimal(0)) >= equipos:
             continue
-        por_categoria[categoria] = por_categoria.get(categoria, Decimal(0)) + cantidad
-    faltan = [c for c in CATEGORIAS_REQUERIDAS if por_categoria.get(c, Decimal(0)) < equipos]
-    # Una cantidad ilegible no prueba que falte nada: va a revisión humana, no descarta.
-    dudosas = [c for c in faltan if c in con_cantidad_ilegible]
-    firmes = [c for c in faltan if c not in con_cantidad_ilegible]
-    hallazgos: list[Hallazgo] = []
-    hay_equipo_completo = any(
-        normalizar_categoria(ln.categoria).replace("_", " ").split(" ")[0].rstrip("s") in _EQUIPO_COMPLETO
-        for ln in e.lineas
-    )
-    if firmes and hay_equipo_completo:
-        hallazgos.append(
-            Hallazgo(
-                CodigoHallazgo.LECTURA,
-                Severidad.ADVERTENCIA,
-                False,
-                f"Hay equipos completos; verificar si incluyen {equipos} unidades de: {', '.join(firmes)}.",
-                "línea de equipo completo",
-                Origen.REGLA,
-            )
-        )
-        firmes = []
-    if firmes:
-        hallazgos.append(
-            Hallazgo(
-                CodigoHallazgo.ALCANCE,
-                Severidad.CRITICA,
-                True,
-                f"No cubre {equipos} unidades de: {', '.join(firmes)}.",
-                "lista fija de requisitos",
-                Origen.REGLA,
-            )
-        )
-    if dudosas:
-        hallazgos.append(
-            Hallazgo(
-                CodigoHallazgo.LECTURA,
-                Severidad.ADVERTENCIA,
-                False,
-                f"Cantidad ilegible; no se puede verificar {equipos} unidades de: {', '.join(dudosas)}.",
-                "lista fija de requisitos",
-                Origen.REGLA,
-            )
-        )
+        if len(stated) < len(mentioning) or _COMPONENTS[name].search(notes):
+            if computer_units < equipos:
+                unclear.append(name)
+        elif mentioning:
+            missing.append(name)
+        else:
+            unmentioned.append(name)
+    if unmentioned and computers:
+        hallazgos.append(_review(
+            f"Hay equipos completos; verificar si incluyen {equipos} unidades de: {', '.join(unmentioned)}.",
+            "línea de equipo completo",
+        ))  # fmt: skip
+    else:
+        missing += unmentioned
+    if missing:
+        ordered = [name for name in CATEGORIAS_REQUERIDAS if name in missing]
+        hallazgos.append(_discard(f"No cubre {equipos} unidades de: {', '.join(ordered)}.", "lista fija de requisitos"))
+    if unclear:
+        hallazgos.append(_review(
+            f"Cantidad ilegible; no se puede verificar {equipos} unidades de: {', '.join(unclear)}.",
+            "lista fija de requisitos",
+        ))  # fmt: skip
     return hallazgos

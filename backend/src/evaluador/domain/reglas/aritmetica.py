@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 
+from evaluador.domain.document_text import has_priced_line, is_recurring, is_single_charge
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severidad
 from evaluador.domain.extraccion import ExtraccionPropuesta, Monto
+from evaluador.domain.montos import is_descriptive
 
 
 def _d(m: Monto | None) -> Decimal | None:
@@ -28,7 +30,12 @@ def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
     suma = Decimal(0)
     suma_valida = True
     for i, ln in enumerate(e.lineas, start=1):
+        if is_descriptive(ln):
+            continue
         cant, precio, total = _d(ln.cantidad), _d(ln.precio_unitario), _d(ln.total_linea)
+        if is_single_charge(ln) and total is not None and (ln.precio_unitario is None or precio == total):
+            suma += total  # a single charge, such as freight
+            continue
         if None in (cant, precio, total):
             hallazgos.append(
                 Hallazgo(
@@ -64,7 +71,22 @@ def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
         impuestos_sueltos = [_d(x) for x in e.totales.impuestos]
         if declarado is not None and all(i is not None for i in impuestos_sueltos):
             esperado = suma + sum((i for i in impuestos_sueltos if i is not None), Decimal(0))
-            if esperado != declarado:
+            # Freight or installation quoted apart may or may not be part of the printed total.
+            extras = [
+                value for kind, value in (("flete", _d(e.condiciones.flete)),
+                                          ("instalacion", _d(e.condiciones.instalacion)))
+                if value is not None and not has_priced_line(e, kind)
+            ]  # fmt: skip
+            plausible = {esperado}
+            for extra in extras:
+                plausible |= {amount + extra for amount in plausible}
+            # A yearly or monthly licence listed as a line may stay out of the printed total.
+            recurring = sum(
+                (value for line in e.lineas if is_recurring(line) and (value := _d(line.total_linea)) is not None),
+                Decimal(0),
+            )
+            plausible |= {amount - recurring for amount in plausible}
+            if declarado not in plausible:
                 hallazgos.append(
                     _hallazgo(
                         f"Líneas e impuestos suman {esperado}, el total declarado es {declarado}.", total_m.literal

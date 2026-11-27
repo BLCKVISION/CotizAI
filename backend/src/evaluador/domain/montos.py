@@ -25,12 +25,20 @@ def a_centavos(valor: Decimal) -> Decimal:
     return valor.quantize(CENTAVOS, rounding=ROUND_HALF_UP)
 
 
+def is_descriptive(linea) -> bool:
+    """No price at all: the line says what is included, its cost is in another one."""
+    return linea.precio_unitario is None and linea.total_linea is None
+
+
 def suma_de_lineas(e: ExtraccionPropuesta) -> Decimal | None:
     """Suma de `total_linea`. `None` si alguna línea es ilegible: una suma parcial no es la base."""
     if not e.lineas:
         return None  # sin líneas no hay base: «cero» haría ganar a una extracción vacía
+    priced = [linea for linea in e.lineas if not is_descriptive(linea)]
+    if not priced:
+        return None
     suma = Decimal(0)
-    for linea in e.lineas:
+    for linea in priced:
         total = leer_monto(linea.total_linea)
         if total is None:
             return None

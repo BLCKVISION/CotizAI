@@ -70,9 +70,12 @@ def _comparar_texto(n: int, linea: Linea, par: _ParDeTexto) -> list[Hallazgo]:
     return []
 
 
-_STATED_SOCKET = re.compile(r"\b(?:socket|zocalo)\s*:?\s*((?:lga|am|fm|str|tr|sp)\s*-?\s*\d{1,4}[a-z]?)\b")
+# After the word "socket" any family counts; alone, only the unmistakable ones ("(AM5)", "LGA1700").
+_STATED_SOCKET = re.compile(
+    r"\b(?:(?:socket|zocalo)\s*:?\s*((?:lga|am|fm|str|tr|sp)\s*-?\s*\d{1,4}[a-z]?)|(am[45]|lga\s*-?\s*\d{4}))\b"
+)
 _PROCESSOR_WORDS = re.compile(
-    r"\b(?:cpu|procesador|ryzen|athlon|threadripper|xeon|pentium|celeron|core\s+(?:ultra|i\d))\b"
+    r"\b(?:cpu|procesador|ryzen|athlon|threadripper|xeon|pentium|celeron|core\s+(?:ultra|i\d)|i[3579]-\d{4,5}[a-z]{0,2})\b"
 )
 _BOARD_WORDS = re.compile(r"\b(?:placa|tarjeta\s+madre|motherboard|mainboard|board|[abhqxz][1-9]\d0[a-z]?)\b")
 
@@ -80,15 +83,20 @@ _BOARD_WORDS = re.compile(r"\b(?:placa|tarjeta\s+madre|motherboard|mainboard|boa
 def _parts(linea: Linea) -> list[str]:
     """Each specification and each part of the quoted text, so one part talks about one component."""
     specs = [f"{key}: {value}" for key, value in linea.especificaciones.items()]
-    return specs + re.split(r"[|\n]", linea.evidencia.texto)
+    return specs + re.split(r"[|\n]", linea.evidencia.texto) + re.split(r"[|\n]", linea.descripcion)
+
+
+def _components(linea: Linea) -> list[str]:
+    """Narrower pieces, for quotes that list a whole computer separated by commas."""
+    return [piece for part in _parts(linea) for piece in re.split(r"[,;]", part)]
 
 
 def _sockets_by_side(linea: Linea) -> dict[str, dict[str, str]]:
     """side -> {socket: the part that states it}."""
     found: dict[str, dict[str, str]] = {esp.SOCKET_CPU: {}, esp.SOCKET_PLACA: {}}
-    for part in _parts(linea):
+    for part in _components(linea):
         text = esp.sin_acentos(part).lower()
-        sockets = {esp.normalizar_texto(s) for s in _STATED_SOCKET.findall(text)}
+        sockets = {esp.normalizar_texto(a or b) for a, b in _STATED_SOCKET.findall(text)}
         processor, board = bool(_PROCESSOR_WORDS.search(text)), bool(_BOARD_WORDS.search(text))
         if len(sockets) == 1 and processor != board:  # a part naming both or neither says nothing about which
             found[esp.SOCKET_CPU if processor else esp.SOCKET_PLACA].setdefault(sockets.pop(), part.strip())
@@ -110,16 +118,22 @@ def _stated_sockets(linea: Linea) -> dict[str, str]:
 # Platforms whose processors accept a single memory generation. Others (e.g. LGA1700) accept two.
 _ONLY_MEMORY = {"am4": "ddr4", "am5": "ddr5", "lga1851": "ddr5"}
 _RAM_WORDS = re.compile(r"\b(?:ram|memoria)\b")
-_GENERATION = re.compile(r"\bddr\s*-?\s*([2-5])\b")  # not GDDR (graphics) nor LPDDR
+_GENERATION = re.compile(r"\bddr\s*-?\s*([2-5])(?![0-9])")  # not GDDR (graphics) nor LPDDR
+_SIZE_AND_GENERATION = re.compile(r"\b\d{1,3}\s*gb\s*\(?\s*(?:de\s+)?ddr\s*-?\s*[2-5]")
+_BOARD_SUFFIX = re.compile(r"\bd([45])\b")  # board models such as "B760M-A D4"
+_MODULES = re.compile(r"\b([1-8])\s*x\s*(\d{1,3})\s*gb\b")
+_SLOTS = re.compile(r"\b([1-8])\s*x?\s*dimm\b|\b([1-8])\s+(?:slots?|ranuras?)\b(?!\s+libres)")
+_BOARD_MAXIMUM = re.compile(r"\bmax(?:imo)?\.?\s*:?\s*(\d{1,4})\s*gb\b")
 _CAPABILITY_WORDS = re.compile(r"\b(?:soporta|compatible|admite|hasta|expandible|ampliable|slots?|ranuras?)\b")
 
 
 def _offered_memory(linea: Linea) -> dict[str, str]:
     """{memory generation offered: the part that states it}, ignoring what a board merely supports."""
     offered: dict[str, str] = {}
-    for part in _parts(linea):
+    for part in _components(linea):
         text = esp.sin_acentos(part).lower()
-        if _RAM_WORDS.search(text) and not _BOARD_WORDS.search(text) and not _CAPABILITY_WORDS.search(text):
+        names_ram = _RAM_WORDS.search(text) or _SIZE_AND_GENERATION.search(text)
+        if names_ram and not _BOARD_WORDS.search(text) and not _CAPABILITY_WORDS.search(text):
             for generation in _GENERATION.findall(text):
                 offered.setdefault(f"ddr{generation}", part.strip())
     canonical = linea.especificaciones.get(esp.TIPO_RAM)
@@ -156,6 +170,63 @@ def _with_stated_sockets(linea: Linea) -> Linea:
     return linea.model_copy(update={"especificaciones": linea.especificaciones | stated}) if stated else linea
 
 
+def _board_memory(linea: Linea) -> dict[str, str]:
+    """{memory generation the board is made for: the part that states it}."""
+    found: dict[str, str] = {}
+    for part in _components(linea):
+        text = esp.sin_acentos(part).lower()
+        if _BOARD_WORDS.search(text) and not _CAPABILITY_WORDS.search(text):
+            generations = _GENERATION.findall(text) + _BOARD_SUFFIX.findall(text)
+            for generation in generations:
+                found.setdefault(f"ddr{generation}", part.strip())
+    return found
+
+
+def _check_board_memory(n: int, linea: Linea) -> list[Hallazgo]:
+    board, memory = _board_memory(linea), _offered_memory(linea)
+    if len(board) != 1 or len(memory) != 1:
+        return []
+    (made_for, board_quote), (offered, memory_quote) = *board.items(), *memory.items()
+    if made_for == offered:
+        return []
+    reason = (
+        f"Línea {n}: la tarjeta madre es para memoria {made_for.upper()} y la propuesta ofrece {offered.upper()}."
+    )
+    quote = f"{board_quote} | {memory_quote}"[:200]
+    return [Hallazgo(CodigoHallazgo.COMPAT, Severidad.CRITICA, True, reason, quote, Origen.REGLA)]
+
+
+def _check_memory_fits(n: int, linea: Linea) -> list[Hallazgo]:
+    """More modules than the board has slots, or more gigabytes than it accepts."""
+    modules: dict[tuple[int, int], str] = {}
+    slots: dict[int, str] = {}
+    maximum: dict[int, str] = {}
+    for part in _parts(linea):
+        text = esp.sin_acentos(part).lower()
+        if _BOARD_WORDS.search(text) or "dimm" in text and not _RAM_WORDS.search(text):
+            for a, b in _SLOTS.findall(text):
+                slots.setdefault(int(a or b), part.strip())
+            for gigabytes in _BOARD_MAXIMUM.findall(text):
+                maximum.setdefault(int(gigabytes), part.strip())
+        elif _RAM_WORDS.search(text):
+            for count, size in _MODULES.findall(text):
+                modules.setdefault((int(count), int(size)), part.strip())
+    if len(modules) != 1:
+        return []
+    ((count, size), memory_quote) = next(iter(modules.items()))
+    problems = []
+    if len(slots) == 1 and count > next(iter(slots)):
+        problems.append((f"{count} módulos de memoria no caben en {next(iter(slots))} ranuras", slots))
+    if len(maximum) == 1 and count * size > next(iter(maximum)):
+        limit = next(iter(maximum))
+        problems.append((f"{count * size} GB superan el máximo de {limit} GB de la tarjeta madre", maximum))
+    if not problems:
+        return []
+    reason = f"Línea {n}: " + " y ".join(text for text, _ in problems) + "."
+    quote = f"{memory_quote} | {next(iter(problems[0][1].values()))}"[:200]
+    return [Hallazgo(CodigoHallazgo.COMPAT, Severidad.CRITICA, True, reason, quote, Origen.REGLA)]
+
+
 def _comparar_gpu(n: int, linea: Linea) -> list[Hallazgo]:
     tarjeta, maximo = linea.especificaciones.get(esp.LONGITUD_GPU_MM), linea.especificaciones.get(esp.MAX_GPU_MM)
     if tarjeta is None and maximo is None:
@@ -182,4 +253,6 @@ def validar_compatibilidad(e: ExtraccionPropuesta) -> list[Hallazgo]:
             hallazgos += _comparar_texto(n, linea, par)
         hallazgos += _comparar_gpu(n, linea)
         hallazgos += _check_platform_memory(n, original)
+        hallazgos += _check_board_memory(n, original)
+        hallazgos += _check_memory_fits(n, original)
     return hallazgos

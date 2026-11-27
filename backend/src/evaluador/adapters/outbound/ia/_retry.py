@@ -1,4 +1,8 @@
-"""Retries a model call that the provider rejected for being too busy (429) or temporarily failing (5xx)."""
+"""Retries a model call that the provider rejected for being too busy (429) or temporarily failing (5xx).
+
+402 is retried too: with little or no purchased credit, a provider refuses calls only while others are in flight.
+An account that is really out of credit still fails, after the attempts.
+"""
 
 from __future__ import annotations
 
@@ -7,7 +11,7 @@ from collections.abc import Callable
 
 import httpx
 
-RETRYABLE = frozenset({429, 500, 502, 503, 504})
+RETRYABLE = frozenset({402, 429, 500, 502, 503, 504})
 MAX_ATTEMPTS = 5
 BASE_DELAY_SECONDS = 2.0
 MAX_DELAY_SECONDS = 20.0

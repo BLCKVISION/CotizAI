@@ -49,6 +49,11 @@ def _interpretaciones(literal: str) -> set[Decimal]:
     return {d for c in candidatas if (d := _decimal(c)) is not None}
 
 
+def readings(literal: str) -> set[Decimal]:
+    """Every legitimate way of reading a printed figure."""
+    return _interpretaciones(literal)
+
+
 def literal_coincide(literal: str, valor: str) -> bool:
     """¿`valor` (punto decimal) es una lectura legítima de `literal`?"""
     v = _decimal(valor.strip())

@@ -74,10 +74,10 @@ def _validar_fuente(n: int, linea: Linea, peor_consumo: Decimal | None, p: Param
     if problema:
         return []  # ya se reportó una vez para la línea
     consumo = consumo_propio if consumo_propio is not None else peor_consumo
+    if consumo is None:
+        return []  # nothing to compare with: the power question stays "not verified"
     if vatios is None:
         return [_revisar(f"Línea {n}: la potencia de la fuente es ilegible o ambigua.", linea)]
-    if consumo is None:
-        return [_revisar(f"Línea {n}: sin TDP del procesador no se puede estimar el consumo de la fuente.", linea)]
     requerido = consumo * p.margen
     if vatios < requerido:
         return [_insuficiente(
@@ -87,6 +87,8 @@ def _validar_fuente(n: int, linea: Linea, peor_consumo: Decimal | None, p: Param
 
 
 def _validar_ups(n: int, linea: Linea, peor_consumo: Decimal | None, p: ParametrosDeCapacidad) -> list[Hallazgo]:
+    if peor_consumo is None:
+        return []  # nothing to compare with: the power question stays "not verified"
     vatios = esp.leer_medida(linea.especificaciones.get(esp.POTENCIA_UPS_W), esp.VATIOS)
     if vatios is None:
         if esp.POTENCIA_UPS_W in linea.especificaciones:
@@ -99,8 +101,6 @@ def _validar_ups(n: int, linea: Linea, peor_consumo: Decimal | None, p: Parametr
     unidades = leer_monto(linea.cantidad)
     if unidades is None or unidades <= 0 or unidades != unidades.to_integral_value():
         return [_revisar(f"Línea {n}: la cantidad de UPS es ilegible o no es un número entero.", linea)]
-    if peor_consumo is None:
-        return [_revisar(f"Línea {n}: sin TDP del procesador no se puede estimar la carga de la UPS.", linea)]
     equipos_por_ups = (Decimal(p.equipos) / unidades).to_integral_value(rounding=ROUND_CEILING)
     requerido = (peor_consumo + p.consumo_perifericos_w) * equipos_por_ups * p.margen
     if vatios < requerido:

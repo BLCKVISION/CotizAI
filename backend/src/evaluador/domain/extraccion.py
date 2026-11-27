@@ -135,6 +135,15 @@ class JuicioDeAlcance(_Base):
     evidencia: list[str] = Field(default_factory=list)
 
 
+class ComponentQuote(_Base):
+    component: str  # monitor | teclado | raton | protector
+    quote: str  # copied from the document, where it offers that component
+
+
+class ComponentEvidence(_Base):
+    found: list[ComponentQuote] = Field(default_factory=list)
+
+
 class TranscripcionImagen(_Base):
     """Salida del modelo de visión: transcripción literal de una imagen (foto o captura de una propuesta)."""
 

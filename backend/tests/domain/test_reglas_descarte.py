@@ -11,6 +11,7 @@ from evaluador.domain.reglas.abusivo import ParametrosDeAbuso, ReferenciaDeMerca
 from evaluador.domain.reglas.calidad import ParametrosDeCalidad, validar_calidad
 from evaluador.domain.reglas.capacidad import ParametrosDeCapacidad, validar_capacidad
 from evaluador.domain.reglas.compatibilidad import validar_compatibilidad
+from evaluador.domain.verification import unverified_checks
 
 
 def m(v: str) -> Monto:
@@ -99,9 +100,10 @@ def test_capacidad_incluye_gpu_en_el_consumo():
     assert h.descarta  # 65+200+100 = 365 W * 1.25
 
 
-def test_capacidad_fuente_sin_tdp_de_ningun_equipo_pide_revision():
-    (h,) = validar_capacidad(prop(linea(potencia_fuente_w="500")))
-    assert h.codigo == CodigoHallazgo.LECTURA and not h.descarta
+def test_capacidad_fuente_sin_tdp_de_ningun_equipo_queda_sin_verificar():
+    proposal = prop(linea(potencia_fuente_w="500"))
+    assert validar_capacidad(proposal) == []
+    assert "CAPACIDAD" in unverified_checks(proposal)
 
 
 def test_capacidad_fuente_ilegible_pide_revision():

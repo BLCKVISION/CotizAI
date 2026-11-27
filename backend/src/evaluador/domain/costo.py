@@ -10,10 +10,10 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
 
+from .document_text import has_priced_line
 from .extraccion import ExtraccionPropuesta, Monto
 from .moneda import TasaDeCambio, convertir, normalize_currency
 from .montos import a_centavos, base_de, leer_monto
-from .reglas.alcance import normalizar_categoria
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,7 +65,7 @@ def _paso_de_condicion(
 ) -> list[PasoDeCosto]:
     if monto is None:
         return []  # no consta: no hay nada que sumar
-    if any(normalizar_categoria(ln.categoria) == categoria_en_lineas for ln in e.lineas):
+    if has_priced_line(e, categoria_en_lineas):
         return [PasoDeCosto(concepto, Decimal(0), "ya incluido en las líneas de la propuesta")]
     valor = _no_negativo(leer_monto(monto))
     if valor is None:

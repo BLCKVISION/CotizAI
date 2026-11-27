@@ -11,13 +11,17 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 
+from evaluador.domain.document_text import visible_text
 from evaluador.domain.errores import DatoInvalido
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severidad
 from evaluador.domain.extraccion import ExtraccionPropuesta
 from evaluador.domain.moneda import normalize_currency
 from evaluador.domain.montos import base_de, leer_monto
 
-_FUERA = r"(exterior|extranjero|fuera\s+del\s+pa[ií]s|fuera\s+de\s+venezuela|abroad|overseas)"
+_FUERA = (
+    r"(exterior|extranjero|fuera\s+del\s+pa[ií]s|fuera\s+de\s+venezuela|abroad|overseas|miami|estados\s+unidos"
+    r"|ee\.?\s*uu\.?|usa|china|panam[aá]|colombia|espa[ñn]a)"
+)
 _SOLO = r"(solo|s[oó]lo|[uú]nicamente|exclusivamente|only)"
 _GARANTIA_EXTERIOR = re.compile(
     rf"garant[ií]a[^.\n]{{0,60}}?{_SOLO}\s+(?:\w+\s+){{0,2}}?(?:en\s+el\s+|en\s+|con\s+validez\s+en\s+(?:el\s+)?)?{_FUERA}|"
@@ -35,7 +39,21 @@ _NEGACION_DE_COBRO = re.compile(r"\b(no|sin|gratis|gratuit\w*|libre)\b", re.IGNO
 _COBRO_EN_CERO = re.compile(r"\s*(cero|alguno)\b", re.IGNORECASE)
 
 
+# A trial that later must be paid: "software de prueba de 30 días, luego $45/mes", "(Evaluación) ... requiere compra
+# de licencias al vencer".
+# It needs an explicit later charge: a purchase of licences, or a price that follows the trial.
+_TRIAL_THEN_PAID = re.compile(
+    r"\b(?:prueba|evaluaci[oó]n|trial|demo)\b.{0,140}?(?:"
+    r"(?:requiere|exige)\s+(?:la\s+)?compra|compra\s+(?:obligatoria\s+)?de\s+licencias"
+    r"|(?:luego|despu[eé]s|al\s+vencer|then|afterwards?)\b[^.]{0,40}?\$\s?[1-9])",
+    re.IGNORECASE,
+)
+
+
 def _prueba_cobrada(texto: str) -> re.Match[str] | None:
+    if m := _TRIAL_THEN_PAID.search(texto):
+        if not _COBRO_EN_CERO.match(texto[m.end() : m.end() + 10]):
+            return m
     for m in _PRUEBA_COBRADA.finditer(texto):
         negada = _NEGACION_DE_COBRO.search(m.group(0)) or _COBRO_EN_CERO.match(texto[m.end() : m.end() + 10])
         if not negada:
@@ -140,8 +158,10 @@ def _flete(e: ExtraccionPropuesta, p: ParametrosDeAbuso) -> list[Hallazgo]:
     return []
 
 
-def _clausulas(e: ExtraccionPropuesta) -> list[Hallazgo]:
+def _clausulas(e: ExtraccionPropuesta, document: str = "") -> list[Hallazgo]:
     textos = [t for t in (e.condiciones.garantia, e.condiciones.soporte, *e.notas_literales) if t]
+    if document:  # the model may leave a clause out; line breaks must not split it
+        textos.append(" ".join(visible_text(document).split()))
     hallazgos: list[Hallazgo] = []
     for etiqueta, buscar in _CLAUSULAS:
         for texto in textos:
@@ -157,6 +177,7 @@ def validar_abuso(
     e: ExtraccionPropuesta,
     referencias: Mapping[int, ReferenciaDeMercado] | None = None,
     p: ParametrosDeAbuso | None = None,
+    document: str = "",
 ) -> list[Hallazgo]:
     p = p or ParametrosDeAbuso()
-    return [*_sobreprecios(e, referencias or {}, p), *_flete(e, p), *_clausulas(e)]
+    return [*_sobreprecios(e, referencias or {}, p), *_flete(e, p), *_clausulas(e, document)]

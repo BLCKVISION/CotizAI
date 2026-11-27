@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from evaluador.domain import especificaciones as esp
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severidad
-from evaluador.domain.extraccion import ExtraccionPropuesta
+from evaluador.domain.extraccion import ExtraccionPropuesta, Linea
 
 _INEQUIVOCO = re.compile(
     r"\b(re-?acondicionad\w*|re-?condicionad\w*|refurbish\w*|refurb|remanufacturad\w*|open\s*box|segunda\s*mano|"
@@ -33,6 +33,13 @@ _DECLARED_NEW = re.compile(
     r"|\b(?:equipos?|productos?|componentes?|hardware)\b[^.;|]{0,30}?\bnuev[oa]s?\b"
     r"|\bnuev[oa]s?\s+(?:de\s+(?:paquete|fabrica|caja)|y\s+sellad\w*)\b"
 )
+# Only with the maker's wording: a supplier's own product name may look like a model number.
+_OLD_PROCESSORS = (
+    re.compile(r"\b(?:intel\s+(?:core\s+)?|core\s+)i[3579]\s*-?\s*[2-7]\d{3}(?!\d)[a-z]{0,2}"),  # 2nd to 7th gen
+    re.compile(r"\bxeon\s+e[357]\s*-?\s*\d{4}l?\s*v[1-4]\b"),
+    re.compile(r"\barquitectura\s*(?:de\s*)?(?:200\d|201[0-7])\b"),
+)
+_OLD_MEMORY = re.compile(r"\bddr\s*-?\s*([23])(?!\d)")
 _NEW_VALUE = re.compile(r"\b(?:nuev[oa]s?|new)\b")
 
 
@@ -68,6 +75,20 @@ def _condicion_de(textos: tuple[str, ...], *, es_campo_de_condicion: bool = Fals
     return None
 
 
+def _obsolete_in_text(n: int, line: Linea, p: ParametrosDeCalidad, found: list[Hallazgo]) -> list[Hallazgo]:
+    """Old processors or memory written in the line, when the model did not label them."""
+    prefix = f"Línea {n}:"
+    if any(h.motivo.startswith(prefix) and "obsolet" in h.motivo for h in found):
+        return []
+    text = esp.sin_acentos(f"{line.descripcion} | {' | '.join(line.especificaciones.values())}").lower()
+    old = next((m.group(0) for pattern in _OLD_PROCESSORS if (m := pattern.search(text))), None)
+    if old is None and (memory := _OLD_MEMORY.search(text)):
+        old = memory.group(0) if f"ddr{memory.group(1)}" in p.tipos_ram_obsoletos else None
+    if old is None:
+        return []
+    return [_hallazgo(f"{prefix} equipo obsoleto ('{esp.recortar(old)}').", line.evidencia.texto or line.descripcion)]
+
+
 def validar_calidad(e: ExtraccionPropuesta, p: ParametrosDeCalidad | None = None) -> list[Hallazgo]:
     p = p or ParametrosDeCalidad()
     hallazgos: list[Hallazgo] = []
@@ -97,6 +118,8 @@ def validar_calidad(e: ExtraccionPropuesta, p: ParametrosDeCalidad | None = None
         ram = especificaciones.get(esp.TIPO_RAM)
         if ram is not None and esp.normalizar_tipo_ram(ram) in p.tipos_ram_obsoletos:
             hallazgos.append(_hallazgo(f"Línea {n}: memoria obsoleta ({esp.recortar(ram)}).", ln.descripcion))
+    for n, ln in enumerate(e.lineas, start=1):
+        hallazgos += _obsolete_in_text(n, ln, p, hallazgos)
     for nota in e.notas_literales:
         if hallado := _condicion_de((nota,)):
             mencion, descarta = hallado

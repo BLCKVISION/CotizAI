@@ -69,9 +69,11 @@ def test_alcance_incompleto_descarta():
     assert CodigoHallazgo.ALCANCE in {h.codigo for h in evaluar(motor(ext)[0]).hallazgos}
 
 
-def test_juicio_cualitativo_de_la_ia_puede_descartar():
+def test_juicio_cualitativo_de_la_ia_se_pide_confirmar_y_no_descarta_solo():
     r = evaluar(motor(extraccion(), JuicioDeAlcance(cumple=False, faltantes=["instalación"]))[0])
-    assert r.veredicto is Veredicto.DESCARTADA
+    assert r.veredicto is Veredicto.VALIDA
+    (opinion,) = [h for h in r.hallazgos if h.codigo.value == "ALCANCE"]
+    assert not opinion.descarta and "confirmar" in opinion.motivo and "instalación" in opinion.motivo
 
 
 def test_instruccion_oculta_se_detecta_por_codigo_sin_confiar_en_el_modelo():
