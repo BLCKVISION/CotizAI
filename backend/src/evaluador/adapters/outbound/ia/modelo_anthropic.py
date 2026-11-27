@@ -17,11 +17,13 @@ class ModeloAnthropic:
         )
         self._modelo = modelo
 
-    def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel]):
+    def estructurar(
+        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
+    ):
         sistema, usuario = construir_mensajes(instrucciones, contenido_no_confiable, esquema)
         r = self._http.post(
             "/v1/messages",
-            json={"model": self._modelo, "max_tokens": 4096, "temperature": 0,
+            json={"model": self._modelo, "max_tokens": 4096, "temperature": temperature,
                   "system": sistema["content"], "messages": [usuario]},
         )  # fmt: skip
         r.raise_for_status()

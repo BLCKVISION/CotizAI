@@ -18,12 +18,14 @@ class ModeloOpenAICompatible:
         self._http = httpx.Client(base_url=base_url.rstrip("/"), headers=cab, timeout=timeout)
         self._modelo = modelo
 
-    def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel]):
+    def estructurar(
+        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
+    ):
         r = post_with_retry(lambda: self._http.post(
             "/chat/completions",
             json={
                 "model": self._modelo,
-                "temperature": 0,
+                "temperature": temperature,
                 "max_tokens": MAX_ANSWER_TOKENS,
                 "response_format": {"type": "json_object"},
                 "messages": construir_mensajes(instrucciones, contenido_no_confiable, esquema),
