@@ -7,15 +7,16 @@ import { Pressable, type PressableStateCallbackType, ScrollView, View } from 're
 
 import { Chip, Texto } from './componentes';
 import { soloWeb, vidrio } from './efectos';
-import { useTema } from './tema';
+import { paletaClara, useTema } from './tema';
 import { espacio, radio } from './tokens';
 
 const CHART_CARD_HEIGHT = 372;
 export type Dato = { etiqueta: string; valor: number };
 type Estado = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
-const TONO = '#1D4ED8';
-/** Bars end in the deep blue at the data end: left→right for bars, bottom→top for columns. */
-const fill = (angle: number) => soloWeb({ backgroundImage: angle === 90 ? 'linear-gradient(90deg, #7CCBF9 0%, #1D4ED8 100%)' : 'linear-gradient(180deg, #1D4ED8 0%, #7CCBF9 100%)' });
+const [SKY, AQUA, MINT] = paletaClara.chart;
+const TONO = AQUA; // solid fallback where gradients are not available
+/** Same gradient as the buttons: left→right for bars, top→bottom for columns. */
+const fill = (angle: number) => soloWeb({ backgroundImage: `linear-gradient(${angle}deg, ${SKY} 0%, ${AQUA} 50%, ${MINT} 100%)` });
 
 export function TarjetaDeGrafico({
   titulo,

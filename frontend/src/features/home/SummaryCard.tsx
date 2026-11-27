@@ -9,7 +9,7 @@ import { espacio, radio } from '@/design/tokens';
 import type { Estadisticas } from '@/features/gestion/api';
 import { porEstado, porFormato } from '@/features/gestion/datosDeGraficos';
 
-/** Single-series column chart (one hue). The selected column shows its value in a dark tooltip. */
+/** Single-series column chart in the button gradient. The selected column shows its value in a dark tooltip. */
 export function SummaryCard({ stats, onOpen }: { stats: Estadisticas; onOpen: () => void }) {
   const t = useTema();
   const [byFormat, setByFormat] = useState(false);
@@ -52,7 +52,7 @@ export function SummaryCard({ stats, onOpen }: { stats: Estadisticas; onOpen: ()
                   {d.valor}
                 </Texto>
               </View>
-              <View style={{ flexShrink: 1, width: '100%', maxWidth: 36, height: grown ? `${Math.max(d.valor > 0 ? 8 : 0, (d.valor / max) * 70)}%` : '0%', backgroundColor: t.chart[0], borderTopLeftRadius: 8, borderTopRightRadius: 8, ...soloWeb({ backgroundImage: `linear-gradient(180deg, ${t.chart[0]} 0%, ${t.chart[1]} 100%)`, transitionProperty: 'height', transitionDuration: '700ms', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }) }} />
+              <View style={{ flexShrink: 1, width: '100%', maxWidth: 36, height: grown ? `${Math.max(d.valor > 0 ? 8 : 0, (d.valor / max) * 70)}%` : '0%', backgroundColor: t.chart[1], borderTopLeftRadius: 8, borderTopRightRadius: 8, ...soloWeb({ backgroundImage: `linear-gradient(180deg, ${t.chart[0]} 0%, ${t.chart[1]} 50%, ${t.chart[2]} 100%)`, transitionProperty: 'height', transitionDuration: '700ms', transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }) }} />
               <View style={{ alignSelf: 'stretch', height: 1, backgroundColor: t.borde }} />
             </View>
             <Texto variante="pequeno" suave numberOfLines={1}>

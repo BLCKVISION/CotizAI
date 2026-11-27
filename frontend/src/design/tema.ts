@@ -23,8 +23,8 @@ export const paletaClara = {
   /** Darker step of the same hue for thin marks, borders and checks on white (>= 3:1). */
   accentStrong: '#0E8FA8',
   gradient: ['#A9DEFD', '#93E4F4', '#A4F4DD'] as const,
-  /** Chart columns: a single blue, deep (top) to sky (bottom). Every column also shows its value as text. */
-  chart: ['#1D4ED8', '#7CCBF9'] as const,
+  /** Charts reuse the button gradient. The tones are light, so every bar also shows its value as text. */
+  chart: ['#A9DEFD', '#93E4F4', '#A4F4DD'] as const,
   halos: { durazno: 'rgba(167,243,208,0.28)', menta: 'rgba(125,211,252,0.34)' },
   exito: { texto: '#166534', fondo: '#DCFCE7' },
   aviso: { texto: '#92400E', fondo: '#FEF3C7' },
