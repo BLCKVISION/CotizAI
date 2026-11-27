@@ -153,7 +153,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   ) : null;
 
   const preparing = step === 'proposals' || step === 'analysis';
-  const showSteps = running || step === 'verification';
+  const showSteps = running; // while verifying, the steps are out of the way: the analysis is what matters
   const blocker = !canEvaluate ? (closed ? 'El proyecto está cerrado.' : 'Su rol no inicia evaluaciones.') : problem;
   const heroTitle = list.length === 0 ? 'Agregue las propuestas' : hasEvaluation ? '¿Evaluar de nuevo?' : '¿Desea evaluar este proyecto?';
   const heroDetail =
@@ -211,7 +211,16 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
 
   return (
     <View style={{ flex: 1, minHeight: 0, gap: espacio.md }}>
-      {showSteps ? <Stepper active={running ? 'analysis' : step} reached={running ? 'analysis' : reached} onSelect={goTo} /> : null}
+      {showSteps ? <Stepper active="analysis" reached="analysis" onSelect={goTo} /> : null}
+      {/* Top bar while verifying: where things stand, and the ways to add or analyse more. */}
+      {step === 'verification' && !running ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
+          <Texto variante="pequeno" suave style={{ flexShrink: 1 }}>
+            {hint}
+          </Texto>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>{actions}</View>
+        </View>
+      ) : null}
 
       {verifying ? (
         <View style={{ flex: 1, minHeight: wide ? 0 : 620, gap: espacio.sm }}>
@@ -254,11 +263,11 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
           {/* The document on the left, its evaluation on the right; on narrow screens, one after the other. */}
           {wide ? (
             <View style={{ flex: 1, minHeight: 0, flexDirection: 'row', gap: espacio.md }}>
-              <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 9, borderRadius: radio.xl }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
+              <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 2, minWidth: 220, borderRadius: radio.xl }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
                 <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
                 {canDecide ? decisionPanel : null}
               </ScrollView>
-              <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 11, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
+              <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 8, minWidth: 0, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
                 <Entrada>
                   <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
                 </Entrada>
@@ -330,11 +339,10 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         </ScrollView>
       )}
 
-      {/* What to do next, always visible while verifying. */}
-      {step !== 'verification' ? null : (
-      <View style={{ ...vidrio({ opacidad: 0.96, radio: radio.xl, elevado: true }), padding: espacio.sm + 4, gap: espacio.sm }}>
-        {canDecide && !wide ? (
-          <View style={{ flexDirection: wide ? 'row' : 'column', alignItems: wide ? 'center' : 'stretch', gap: espacio.sm }}>
+      {/* Narrow screens: the answer stays in a bar. On wide ones it sits under the document. */}
+      {step === 'verification' && canDecide && !wide ? (
+        <View style={{ ...vidrio({ opacidad: 0.96, radio: radio.xl, elevado: true }), padding: espacio.sm + 4 }}>
+          <View style={{ flexDirection: 'column', alignItems: 'stretch', gap: espacio.sm }}>
             <Texto variante="etiqueta">¿Está de acuerdo?</Texto>
             <TextInput
               value={comment}
@@ -343,20 +351,13 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
               placeholder="Comentario (obligatorio si cambia la respuesta de la IA)"
               placeholderTextColor={t.textoSuave}
               accessibilityLabel="Comentario de su verificación"
-              style={[{ ...texto.cuerpo, flex: wide ? 1 : undefined, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 1, borderColor: t.bordeControl, color: t.texto, backgroundColor: '#FFFFFF' }, soloWeb({ outlineStyle: 'none' })]}
+              style={[{ ...texto.cuerpo, minHeight: 44, paddingHorizontal: espacio.md, borderRadius: radio.pildora, borderWidth: 1, borderColor: t.bordeControl, color: t.texto, backgroundColor: '#FFFFFF' }, soloWeb({ outlineStyle: 'none' })]}
             />
             <Boton etiqueta="No, rechazar" icono="x" variante="secundario" deshabilitado={saving} onPress={() => void decide(false)} />
             <Boton etiqueta="Sí, aprobar" icono="check" cargando={saving} onPress={() => void decide(true)} />
           </View>
-        ) : null}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
-          <Texto variante="pequeno" suave style={{ flexShrink: 1 }}>
-            {hint}
-          </Texto>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>{actions}</View>
         </View>
-      </View>
-      )}
+      ) : null}
 
       <MarkdownDialog projectId={project.id} proposal={list.find((p) => p.id === viewing) ?? null} onClose={() => setViewing(null)} />
       <UploadFlow visible={upload.visible} items={upload.items} busy={upload.busy} onClose={upload.close} />
