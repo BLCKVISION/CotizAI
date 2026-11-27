@@ -10,7 +10,7 @@ import { pickFiles, ACCEPT_DOCUMENTS, ACCEPT_PHOTOS } from '@/core/files';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
-import { Boton, BotonIcono, Icono, Tarjeta, Texto } from '@/design/componentes';
+import { Boton, Icono, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb, vidrio } from '@/design/efectos';
 import { useTema } from '@/design/tema';
@@ -26,7 +26,6 @@ import { useProposalUpload } from '@/features/home/useProposalUpload';
 import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
-import { AnalysisStep } from './AnalysisStep';
 import { DocumentPanel } from './DocumentPanel';
 import { currentStep, defaultSelection, EVALUATION_STEPS, highlightTerms, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
 import { PreparationHero } from './PreparationHero';
@@ -185,8 +184,28 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
 
   const verifying = step === 'verification' && open !== null && seesResults;
   const wide = dispositivo === 'escritorio';
-  // While answering on a wide screen, the secondary actions are icons next to the answer buttons.
-  const singleRow = wide && verifying && can(role, 'review') && !closed;
+  // On a wide screen the answer sits under the document, on the left; on narrow ones it stays in the bottom bar.
+  const canDecide = verifying && can(role, 'review') && !closed;
+
+  const decisionPanel = (
+    <View style={{ gap: espacio.sm, padding: espacio.lg, borderRadius: radio.xl, backgroundColor: '#FFFFFF' }}>
+      <Texto variante="subtitulo" accessibilityRole="header">¿Está de acuerdo?</Texto>
+      <TextInput
+        value={comment}
+        onChangeText={setComment}
+        maxLength={500}
+        multiline
+        placeholder="Comentario (obligatorio si cambia la respuesta de la IA)"
+        placeholderTextColor={t.textoSuave}
+        accessibilityLabel="Comentario de su verificación"
+        style={[{ ...texto.cuerpo, minHeight: 84, padding: espacio.md, borderRadius: radio.lg, borderWidth: 1, borderColor: t.bordeControl, color: t.texto, backgroundColor: '#FFFFFF', textAlignVertical: 'top' }, soloWeb({ outlineStyle: 'none' })]}
+      />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>
+        <Boton etiqueta="No, rechazar" icono="x" variante="secundario" deshabilitado={saving} onPress={() => void decide(false)} />
+        <Boton etiqueta="Sí, aprobar" icono="check" cargando={saving} onPress={() => void decide(true)} />
+      </View>
+    </View>
+  );
 
   return (
     <View style={{ flex: 1, minHeight: 0, gap: espacio.md }}>
@@ -233,10 +252,11 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
           {/* The document on the left, its evaluation on the right; on narrow screens, one after the other. */}
           {wide ? (
             <View style={{ flex: 1, minHeight: 0, flexDirection: 'row', gap: espacio.md }}>
-              <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 11, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
+              <ScrollView key={`doc-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 9, borderRadius: radio.xl }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
                 <DocumentPanel projectId={project.id} proposalId={open.proposal_id} filename={open.filename} terms={highlightTerms(open)} />
+                {canDecide ? decisionPanel : null}
               </ScrollView>
-              <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 9, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
+              <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 11, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
                 <Entrada>
                   <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
                 </Entrada>
@@ -252,24 +272,32 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       ) : (
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
           {preparing ? (
-            <>
-              <PreparationHero
-                title={heroTitle}
-                detail={heroDetail}
-                blocker={list.length === 0 && canEvaluate ? 'Agregue al menos una propuesta para poder evaluar.' : blocker}
-                canEvaluate={canEvaluate}
-                running={running}
-                elapsed={elapsed}
-                onEvaluate={() => void evaluate()}
-                onShowProcess={() => setShowProcess(true)}
-                onBackToResult={hasEvaluation ? () => goTo(null) : undefined}
-              />
-              {error ? <ErrorConReintento texto={error} onReintentar={() => void (seesResults ? reload() : evaluate())} /> : null}
-              {/* With a single proposal there is nothing to choose. */}
-              {list.length > 1 ? <AnalysisStep proposals={list} selected={selected} evaluated={evaluated} onChange={setSelection} /> : null}
-              <Expediente proyecto={project} onCambio={() => { proposals.recargar(); if (seesResults) void reload(); onProjectChange(); }} />
-              <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
-            </>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.md, alignItems: 'flex-start' }}>
+              {/* Left: the proposals and which of them to evaluate. Right: what happens next and the context. */}
+              <View style={{ flexGrow: 3, flexBasis: 420, minWidth: 0, gap: espacio.md }}>
+                <Expediente
+                  proyecto={project}
+                  selection={list.length > 0 ? { selected, evaluated, onChange: setSelection } : undefined}
+                  onCambio={() => { proposals.recargar(); if (seesResults) void reload(); onProjectChange(); }}
+                />
+              </View>
+              <View style={{ flexGrow: 2, flexBasis: 320, minWidth: 0, gap: espacio.md }}>
+                <PreparationHero
+                  title={heroTitle}
+                  detail={heroDetail}
+                  blocker={list.length === 0 && canEvaluate ? 'Agregue al menos una propuesta para poder evaluar.' : blocker}
+                  canEvaluate={canEvaluate}
+                  running={running}
+                  elapsed={elapsed}
+                  onEvaluate={() => void evaluate()}
+                  onShowProcess={() => setShowProcess(true)}
+                  onBackToResult={hasEvaluation ? () => goTo(null) : undefined}
+                >
+                  <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
+                </PreparationHero>
+                {error ? <ErrorConReintento texto={error} onReintentar={() => void (seesResults ? reload() : evaluate())} /> : null}
+              </View>
+            </View>
           ) : null}
           {step === 'verification' && !seesResults ? (
             <Tarjeta>
@@ -303,7 +331,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       {/* What to do next, always visible while verifying. */}
       {step !== 'verification' ? null : (
       <View style={{ ...vidrio({ opacidad: 0.96, radio: radio.xl, elevado: true }), padding: espacio.sm + 4, gap: espacio.sm }}>
-        {verifying && can(role, 'review') && !closed ? (
+        {canDecide && !wide ? (
           <View style={{ flexDirection: wide ? 'row' : 'column', alignItems: wide ? 'center' : 'stretch', gap: espacio.sm }}>
             <Texto variante="etiqueta">¿Está de acuerdo?</Texto>
             <TextInput
@@ -317,20 +345,13 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
             />
             <Boton etiqueta="No, rechazar" icono="x" variante="secundario" deshabilitado={saving} onPress={() => void decide(false)} />
             <Boton etiqueta="Sí, aprobar" icono="check" cargando={saving} onPress={() => void decide(true)} />
-            {wide ? (
-              <>
-                <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: t.borde }} />
-                {canUpload ? <BotonIcono nombre="plus" etiqueta="Agregar propuestas" onPress={addProposals} /> : null}
-                {evaluateOthers ? <BotonIcono nombre="cpu" etiqueta="Evaluar de nuevo o elegir otras" onPress={chooseAgain} /> : null}
-              </>
-            ) : null}
           </View>
         ) : null}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: espacio.sm }}>
           <Texto variante="pequeno" suave style={{ flexShrink: 1 }}>
             {hint}
           </Texto>
-          {singleRow && pending.length > 0 ? null : <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>{actions}</View>}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: espacio.sm }}>{actions}</View>
         </View>
       </View>
       )}
