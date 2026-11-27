@@ -13,12 +13,17 @@ ACCOUNT = {"display_name": "Ana Pérez", "email": "ana@universidad.test", "passw
 
 
 def _client(**settings) -> TestClient:
-    config = Configuracion(_env_file=None, nivel_de_log="CRITICAL", **settings)
+    config = Configuracion(_env_file=None, nivel_de_log="CRITICAL", **{"registration_enabled": True} | settings)
     return TestClient(crear_aplicacion(config, construir_contenedor(config=config)))
 
 
 def _login(client, email=ACCOUNT["email"], password=PASSWORD):
     return client.post("/api/v1/sesiones", json={"correo": email, "contrasena": password})
+
+
+def test_sign_up_is_off_unless_it_is_enabled(monkeypatch):
+    monkeypatch.delenv("EVALUADOR_REGISTRATION_ENABLED", raising=False)
+    assert Configuracion(_env_file=None).registration_enabled is False
 
 
 def test_a_new_account_can_sign_in_and_work_alone():

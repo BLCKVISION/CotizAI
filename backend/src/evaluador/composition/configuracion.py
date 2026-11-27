@@ -53,7 +53,7 @@ class Configuracion(BaseSettings):
     market_search_model: str = "perplexity/sonar"
 
     # --- Accounts ---
-    registration_enabled: bool = True  # each sign-up can spend AI credit: turn off when not needed
+    registration_enabled: bool = False  # opt-in: each sign-up can spend AI credit
     registration_max_accounts: int = 25
     registrations_per_minute: int = 3  # per address
 
