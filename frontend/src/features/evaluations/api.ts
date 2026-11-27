@@ -66,7 +66,7 @@ export type ProjectEvaluation = {
 
 export type ManualRate = { base: string; quote: string; value: string; source: string; effective_date: string };
 export type Answer = { answer: string; citations: { number: number; filename: string; excerpt: string }[] };
-export type ReportFormat = 'md' | 'csv';
+export type ReportFormat = 'pdf' | 'xlsx' | 'md';
 
 const evaluationsPath = (projectId: string) => `/proyectos/${projectId}/evaluations`;
 

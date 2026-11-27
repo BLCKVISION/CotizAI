@@ -65,6 +65,9 @@ class OpenRouterMarketSearch:
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
         self._http = client or httpx.Client(base_url=base_url.rstrip("/"), headers=headers, timeout=timeout)
 
+    def lookup(self, description: str, currency: str) -> ReferenciaDeMercado | None:
+        return self._lookup(description, currency)
+
     def _lookup(self, description: str, currency: str) -> ReferenciaDeMercado | None:
         clean = " ".join(re.sub(r"[<>]", " ", description).split())[:_MAX_DESCRIPTION]
         if not clean:

@@ -52,6 +52,17 @@ class Configuracion(BaseSettings):
     market_search_enabled: bool = False  # sends product descriptions to a web search model
     market_search_model: str = "perplexity/sonar"
 
+    # --- Accounts ---
+    registration_enabled: bool = True  # each sign-up can spend AI credit: turn off when not needed
+    registration_max_accounts: int = 25
+    registrations_per_minute: int = 3  # per address
+
+    # --- Assistant ---
+    assistant_enabled: bool = False  # not yet validated with the real model
+    assistant_model: str = ""  # empty: use ia_modelo. It must support tool calling.
+    assistant_market_search_enabled: bool = True  # sends only product descriptions to the web search model
+    assistant_messages_per_minute: int = 12
+
     @property
     def es_produccion(self) -> bool:
         return self.entorno.strip().lower() in {"produccion", "production", "prod"}

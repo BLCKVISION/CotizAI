@@ -40,7 +40,7 @@ Aplican a **backend (Python)** y **frontend (TypeScript / React Native)**. Lo qu
 - Contraseñas: Argon2id. Tokens: opacos, solo se guarda su huella. Comparaciones sensibles en tiempo constante.
 - Mensaje único para fallos de login. Sin enumeración de usuarios ni de tenants. El login es solo correo + contraseña; el tenant se deduce en el servidor (correo único global).
 - **Todo acceso a datos recibe `tenant_id`** y lo filtra. Una consulta sin tenant es un bug de seguridad.
-- Documentos y propuestas = **no confiables**: no se interpretan como instrucciones; el modelo no recibe herramientas.
+- Documentos y propuestas = **no confiables**: no se interpretan como instrucciones; el modelo que los lee no recibe herramientas. El asistente sí las tiene, solo de lectura y limitadas a la organización de la sesión (ver [`ASISTENTE.md`](ASISTENTE.md)).
 - Secretos solo por entorno (`EVALUADOR_*`), nunca en código, logs ni imágenes. `.env` fuera de git.
 
 ### Logs

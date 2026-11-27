@@ -42,12 +42,16 @@ válidas. La decisión final es del comité.
 - Lectura de PDF, PDF escaneado, imágenes y XLSX (incluye contenido oculto).
 - Reglas de descarte: alcance, compatibilidad, capacidad, calidad, costos abusivos, aritmética y manipulación.
 - Costo real paso a paso, tasa del BCV o manual, ranking, antecedentes de descarte del proveedor.
-- Informe en Markdown y CSV, preguntas sobre un proyecto evaluado con citas, y modo lote que genera `salida.json`.
+- Informe en PDF (con espacio para firmas), Excel y Markdown; preguntas sobre un proyecto evaluado con citas, y modo
+  lote que genera `salida.json`.
+- Registro de cuentas: cada una recibe su propia organización aislada (se puede desactivar con
+  `EVALUADOR_REGISTRATION_ENABLED=false`).
 - Búsqueda web de precios de mercado, **desactivada por defecto** (`EVALUADOR_MARKET_SEARCH_ENABLED=true`).
 
 **Limitaciones**
 
-- No hay exportación a PDF del informe.
+- No hay envío de correos: la contraseña la restablece un administrador y el correo de las cuentas nuevas no se verifica.
+- El asistente conversacional con herramientas (`docs/ASISTENTE.md`) está desactivado: falta validarlo con el modelo real.
 - La interfaz muestra el tiempo transcurrido de la evaluación, no la traza paso a paso del agente.
 - El cifrado en reposo de la aplicación cubre los documentos originales, no la base de datos ni la auditoría.
 - Sin PostgreSQL, los datos se pierden al reiniciar la API. El índice de preguntas está siempre en memoria: tras un
@@ -128,6 +132,7 @@ Las versiones exactas están en [`backend/requirements.txt`](backend/requirement
 - Agente y RAG: LangGraph, FastEmbed, NumPy, pgvector.
 - Datos: Psycopg, SQLAlchemy, Alembic.
 - Documentos: pdfplumber, pypdfium2 y Pillow (instalados con pdfplumber), openpyxl, defusedxml.
+- Reportes PDF: ReportLab.
 - Seguridad: argon2-cffi, cryptography, PyJWT.
 - Calidad: pytest, pytest-asyncio, Ruff, mypy.
 

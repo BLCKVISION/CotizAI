@@ -9,6 +9,7 @@ from evaluador.adapters.inbound.http.errores_http import registrar_manejadores
 from evaluador.adapters.inbound.http.guards import LimitadorDeVentana
 from evaluador.adapters.inbound.http.interceptores import InterceptorDeSeguridad, InterceptorDeTrazabilidad
 from evaluador.adapters.inbound.http.routers import (
+    assistant,
     evaluations,
     exchange_rates,
     gestion,
@@ -50,6 +51,8 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
         )
     app.state.produccion = config.es_produccion
     app.state.limitador_login = LimitadorDeVentana(config.limite_login_por_minuto)
+    app.state.registration_limiter = LimitadorDeVentana(config.registrations_per_minute)
+    app.state.assistant_limiter = LimitadorDeVentana(config.assistant_messages_per_minute)
 
     api = APIRouter(prefix="/api/v1")
     api.include_router(sesiones.router)
@@ -58,6 +61,8 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
     api.include_router(evaluations.router)
     api.include_router(exchange_rates.router)
     api.include_router(transcriptions.router)
+    if config.assistant_enabled:
+        api.include_router(assistant.router)
 
     @api.get("/salud", tags=["sistema"])
     def salud() -> dict[str, str]:

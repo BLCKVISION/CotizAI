@@ -7,7 +7,7 @@ import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
 import { BackButton } from '@/design/BackButton';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
-import { Boton, BotonIcono, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
+import { Boton, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb } from '@/design/efectos';
 import { FixedPage } from '@/design/layout';
@@ -30,12 +30,12 @@ const loadProjects = async (token: string) => {
   return { projects, counts: stats.propuestas_por_proyecto };
 };
 
-function PillButton({ icon, label, onPress, expanded }: { icon: NombreIcono; label: string; onPress: () => void; expanded?: boolean }) {
+function PillButton({ icon, label, onPress, expanded, accessibilityLabel }: { icon: NombreIcono; label: string; onPress: () => void; expanded?: boolean; accessibilityLabel?: string }) {
   const t = useTema();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={expanded === undefined ? undefined : { expanded }}
       onPress={onPress}
       style={(e: PressState) => ({
@@ -166,8 +166,8 @@ export default function Projects() {
                   />
                   {/* A sibling of the folder, not inside it: pressing it must not open the project. */}
                   {canCreate && canBeDeleted(p) ? (
-                    <View style={{ position: 'absolute', top: 6, right: 6, zIndex: 5, borderRadius: radio.pildora, backgroundColor: 'rgba(255,255,255,0.92)' }}>
-                      <BotonIcono nombre="trash-2" etiqueta={`Eliminar proyecto ${p.nombre}`} onPress={() => setDeleting(p)} />
+                    <View style={{ alignItems: 'center', paddingTop: espacio.sm }}>
+                      <PillButton icon="trash-2" label="Eliminar proyecto" accessibilityLabel={`Eliminar proyecto ${p.nombre}`} onPress={() => setDeleting(p)} />
                     </View>
                   ) : null}
                 </Entrada>

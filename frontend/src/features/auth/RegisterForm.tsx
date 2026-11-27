@@ -49,7 +49,8 @@ export function RegisterForm({ onMode }: { onMode: (mode: AuthMode) => void }) {
       await registerAccountApi(name.trim(), email.trim().toLowerCase(), password);
       setPassword('');
       setConfirmation('');
-      setNotice({ tone: 'success', text: 'Solicitud enviada. Revise su correo para continuar.' });
+      // The server answers the same for a new and an existing address, so accounts cannot be discovered.
+      setNotice({ tone: 'success', text: 'Listo. Inicie sesión con su correo y contraseña. Si no puede entrar, es posible que ese correo ya tuviera una cuenta.' });
     } catch (e) {
       setNotice(accountErrorNotice(e));
     } finally {

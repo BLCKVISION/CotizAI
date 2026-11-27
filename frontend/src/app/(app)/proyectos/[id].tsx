@@ -7,7 +7,7 @@ import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { BackButton } from '@/design/BackButton';
 import { CollapsibleCard } from '@/design/Collapsible';
-import { BotonIcono, Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
+import { Boton, Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { EncabezadoDePagina, FixedPage, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
@@ -199,7 +199,7 @@ export default function DetalleProyecto() {
           ))}
         </View>
         {can(usuario?.rol, 'createProject') && canBeDeleted(proyecto) ? (
-          <BotonIcono nombre="trash-2" etiqueta="Eliminar proyecto" onPress={() => setDeleting(true)} />
+          <Boton etiqueta="Eliminar proyecto" icono="trash-2" variante="secundario" onPress={() => setDeleting(true)} />
         ) : null}
         <DeleteProjectDialog project={deleting ? proyecto : null} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/proyectos')} />
       </View>

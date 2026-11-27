@@ -4,7 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.12"
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 
@@ -26,5 +26,5 @@ strict = true
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
-module = ["openpyxl.*", "pdfplumber.*", "pypdfium2.*"]
+module = ["openpyxl.*", "pdfplumber.*", "pypdfium2.*", "reportlab.*"]
 ignore_missing_imports = true

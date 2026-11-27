@@ -33,6 +33,17 @@ class CriterionScore:
 
 
 @dataclass(frozen=True, slots=True)
+class QuotedLine:
+    """One line of a quote as it was read; amounts that were not legible stay None."""
+
+    description: str
+    category: str
+    quantity: Decimal | None
+    unit_price: Decimal | None
+    line_total: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
 class ProposalEvaluationItem:
     proposal_id: str
     filename: str
@@ -51,6 +62,7 @@ class ProposalEvaluationItem:
     supplier_history: tuple[str, ...] = ()  # earlier discards of the same supplier in this organisation
     evaluated_at: datetime | None = None  # when this proposal was read; a selective run keeps the older ones
     unverified: tuple[str, ...] = ()  # control questions without enough data to answer
+    lines: tuple[QuotedLine, ...] = ()  # absent in evaluations stored before the assistant existed
 
 
 @dataclass(frozen=True, slots=True)

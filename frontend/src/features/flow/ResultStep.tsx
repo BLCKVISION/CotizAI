@@ -112,8 +112,9 @@ export function ResultStep({ evaluation, decisions, onOpen, onDownload }: Props)
         </Entrada>
       ))}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: espacio.sm }}>
-        <Boton etiqueta="Descargar informe" icono="file-text" variante="secundario" onPress={() => onDownload('md')} />
-        <Boton etiqueta="Descargar tabla (CSV)" icono="grid" variante="secundario" onPress={() => onDownload('csv')} />
+        <Boton etiqueta="Descargar PDF" icono="file-text" variante="secundario" onPress={() => onDownload('pdf')} />
+        <Boton etiqueta="Descargar Excel" icono="grid" variante="secundario" onPress={() => onDownload('xlsx')} />
+        <Boton etiqueta="Descargar Markdown" icono="file-text" variante="secundario" onPress={() => onDownload('md')} />
       </View>
       <AskCard projectId={evaluation.project_id} />
     </View>

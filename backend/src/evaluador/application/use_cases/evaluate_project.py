@@ -31,6 +31,7 @@ from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Result
 from evaluador.domain.gestion import MAX_PROPOSALS_PER_RUN, MIN_PROPUESTAS, Propuesta
 from evaluador.domain.identidad import Permiso, Usuario
 from evaluador.domain.moneda import TasaDeCambio, convertir
+from evaluador.domain.montos import leer_monto
 from evaluador.domain.project_evaluation import (
     CostStepSummary,
     CriterionScore,
@@ -38,6 +39,7 @@ from evaluador.domain.project_evaluation import (
     ProjectEvaluation,
     ProposalEvaluationItem,
     ProposalFindingSummary,
+    QuotedLine,
 )
 from evaluador.domain.proyecto import EstadoProyecto, Proyecto
 from evaluador.domain.puntaje import Pesos
@@ -375,6 +377,18 @@ class EvaluateProject:
                 supplier_history=tuple(history.get(_supplier_key(supplier), [])[:5]) if supplier else (),
                 evaluated_at=self._clock.ahora(),
                 unverified=unverified_checks(extraction) if extraction else (),
+                lines=tuple(
+                    QuotedLine(
+                        " ".join(filter(None, [ln.marca, ln.modelo, ln.descripcion]))[:200],
+                        ln.categoria[:40],
+                        leer_monto(ln.cantidad),
+                        leer_monto(ln.precio_unitario),
+                        leer_monto(ln.total_linea),
+                    )
+                    for ln in extraction.lineas[:40]
+                )
+                if extraction
+                else (),
             ),
             used,
         )

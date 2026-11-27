@@ -12,7 +12,8 @@ from pydantic import Field
 
 from evaluador.adapters.inbound.http.dtos import ID_PATRON, DtoEntrada, DtoSalida
 from evaluador.adapters.inbound.http.guards import exigir
-from evaluador.adapters.outbound.reportes.evaluation_report import render_csv_report, render_markdown_report
+from evaluador.adapters.outbound.reportes.assistant_report import ReportFileRenderer
+from evaluador.application.ports.assistant import REPORT_MEDIA_TYPES
 from evaluador.application.use_cases.autenticacion import SesionAutenticada
 from evaluador.domain.identidad import Permiso
 from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
@@ -166,18 +167,14 @@ def download_report(
     proyecto_id: ProjectId,
     request: Request,
     session: Annotated[SesionAutenticada, Depends(exigir(Permiso.VER_RESULTADOS))],
-    fmt: Annotated[Literal["md", "csv"], Query()] = "md",
+    fmt: Annotated[Literal["pdf", "xlsx", "md", "csv"], Query()] = "md",
 ) -> Response:
     container = request.app.state.contenedor
     evaluation = container.get_project_evaluation.execute(session.usuario, proyecto_id)
     project = container.obtener_proyecto.ejecutar(session.usuario, proyecto_id)
-    if fmt == "csv":
-        body, media_type = "﻿" + render_csv_report(evaluation), "text/csv"  # BOM: Excel reads accents
-    else:
-        body, media_type = render_markdown_report(evaluation, project.nombre), "text/markdown"
     return Response(
-        body,
-        media_type=f"{media_type}; charset=utf-8",
+        ReportFileRenderer().evaluation(evaluation, project.nombre, fmt),
+        media_type=REPORT_MEDIA_TYPES[fmt],
         headers={"Content-Disposition": f'attachment; filename="informe-evaluacion.{fmt}"'},
     )
 

@@ -22,6 +22,7 @@ _log = logging.getLogger("evaluador.http")
 _TRACK_ID_VALIDO = re.compile(r"^[A-Za-z0-9-]{8,64}$")
 _RUTA_DE_CARGA = re.compile(r"^/api/v1/proyectos/[0-9a-fA-F-]{36}/propuestas$")
 _TRANSCRIPTION_PATH = "/api/v1/transcriptions"
+_ASSISTANT_PATH = "/api/v1/assistant/messages"
 _RUTAS_DE_DOCUMENTACION = ("/api/docs", "/api/openapi.json")
 
 
@@ -115,9 +116,16 @@ class InterceptorDeTrazabilidad:
                     "estado": estado,
                     "duracion_ms": round((time.perf_counter() - inicio) * 1000, 1),
                     "cabeceras": censurar_cabeceras({k: v for k, v in cab.items() if k in _CABECERAS_A_LOGUEAR}),
-                    "cuerpo": "<documento>" if es_carga else self._cuerpo_censurado(bytes(cuerpo), excedido),
+                    "cuerpo": self._body_for_log(scope["path"], es_carga, bytes(cuerpo), excedido),
                 },
             )
+
+    def _body_for_log(self, path: str, is_upload: bool, body: bytes, exceeded: bool) -> Any:
+        if is_upload:
+            return "<documento>"
+        if path == _ASSISTANT_PATH:  # what a person asks may hold sensitive purchase data
+            return "<mensaje_al_asistente>"
+        return self._cuerpo_censurado(body, exceeded)
 
     @staticmethod
     def _upload_limit(scope: Scope) -> int | None:

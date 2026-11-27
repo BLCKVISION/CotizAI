@@ -28,6 +28,9 @@ class UsuariosEnMemoria:
     def por_correo(self, correo: str) -> Usuario | None:
         return next((u for u in self._datos.values() if u.correo == correo), None)
 
+    def all(self) -> list[Usuario]:
+        return list(self._datos.values())
+
     def por_id(self, tenant_id: str, usuario_id: str) -> Usuario | None:
         return self._datos.get((tenant_id, usuario_id))
 
