@@ -121,6 +121,31 @@ def quoted_components(evidence: ComponentEvidence, asked: list[str], document: s
     }
 
 
+MIN_COMPONENT_LINES = 5
+
+
+def _only_the_teacher_set_is_unlisted(e: ExtraccionPropuesta, missing: list[str], equipos: int) -> bool:
+    """Every missing component is listed for exactly all stations but one, and that one is a whole computer."""
+    teacher = [
+        line for line in e.lineas
+        if re.search(r"\b(?:pc|computador(?:a)?|equipo|estacion|workstation)\s+(?:del?\s+)?docente\b", line_text(line))
+        and _units(line) == 1
+    ]  # fmt: skip
+    broken_down = sum(1 for line in e.lineas if _units(line) == equipos - 1)
+    if not teacher or broken_down < MIN_COMPONENT_LINES:
+        return False  # only a student station listed part by part, next to a teacher computer priced whole
+    for name in missing:
+        listed = sum(
+            (units for line in e.lineas
+             if (_COMPONENTS[name].search(line_text(line)) or normalizar_categoria(line.categoria) == name)
+             and (units := _units(line)) is not None),
+            Decimal(0),
+        )  # fmt: skip
+        if listed != equipos - 1:
+            return False
+    return True
+
+
 def validar_alcance_fijo(
     e: ExtraccionPropuesta,
     equipos: int = EQUIPOS_REQUERIDOS,
@@ -165,6 +190,14 @@ def validar_alcance_fijo(
         ))  # fmt: skip
     else:
         missing += unmentioned
+    if missing and _only_the_teacher_set_is_unlisted(e, missing, equipos):
+        # One whole teacher computer priced on its own: its set may be part of that price. Confirm, never discard.
+        hallazgos.append(Hallazgo(
+            CodigoHallazgo.ALCANCE, Severidad.ADVERTENCIA, False,
+            f"Confirmar que la PC docente incluye: {', '.join(c for c in CATEGORIAS_REQUERIDAS if c in missing)}.",
+            "PC docente cotizada como equipo completo", Origen.REGLA,
+        ))  # fmt: skip
+        missing = []
     if missing:
         ordered = [name for name in CATEGORIAS_REQUERIDAS if name in missing]
         hallazgos.append(_discard(f"No cubre {equipos} unidades de: {', '.join(ordered)}.", "lista fija de requisitos"))

@@ -25,6 +25,7 @@ from evaluador.domain.reglas.aritmetica import validar_aritmetica
 from evaluador.domain.reglas.calidad import validar_calidad
 from evaluador.domain.reglas.capacidad import validar_capacidad
 from evaluador.domain.reglas.compatibilidad import validar_compatibilidad
+from evaluador.domain.reglas.estaciones import validar_estaciones
 from evaluador.domain.reglas.manipulacion import detectar_manipulacion
 
 from .estado import EstadoEvaluacion
@@ -39,7 +40,18 @@ _INSTR_EXTRACCION = (
     "(2) copia las cifras tal cual en 'literal' y su forma con punto decimal en 'valor'; (3) NUNCA recalcules ni "
     'corrijas montos; (4) usa null cuando algo no conste (cantidad, precio o total ausentes = null, nunca 0 ni ""); '
     "(5) cada línea cita su evidencia (página o celda y texto tal cual); (6) en totales.impuestos va el MONTO del "
-    "impuesto impreso en el documento; si solo aparece el porcentaje, no calcules el monto y deja la lista vacía."
+    "impuesto impreso en el documento; si solo aparece el porcentaje, no calcules el monto y deja la lista vacía; "
+    "(7) si la cotización desglosa por componentes, cada componente es una línea aparte: no juntes varios en una. "
+    "Si un encabezado da la cantidad de un grupo (p. ej. «Desglose Estudiantes (10x)»), CADA línea del grupo lleva "
+    "esa cantidad y su precio unitario; (8) empieza la descripción con el puesto al que pertenece («Estudiantes» o "
+    "«Docente») cuando el documento lo indique, y conserva modelos, vatios y medidas tal como están escritos; "
+    "(9) todo importe que forma el total (envío, instalación, servicios opcionales) queda como línea o en "
+    "condiciones: no omitas ninguno."
+)
+_ARITHMETIC_RECHECK = (
+    "\nTu lectura anterior no cuadraba con los totales impresos. Vuelve a leer el documento COMPLETO: revisa que no "
+    "falte ninguna línea ni cargo, que cada cantidad sea la de su grupo y que cada cifra, sobre todo las escritas a "
+    "mano, sea exactamente la impresa. Copia lo que dice: no ajustes ninguna cifra para que cuadre."
 )
 _INSTR_ALCANCE = (
     "Juzga SOLO con la evidencia citada si la propuesta incluye instalación y puesta en marcha, equipos nuevos, "
@@ -119,7 +131,8 @@ class NodosEvaluacion:
                 if problemas := validar_contrato(ext):  # lo que no es auditable cuenta como error de lectura
                     correction = _correction_request(problemas)
                     raise ValueError("; ".join(problemas[:5]))
-                return {"extraccion": self.prepare(ext, s["texto"]), "error_de_lectura": False}
+                prepared = self._confirm_arithmetic(self.prepare(ext, s["texto"]), s["texto"])
+                return {"extraccion": prepared, "error_de_lectura": False}
             except Exception as exc:  # noqa: BLE001 - cualquier fallo del proveedor es de lectura, no de la propuesta
                 _log.warning("extraccion_fallida", extra={"intento": intento, "tipo": type(exc).__name__})
         return {
@@ -128,6 +141,28 @@ class NodosEvaluacion:
             "hallazgos": [Hallazgo(CodigoHallazgo.LECTURA, Severidad.ADVERTENCIA, False,
                                    "No se pudo leer la propuesta de forma fiable.", "", Origen.REGLA)],
         }  # fmt: skip
+
+    def _confirm_arithmetic(self, first: ExtraccionPropuesta, text: str) -> ExtraccionPropuesta:
+        """A supplier is only discarded for its sums if a second reading also fails to add up.
+
+        The hint never carries figures, and the second reading replaces the first only when it adds up on its own.
+        """
+        if not any(f.descarta for f in validar_aritmetica(first)):
+            return first
+        try:
+            second = self._modelo.estructurar(
+                instrucciones=_INSTR_EXTRACCION + _ARITHMETIC_RECHECK,
+                contenido_no_confiable=text,
+                esquema=ExtraccionPropuesta,
+            )
+            if validar_contrato(second):
+                return first
+            second = self.prepare(second, text)
+        except Exception as exc:  # noqa: BLE001 - without a second reading the first one stands
+            _log.warning("arithmetic_recheck_failed", extra={"tipo": type(exc).__name__})
+            return first
+        complete = len(second.lineas) >= len(first.lineas)
+        return second if complete and not any(f.descarta for f in validar_aritmetica(second)) else first
 
     @staticmethod
     def prepare(extraction: ExtraccionPropuesta, text: str) -> ExtraccionPropuesta:
@@ -151,6 +186,7 @@ class NodosEvaluacion:
                 *validar_compatibilidad(e),
                 *validar_capacidad(e),
                 *validar_calidad(e),
+                *validar_estaciones(e, s.get("texto", "")),
                 *validar_abuso(e, referencias=references, document=s.get("texto", "")),
             ],
         }
