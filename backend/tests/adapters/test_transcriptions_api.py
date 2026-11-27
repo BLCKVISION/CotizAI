@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,6 +11,7 @@ from PIL import Image
 
 from evaluador.adapters.inbound.http.aplicacion import crear_aplicacion
 from evaluador.adapters.outbound.extraccion.preprocess import MAX_LONG_SIDE, MIN_LONG_SIDE, enhance
+from evaluador.adapters.outbound.ia._comun import sistema_para_imagen
 from evaluador.composition.configuracion import Configuracion
 from evaluador.composition.contenedor import construir_contenedor
 from evaluador.domain.extraccion import ImageMarkdownReading
@@ -121,3 +123,16 @@ def test_accepts_images_above_the_json_limit_and_rejects_above_25_mib(client, vi
 @pytest.mark.parametrize(("size", "long_side"), [((400, 300), MIN_LONG_SIDE), ((5000, 1000), MAX_LONG_SIDE)])
 def test_preprocessing_keeps_the_long_side_within_bounds(size, long_side):
     assert max(Image.open(io.BytesIO(enhance(image(size=size)))).size) == long_side
+
+
+def test_a_reply_that_echoes_the_schema_is_rejected_instead_of_read_as_empty():
+    with pytest.raises(ValueError):
+        ImageMarkdownReading.model_validate(ImageMarkdownReading.model_json_schema())
+
+
+def test_image_prompt_shows_an_example_object_instead_of_the_schema():
+    prompt = sistema_para_imagen("x", ImageMarkdownReading)
+    assert '"properties"' not in prompt
+    example = json.loads(prompt.splitlines()[-1])
+    assert list(example) == ["markdown", "unreadable", "uncertain", "quality"]
+    assert example["quality"] == "<high | medium | low>" and example["unreadable"] is False

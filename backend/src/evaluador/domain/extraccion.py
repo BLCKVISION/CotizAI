@@ -122,7 +122,7 @@ class TranscripcionImagen(_Base):
 class ImageMarkdownReading(_Base):
     """Vision model output: literal Markdown transcription of the photo of a quote."""
 
-    markdown: str = ""
+    markdown: str  # required: a reply without it (e.g. the schema echoed back) must fail, not read as empty
     unreadable: bool = False  # the image cannot be read reliably: ask for review, never invent
     uncertain: list[str] = Field(default_factory=list)  # doubtful figures, as marked with "?"
     quality: Literal["high", "medium", "low"] = "high"
