@@ -24,7 +24,40 @@ def extraer_json(texto: str) -> dict:
     m = re.search(r"\{.*\}", texto, re.DOTALL)
     if not m:
         raise ValueError("La respuesta del modelo no contiene JSON.")
-    return json.loads(m.group(0))
+    try:
+        return json.loads(m.group(0))
+    except json.JSONDecodeError:
+        # Valid JSON followed by leftovers: keep the first complete object.
+        return json.JSONDecoder().raw_decode(m.group(0))[0]
+
+
+def _is_schema_node(value: object) -> bool:
+    return isinstance(value, dict) and ("type" in value or "$ref" in value or "anyOf" in value)
+
+
+def unwrap_schema_echo(data: dict, fields: set[str]) -> dict:
+    """Small models sometimes answer inside the shape of the schema: {"properties": {<the real answer>}}.
+
+    Only the real answer is taken: if "properties" holds schema definitions instead of values, nothing changes.
+    """
+    inner = data.get("properties")
+    if "properties" in fields or not isinstance(inner, dict):
+        return data
+    values = {k: v for k, v in inner.items() if k in fields and not _is_schema_node(v)}
+    outside = {k: v for k, v in data.items() if k in fields}  # some replies put the answer next to the echo
+    return {**values, **outside} or data
+
+
+def validate_reply(texto: str, esquema: type[BaseModel]) -> BaseModel:
+    """Normal reading first; the echo is only undone when that fails, so correct replies are never altered."""
+    data = extraer_json(texto)
+    try:
+        return esquema.model_validate(data)
+    except ValueError:
+        unwrapped = unwrap_schema_echo(data, set(esquema.model_fields))
+        if unwrapped is data:
+            raise
+        return esquema.model_validate(unwrapped)
 
 
 def sistema_para_imagen(instrucciones: str, esquema: type[BaseModel]) -> str:

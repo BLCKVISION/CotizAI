@@ -15,7 +15,9 @@ from .extraccion import ExtraccionPropuesta, Monto
 _RUIDO = re.compile(r"[^\d.,\-+]")
 # Words suppliers write instead of a figure when something costs nothing extra.
 _ZERO_WORDS = re.compile(
-    r"\b(inclu[ií]d[oa]s?|gratis|gratuit[oa]|sin (costo|cargo)|bonificad[oa]|cortes[ií]a)\b", re.IGNORECASE
+    r"\b(inclu[ií]d[oa]s?|gratis|gratuit[oa]|sin (costo|cargo)|bonificad[oa]|cortes[ií]a|"
+    r"free( of charge| shipping| delivery)?|no (extra )?charge|at no cost)\b",
+    re.IGNORECASE,
 )
 
 
@@ -62,6 +64,12 @@ def literal_coincide(literal: str, valor: str) -> bool:
 
 def _is_spreadsheet_formula(literal: str) -> bool:
     return literal.lstrip().startswith("=")
+
+
+def says_it_is_free(literal: str) -> bool:
+    """Only without any figure and without a condition: "gratis desde $500" is not free."""
+    conditional = re.search(r"\b(si|desde|a partir|solo|s[oó]lo|if|over|above)\b", literal, re.IGNORECASE)
+    return not any(c.isdigit() for c in literal) and bool(_ZERO_WORDS.search(literal)) and not conditional
 
 
 def _is_zero_in_words(monto: Monto) -> bool:

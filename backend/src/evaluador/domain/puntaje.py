@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .errores import DatoInvalido
+from .extraccion import ExtraccionPropuesta
 from .montos import a_centavos
 
 
@@ -53,6 +55,27 @@ class Pesos:
         pesos = (self.rendimiento, self.proteccion_y_perifericos, self.garantia_y_soporte)
         if any(type(x) is not int for x in pesos) or min(pesos) < 0 or sum(pesos) != 100:
             raise DatoInvalido("Los pesos deben ser enteros no negativos que sumen 100.")
+
+
+MAX_SCORE_WITHOUT_SUPPORT = 40
+_SUPPORT_WORDS = re.compile(
+    r"\b(soporte|support|asistencia|servicio t[eé]cnico|atenci[oó]n t[eé]cnica|post[- ]?venta)", re.IGNORECASE
+)
+
+
+def support_is_stated(extraction: ExtraccionPropuesta) -> bool:
+    """The project asks for warranty AND clearly stated after-sales support: a warranty alone is not support."""
+    conditions = extraction.condiciones
+    texts = [conditions.soporte, conditions.garantia, *extraction.notas_literales]
+    return any(text and _SUPPORT_WORDS.search(text) for text in texts)
+
+
+def limit_unsupported_score(rubric: RubricaPuntuada, extraction: ExtraccionPropuesta) -> RubricaPuntuada:
+    current = rubric.garantia_y_soporte
+    if support_is_stated(extraction) or current.puntaje <= MAX_SCORE_WITHOUT_SUPPORT:
+        return rubric
+    limited = current.model_copy(update={"puntaje": MAX_SCORE_WITHOUT_SUPPORT})
+    return rubric.model_copy(update={"garantia_y_soporte": limited})
 
 
 def puntaje_total(rubrica: RubricaPuntuada, pesos: Pesos | None = None) -> Decimal:

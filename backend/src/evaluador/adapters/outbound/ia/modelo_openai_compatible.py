@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 from pydantic import BaseModel
 
-from ._comun import construir_mensajes, extraer_json, imagen_base64, sistema_para_imagen
+from ._comun import construir_mensajes, imagen_base64, sistema_para_imagen, validate_reply
 from ._retry import post_with_retry
 
 # Without a cap the provider reserves the model's whole output window and may refuse a low-credit account (402).
@@ -32,7 +32,7 @@ class ModeloOpenAICompatible:
             },
         ))
         r.raise_for_status()
-        return esquema.model_validate(extraer_json(r.json()["choices"][0]["message"]["content"]))
+        return validate_reply(r.json()["choices"][0]["message"]["content"], esquema)
 
     def estructurar_imagen(
         self, *, instrucciones: str, imagen: bytes, mime: str, esquema: type[BaseModel]
@@ -54,4 +54,4 @@ class ModeloOpenAICompatible:
             },
         ))  # fmt: skip
         r.raise_for_status()
-        return esquema.model_validate(extraer_json(r.json()["choices"][0]["message"]["content"]))
+        return validate_reply(r.json()["choices"][0]["message"]["content"], esquema)

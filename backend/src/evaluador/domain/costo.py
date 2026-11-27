@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
 
+from .contrato import says_it_is_free
 from .document_text import has_priced_line
 from .extraccion import ExtraccionPropuesta, Monto
 from .moneda import TasaDeCambio, convertir, normalize_currency
@@ -67,6 +68,8 @@ def _paso_de_condicion(
         return []  # no consta: no hay nada que sumar
     if has_priced_line(e, categoria_en_lineas):
         return [PasoDeCosto(concepto, Decimal(0), "ya incluido en las líneas de la propuesta")]
+    if says_it_is_free(monto.literal):
+        return [PasoDeCosto(concepto, Decimal(0), f"sin costo según el documento: {monto.literal[:60]}")]
     valor = _no_negativo(leer_monto(monto))
     if valor is None:
         return [PasoDeCosto(concepto, None, f"no determinado (el documento dice: {monto.literal[:60]!r})")]

@@ -65,7 +65,8 @@ class ProposalEvaluationItem:
     evaluated_at: datetime | None = None  # when this proposal was read; a selective run keeps the older ones
     unverified: tuple[str, ...] = ()  # control questions without enough data to answer
     trace: tuple[TraceStep, ...] = ()  # absent in older results
-    lines: tuple[QuotedLine, ...] = ()  # absent in evaluations stored before the assistant existed
+    lines: tuple[QuotedLine, ...] = ()  # absent in older results
+    terms: tuple[str, ...] = ()  # warranty and support as written in the quote
 
 
 @dataclass(frozen=True, slots=True)

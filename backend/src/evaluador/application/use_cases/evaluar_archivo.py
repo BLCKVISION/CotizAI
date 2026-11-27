@@ -20,7 +20,7 @@ from evaluador.domain.evaluacion import (
     Severidad,
     Veredicto,
 )
-from evaluador.domain.puntaje import RubricaPuntuada, puntaje_total
+from evaluador.domain.puntaje import RubricaPuntuada, limit_unsupported_score, puntaje_total
 from evaluador.domain.rag import Fragmento, fragmentar
 
 TENANT_LOTE = "lote"  # el modo lote es de un solo tenant implícito: sin sesiones ni base de datos
@@ -113,6 +113,15 @@ class EvaluarArchivo:
             contenido_no_confiable=texto[:_MAX_CARACTERES_RUBRICA],
             esquema=RubricaPuntuada,
         )
+        limited = limit_unsupported_score(rubrica, r.extraccion)
+        if limited is not rubrica:
+            note = TraceStep(
+                "support", "Soporte postventa no declarado", "info",
+                ("El proyecto pide soporte claramente establecido y la propuesta no lo declara: "
+                 "la nota de garantía y soporte queda limitada.",),
+            )  # fmt: skip
+            r = replace(r, trace=(*r.trace, note))
+            rubrica = limited
         return Evaluacion(
             r, puntaje_total(rubrica), breakdown.total, breakdown.moneda, breakdown, rubrica, texto, warnings
         )
