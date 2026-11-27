@@ -9,6 +9,7 @@ import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, CampoDeTexto, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
+import { PastRuns } from '@/features/history/PastRuns';
 import { type Proyecto, transicionarProyectoApi } from '@/features/proyectos/api';
 import { formatoFechaHora } from '@/features/proyectos/estados';
 
@@ -72,6 +73,8 @@ export function Revision({ proyecto, onCambio }: { proyecto: Proyecto; onCambio:
             onPress={() => ejecutar(async () => onCambio(await conSesion(transicionarProyectoApi(proyecto.id, 'cerrado', motivo || null))))} />
         </CollapsibleCard>
       ) : null}
+
+      <PastRuns projectId={proyecto.id} />
 
       <CollapsibleCard title="Historial de cambios" detail="Se registra automáticamente">
         {historial.error ? <ErrorConReintento texto={historial.error} onReintentar={historial.recargar} /> : null}

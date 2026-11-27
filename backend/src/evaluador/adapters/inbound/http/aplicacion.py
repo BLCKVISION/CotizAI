@@ -13,6 +13,7 @@ from evaluador.adapters.inbound.http.routers import (
     evaluations,
     exchange_rates,
     gestion,
+    history,
     proyectos,
     sesiones,
     transcriptions,
@@ -58,6 +59,7 @@ def crear_aplicacion(config: Configuracion | None = None, contenedor: Contenedor
     api.include_router(sesiones.router)
     api.include_router(proyectos.router)
     api.include_router(gestion.router)
+    api.include_router(history.router)
     api.include_router(evaluations.router)
     api.include_router(exchange_rates.router)
     api.include_router(transcriptions.router)

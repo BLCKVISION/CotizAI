@@ -2,12 +2,12 @@
 import { Animated, Pressable, View } from 'react-native';
 
 import { Sheen, useAttention, wiggle } from '@/design/Attention';
-import { Icono, Texto } from '@/design/componentes';
+import { Icono, Insignia, Texto } from '@/design/componentes';
 import { soloWeb } from '@/design/efectos';
 import { isKeyboardFocus } from '@/design/focusModality';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
-import type { Proveedor } from '@/features/gestion/api';
+import { backgroundLabel, type SupplierEntry } from '@/features/history/suppliers';
 
 export const PROVIDER_CARD_HEIGHT = 224;
 const easing = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -15,13 +15,16 @@ const motion = (properties: string) => ({ transitionProperty: properties, transi
 
 type PressState = { pressed: boolean; hovered?: boolean; focused?: boolean };
 
-export function ProviderCard({ provider, onPress, index = 0 }: { provider: Proveedor; onPress: () => void; index?: number }) {
+export function ProviderCard({ provider, onPress, index = 0 }: { provider: SupplierEntry; onPress: () => void; index?: number }) {
   const t = useTema();
+  const record = provider.registration;
+  const background = backgroundLabel(provider);
+  const identity = record ? `${record.tax_id} · ${record.location}` : 'Sin ficha todavía';
   const pulse = useAttention(index);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${provider.nombre}. RIF ${provider.rif}. ${provider.ubicacion}`}
+      accessibilityLabel={`${provider.name}. ${identity}. ${background.text}`}
       onPress={onPress}
       style={(e: PressState) => {
         const active = Boolean(e.hovered) || isKeyboardFocus(e.focused);
@@ -47,26 +50,31 @@ export function ProviderCard({ provider, onPress, index = 0 }: { provider: Prove
         const active = Boolean(hovered) || isKeyboardFocus(focused);
         return (
           <>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: espacio.sm }}>
             <Animated.View style={[{ alignSelf: 'flex-start' }, wiggle(pulse)]}>
               <View style={{ width: 56, height: 56, borderRadius: radio.lg, alignItems: 'center', justifyContent: 'center', backgroundColor: active ? '#FFFFFF' : t.accent, ...soloWeb({ ...motion('transform, background-color'), transform: active ? 'scale(1.1) rotate(-6deg)' : 'scale(1) rotate(0deg)' }) }}>
                 <Icono nombre="briefcase" tamano="lg" color={t.onAccent} />
               </View>
             </Animated.View>
+              <View style={{ flexShrink: 1 }}>
+                <Insignia etiqueta={background.text} tono={background.tone} />
+              </View>
+            </View>
             {/* Contact data slides in on hover; touch users open the card to read it. */}
             <View style={soloWeb({ ...motion('opacity, transform'), opacity: active ? 1 : 0, transform: active ? 'translateY(0px)' : 'translateY(8px)' })}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Icono nombre="phone" tamano="sm" color={t.onAccent} />
                 <Texto variante="pequeno" color={t.onAccent} numberOfLines={1} style={{ flex: 1 }}>
-                  {provider.contacto}
+                  {record?.contact ?? 'Complete la ficha para ver el contacto'}
                 </Texto>
               </View>
             </View>
             <View style={{ gap: 2 }}>
               <Texto variante="cuerpoMedio" color={t.onAccent} numberOfLines={2} style={{ fontFamily: 'Urbanist_600SemiBold', fontSize: 16, lineHeight: 20 }}>
-                {provider.nombre}
+                {provider.name}
               </Texto>
               <Texto variante="pequeno" color={active ? t.onAccent : t.textoSuave} numberOfLines={1}>
-                {provider.rif} · {provider.ubicacion}
+                {identity}
               </Texto>
             </View>
             <Sheen pulse={pulse} />

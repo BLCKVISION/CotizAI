@@ -79,8 +79,9 @@ class DeleteProposal:
 class DeleteProject:
     def __init__(
         self, *, projects: ProyectoRepositorio, proposals, notes, evaluations, decisions, store, audit: Auditoria,
-        forget_text: ForgetText,
+        forget_text: ForgetText, forget_runs: Callable[[str, str], None],
     ) -> None:  # fmt: skip
+        self._forget_runs = forget_runs
         self._projects, self._proposals, self._notes = projects, proposals, notes
         self._evaluations, self._decisions, self._store = evaluations, decisions, store
         self._audit, self._forget_text = audit, forget_text
@@ -103,6 +104,7 @@ class DeleteProject:
         for note in [n for n in self._notes.listar(actor.tenant_id) if n.proyecto_id == project_id]:
             self._notes.eliminar(actor.tenant_id, note.id)
         self._evaluations.eliminar(actor.tenant_id, project_id)
+        self._forget_runs(actor.tenant_id, project_id)
         self._projects.eliminar(actor.tenant_id, project_id)
         self._audit.registrar(
             tenant_id=actor.tenant_id, actor=actor.id, accion="proyecto_eliminado",

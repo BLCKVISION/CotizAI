@@ -42,6 +42,7 @@ from evaluador.application.use_cases.evaluate_project import (
 )
 from evaluador.application.use_cases.exchange_rates import RegisterManualRate, ResolveRates
 from evaluador.application.use_cases.gestion import Gestion
+from evaluador.application.use_cases.history import ArchivingEvaluations, EvaluationHistory, GetSupplierDirectory
 from evaluador.application.use_cases.proposal_markdown import GetProposalMarkdown
 from evaluador.application.use_cases.proyectos import (
     CrearProyecto,
@@ -88,6 +89,8 @@ class Contenedor:
     delete_project: DeleteProject
     ask_assistant: AskAssistant
     register_account: RegisterAccount
+    evaluation_history: EvaluationHistory
+    supplier_directory: GetSupplierDirectory
     # Expuestos para scripts de semillas y pruebas
     tenants: TenantsEnMemoria
     usuarios: UsuariosEnMemoria
@@ -103,6 +106,7 @@ def _colecciones(config: Configuracion | None) -> dict:
         "notas": Nota,
         "eventos": Evento,
         "evaluations": ProjectEvaluation,
+        "evaluation_runs": ProjectEvaluation,
         "reviews": ReviewDecision,
         "exchange_rates": RateRecord,
     }
@@ -150,7 +154,7 @@ def construir_contenedor(
     almacen = None
     if config is not None and config.clave_cifrado and config.clave_cifrado.get_secret_value():
         almacen = AlmacenCifrado(config.directorio_documentos, config.clave_cifrado.get_secret_value())
-    evaluations = datos.pop("evaluations")
+    evaluations = ArchivingEvaluations(datos.pop("evaluations"), datos.pop("evaluation_runs"), ids.nuevo)
     reviews = datos.pop("reviews")
     rates = CollectionExchangeRates(datos.pop("exchange_rates"), reloj)
     gestion = Gestion(**datos, usuarios=usuarios, almacen=almacen, ids=ids, reloj=reloj, auditoria=auditoria)
@@ -237,7 +241,10 @@ def construir_contenedor(
         delete_project=DeleteProject(
             projects=proyectos, proposals=datos["propuestas"], notes=datos["notas"], evaluations=evaluations,
             decisions=reviews, store=gestion, audit=auditoria, forget_text=proposal_markdown.forget,
+            forget_runs=evaluations.forget_runs,
         ),
+        evaluation_history=EvaluationHistory(proyectos, evaluations, gestion),
+        supplier_directory=GetSupplierDirectory(proyectos, evaluations, datos["proveedores"]),
         tenants=tenants,
         usuarios=usuarios,
         hasheador=hasheador,

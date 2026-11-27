@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import threading
-import unicodedata
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import copy_context
@@ -47,6 +46,7 @@ from evaluador.domain.proyecto import EstadoProyecto, Proyecto
 from evaluador.domain.puntaje import Pesos
 from evaluador.domain.rag import Fragmento, fragmentar
 from evaluador.domain.ranking import Candidata, ordenar_ranking
+from evaluador.domain.supplier_history import supplier_key as _supplier_key
 from evaluador.domain.verification import unverified_checks
 
 _log = logging.getLogger("evaluador.evaluations")
@@ -83,12 +83,6 @@ class _Outcome:
 def _unreadable(proposal: Propuesta, reason: str) -> Evaluacion:
     finding = Hallazgo(CodigoHallazgo.LECTURA, Severidad.ADVERTENCIA, False, reason, proposal.archivo, Origen.REGLA)
     return Evaluacion(ResultadoEvaluacion(proposal.id, Veredicto.PENDIENTE_DE_REVISION, (finding,)))
-
-
-def _supplier_key(name: str) -> str:
-    plain = "".join(c for c in unicodedata.normalize("NFKD", name.lower()) if not unicodedata.combining(c))
-    words = "".join(c if c.isalnum() else " " for c in plain).split()
-    return " ".join(w for w in words if w not in {"c", "a", "ca", "sa", "s", "srl", "rl", "inc", "llc"})
 
 
 class EvaluateProject:
