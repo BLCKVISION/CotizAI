@@ -46,8 +46,9 @@ válidas. La decisión final es del comité.
   lote que genera `salida.json`.
 - Registro de cuentas: cada una recibe su propia organización aislada (se puede desactivar con
   `EVALUADOR_REGISTRATION_ENABLED=false`).
-- Búsqueda web de precios de mercado (Perplexity Sonar): implementada y **apagada por defecto** para controlar el
-  costo (`EVALUADOR_MARKET_SEARCH_ENABLED=true` la activa). Consulta hasta 5 líneas por propuesta.
+- Búsqueda web de precios de mercado (Perplexity Sonar): **activa por defecto** en los despliegues con Docker Compose;
+  tiene costo por consulta y `EVALUADOR_MARKET_SEARCH_ENABLED=false` la apaga. Fuera de Compose, el modo lote incluido,
+  se activa con `EVALUADOR_MARKET_SEARCH_ENABLED=true`. Consulta hasta 5 líneas por propuesta.
 - Traza por propuesta con los pasos que ejecutó el agente, sus hallazgos, el costo y el veredicto.
 
 **Limitaciones**
