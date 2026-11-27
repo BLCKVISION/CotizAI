@@ -8,11 +8,13 @@ import { Aviso, Cargando, ErrorConReintento } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { espacio } from '@/design/tokens';
+import { showToast } from '@/design/toastStore';
 import type { Proyecto } from '@/features/proyectos/api';
 import { formatoFechaHora } from '@/features/proyectos/estados';
 
 import { downloadReportApi, type ProjectEvaluation, type ReportFormat } from './api';
 import { AskCard } from './AskCard';
+import { EvaluationProcess } from './EvaluationProcess';
 import { costShare, formatMoney } from './format';
 import { ProposalResultCard } from './ProposalResultCard';
 import { RatePanel } from './RatePanel';
@@ -51,15 +53,16 @@ function Recommendation({ evaluation }: { evaluation: ProjectEvaluation }) {
   );
 }
 
-type Props = { project: Proyecto; proposalCount: number; minimumProposals: number; onEvaluated: () => void };
+type Props = { project: Proyecto; proposalCount: number; proposalNames: string[]; minimumProposals: number; onEvaluated: () => void };
 
-export function EvaluationResults({ project, proposalCount, minimumProposals, onEvaluated }: Props) {
+export function EvaluationResults({ project, proposalCount, proposalNames, minimumProposals, onEvaluated }: Props) {
   const { usuario, conSesion } = useSesion();
   const role = usuario?.rol;
   const canStart = role === 'cargador' || role === 'evaluador';
   const canView = role !== undefined && role !== 'cargador';
   const { evaluation, rates, ratesError, loading, running, elapsed, error, run, saveRate, reload } = useProjectEvaluation(project.id, canView);
   const [confirming, setConfirming] = useState(false);
+  const [showProcess, setShowProcess] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const closed = project.estado === 'adjudicado' || project.estado === 'cerrado';
@@ -69,7 +72,9 @@ export function EvaluationResults({ project, proposalCount, minimumProposals, on
   const evaluate = async () => {
     if (alreadyEvaluated && !confirming) return setConfirming(true);
     setConfirming(false);
-    await run();
+    setShowProcess(true);
+    const completed = await run();
+    if (completed) showToast({ tone: 'success', title: 'Evaluación completada' });
     onEvaluated(); // also after a failure: the server may have restored the project state
   };
 
@@ -103,9 +108,8 @@ export function EvaluationResults({ project, proposalCount, minimumProposals, on
             onPress={() => void evaluate()}
           />
         ) : null}
-        {running ? (
-          <Aviso tono="info" texto={`Evaluando ${proposalCount} propuestas (${elapsed} s). Puede tardar varios minutos; no cierre esta página.`} />
-        ) : null}
+        {running ? <Boton etiqueta={`Ver el proceso (${elapsed} s)`} icono="activity" variante="secundario" onPress={() => setShowProcess(true)} /> : null}
+        <EvaluationProcess visible={showProcess} running={running} elapsed={elapsed} files={proposalNames} evaluation={evaluation} error={error} onClose={() => setShowProcess(false)} />
         {canStart && !closed && missing > 0 ? <Aviso tono="info" texto={`Faltan ${missing} propuesta(s) para poder evaluar.`} /> : null}
         {evaluation?.restricted ? (
           <Aviso tono="exito" texto={`Evaluación completada: ${evaluation.evaluated_count} propuestas. Los resultados los ve el comité (evaluador, aprobador o auditor).`} />

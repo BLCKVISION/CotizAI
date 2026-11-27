@@ -157,6 +157,7 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
         <EvaluationResults
           project={proyecto}
           proposalCount={n}
+          proposalNames={datos?.map((p) => p.archivo) ?? []}
           minimumProposals={MINIMO}
           onEvaluated={() => {
             recargar();

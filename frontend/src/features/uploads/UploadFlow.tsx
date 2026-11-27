@@ -107,7 +107,7 @@ export function UploadFlow({ visible, items, busy, onClose }: { visible: boolean
   return (
     <Lightbox visible={visible} title={title} description={busy ? 'Puede cerrar esta ventana: la carga continúa.' : `${saved} ${saved === 1 ? 'guardada' : 'guardadas'} · ${items.length - saved} ${items.length - saved === 1 ? 'rechazada' : 'rechazadas'}`} onClose={onClose}>
       <Pipeline active={busy} />
-      <View accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: items.length, now: done }} style={{ height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: t.superficieAlta }}>
+      <View accessibilityRole="progressbar" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={done} style={{ height: 8, borderRadius: 4, overflow: 'hidden', backgroundColor: t.superficieAlta }}>
         <View style={{ height: 8, width: `${items.length ? (done / items.length) * 100 : 0}%`, borderRadius: 4, ...accentGradient(90) }} />
       </View>
       <View style={{ gap: espacio.sm }}>
