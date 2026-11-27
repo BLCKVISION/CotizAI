@@ -30,9 +30,7 @@ class RegistrationDto(DtoEntrada):
 def register(dto: RegistrationDto, request: Request) -> Response:
     """Same empty answer for a new and an already registered address."""
     request.app.state.registration_limiter.verificar(contexto.obtener().ip)
-    request.app.state.contenedor.register_account.execute(
-        dto.display_name, dto.email, dto.password.get_secret_value()
-    )
+    request.app.state.contenedor.register_account.execute(dto.display_name, dto.email, dto.password.get_secret_value())
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

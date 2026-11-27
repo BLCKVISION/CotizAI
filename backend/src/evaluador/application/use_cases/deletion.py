@@ -8,11 +8,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import replace
 
-from evaluador.application.ports.salida import Auditoria, ProyectoRepositorio
+from evaluador.application.ports.salida import Auditoria, Collection, ProyectoRepositorio
 from evaluador.application.use_cases.gestion import Gestion
 from evaluador.domain.errores import NoEncontrado, TransicionInvalida
-from evaluador.domain.gestion import Propuesta
+from evaluador.domain.gestion import Nota, Propuesta
 from evaluador.domain.identidad import Permiso, Usuario
+from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
 from evaluador.domain.proyecto import EstadoProyecto, Proyecto
 
 # Called with (tenant_id, sha256) so that text extracted from a deleted file does not stay in memory.
@@ -35,9 +36,15 @@ def _require_deletable(project: Proyecto) -> None:
 
 class DeleteProposal:
     def __init__(
-        self, *, projects: ProyectoRepositorio, management: Gestion, evaluations, decisions, audit: Auditoria,
+        self,
+        *,
+        projects: ProyectoRepositorio,
+        management: Gestion,
+        evaluations: Collection[ProjectEvaluation],
+        decisions: Collection[ReviewDecision],
+        audit: Auditoria,
         forget_text: ForgetText,
-    ) -> None:  # fmt: skip
+    ) -> None:
         self._projects, self._management = projects, management
         self._evaluations, self._decisions = evaluations, decisions
         self._audit, self._forget_text = audit, forget_text
@@ -78,9 +85,18 @@ class DeleteProposal:
 
 class DeleteProject:
     def __init__(
-        self, *, projects: ProyectoRepositorio, proposals, notes, evaluations, decisions, store, audit: Auditoria,
-        forget_text: ForgetText, forget_runs: Callable[[str, str], None],
-    ) -> None:  # fmt: skip
+        self,
+        *,
+        projects: ProyectoRepositorio,
+        proposals: Collection[Propuesta],
+        notes: Collection[Nota],
+        evaluations: Collection[ProjectEvaluation],
+        decisions: Collection[ReviewDecision],
+        store: Gestion,
+        audit: Auditoria,
+        forget_text: ForgetText,
+        forget_runs: Callable[[str, str], None],
+    ) -> None:
         self._forget_runs = forget_runs
         self._projects, self._proposals, self._notes = projects, proposals, notes
         self._evaluations, self._decisions, self._store = evaluations, decisions, store

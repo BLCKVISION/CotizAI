@@ -189,9 +189,7 @@ def _check_board_memory(n: int, linea: Linea) -> list[Hallazgo]:
     (made_for, board_quote), (offered, memory_quote) = *board.items(), *memory.items()
     if made_for == offered:
         return []
-    reason = (
-        f"Línea {n}: la tarjeta madre es para memoria {made_for.upper()} y la propuesta ofrece {offered.upper()}."
-    )
+    reason = f"Línea {n}: la tarjeta madre es para memoria {made_for.upper()} y la propuesta ofrece {offered.upper()}."
     quote = f"{board_quote} | {memory_quote}"[:200]
     return [Hallazgo(CodigoHallazgo.COMPAT, Severidad.CRITICA, True, reason, quote, Origen.REGLA)]
 

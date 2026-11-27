@@ -56,8 +56,13 @@ def test_an_undefined_configuration_is_not_acceptable(text):
 
 def test_the_teacher_computer_priced_whole_is_confirmed_not_discarded():
     ten, one = Monto(literal="10", valor="10"), Monto(literal="1", valor="1")
-    parts = ["Estudiantes procesador y placa", "Estudiantes gabinete", "Estudiantes monitor",
-             "Estudiantes teclado y ratón", "Estudiantes UPS protector"]
+    parts = [
+        "Estudiantes procesador y placa",
+        "Estudiantes gabinete",
+        "Estudiantes monitor",
+        "Estudiantes teclado y ratón",
+        "Estudiantes UPS protector",
+    ]
     lines = [Linea(descripcion=d, categoria="componente", cantidad=ten) for d in parts]
     teacher = Linea(descripcion="PC Docente Ryzen 9", categoria="computadora", cantidad=one)
     findings = validar_alcance_fijo(ExtraccionPropuesta(lineas=[*lines, teacher]))
@@ -67,8 +72,11 @@ def test_the_teacher_computer_priced_whole_is_confirmed_not_discarded():
 
 
 def test_a_model_left_out_of_the_line_is_read_from_the_document_and_never_overestimated():
-    quote = _quote("Estudiantes Procesador: Ryzen 7 7700X", "Estudiantes Tarjeta grafica (GPU) VRAM 16GB",
-                   "Estudiantes Fuente (PSU) 450W Generica")
+    quote = _quote(
+        "Estudiantes Procesador: Ryzen 7 7700X",
+        "Estudiantes Tarjeta grafica (GPU) VRAM 16GB",
+        "Estudiantes Fuente (PSU) 450W Generica",
+    )
     assert _codes(quote, "Combo Ryzen 7 7700X + RTX 4070 Ti Super 16GB") == {"CAPACIDAD"}
     assert _codes(quote, "Docente RTX 4070 Ti Super. Estudiantes RTX 4060") == set()
     assert _codes(quote, "Sin modelo de grafica") == set()

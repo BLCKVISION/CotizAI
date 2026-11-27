@@ -63,7 +63,9 @@ def world():
     chat, market = ScriptedChat(), Market()
     container = construir_contenedor(assistant_services=lambda: AssistantServices(chat), market_lookup=market)
     seed(container, container.hasheador.hashear(CLAVE))
-    client = TestClient(crear_aplicacion(Configuracion(_env_file=None, nivel_de_log="CRITICAL", assistant_enabled=True), container))
+    client = TestClient(
+        crear_aplicacion(Configuracion(_env_file=None, nivel_de_log="CRITICAL", assistant_enabled=True), container)
+    )
 
     tokens: dict[str, str] = {}
 

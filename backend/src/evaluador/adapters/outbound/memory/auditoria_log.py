@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from dataclasses import replace
 from threading import Lock
 
+from evaluador.application.ports.salida import Collection, GeneradorDeIds, Reloj
 from evaluador.domain.gestion import Evento
 
 _log = logging.getLogger("evaluador.auditoria")
@@ -27,7 +29,12 @@ def cadena_integra(eventos: list[Evento]) -> bool:
 
 
 class AuditoriaLog:
-    def __init__(self, eventos=None, ids=None, reloj=None) -> None:
+    def __init__(
+        self,
+        eventos: Collection[Evento] | None = None,
+        ids: GeneradorDeIds | None = None,
+        reloj: Reloj | None = None,
+    ) -> None:
         self._eventos, self._ids, self._reloj = eventos, ids, reloj
         self._lock = Lock()  # un solo proceso: la cadena no se bifurca
 
@@ -35,12 +42,19 @@ class AuditoriaLog:
         _log.info(accion, extra={"auditoria": True, "tenant": tenant_id, "actor": actor, "detalle": detalle})
         if self._eventos is None or not tenant_id:
             return
+        if self._ids is None or self._reloj is None:
+            raise RuntimeError("A persisted audit trail needs an id generator and a clock.")
         with self._lock:
             ultimo = max(self._eventos.listar(tenant_id), key=lambda e: e.secuencia, default=None)
-            campos = {
-                "id": self._ids.nuevo(), "tenant_id": tenant_id, "actor": actor, "accion": accion,
-                "detalle": detalle, "creado": self._reloj.ahora(),
-                "secuencia": ultimo.secuencia + 1 if ultimo else 1,
-                "huella_anterior": ultimo.huella if ultimo else "",
-            }  # fmt: skip
-            self._eventos.guardar(Evento(**campos, huella=huella_de(Evento(**campos, huella=""))))
+            draft = Evento(
+                id=self._ids.nuevo(),
+                tenant_id=tenant_id,
+                actor=actor,
+                accion=accion,
+                detalle=detalle,
+                creado=self._reloj.ahora(),
+                secuencia=ultimo.secuencia + 1 if ultimo else 1,
+                huella_anterior=ultimo.huella if ultimo else "",
+                huella="",
+            )
+            self._eventos.guardar(replace(draft, huella=huella_de(draft)))

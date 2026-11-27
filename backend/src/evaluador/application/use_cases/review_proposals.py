@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from evaluador.application.ports.salida import Auditoria, ProyectoRepositorio, Reloj
+from evaluador.application.ports.salida import Auditoria, Collection, ProyectoRepositorio, Reloj
 from evaluador.application.use_cases.evaluate_project import ProjectEvaluationRepository
 from evaluador.domain.errores import DatoInvalido, NoEncontrado, TransicionInvalida
 from evaluador.domain.evaluacion import Veredicto
@@ -20,7 +20,7 @@ class ReviewProposals:
         *,
         projects: ProyectoRepositorio,
         evaluations: ProjectEvaluationRepository,
-        decisions,
+        decisions: Collection[ReviewDecision],
         clock: Reloj,
         audit: Auditoria,
     ) -> None:

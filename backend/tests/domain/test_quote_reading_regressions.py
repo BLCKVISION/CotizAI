@@ -43,7 +43,9 @@ def test_glyphs_drawn_twice_are_read_once():
 
 @pytest.mark.parametrize("size", [10, 3])
 def test_real_double_letters_survive_even_in_tiny_text(size):
-    assert "llenar billete correcto II 1100" in leer_pdf(_pdf(_text(size, 750, "llenar billete correcto II 1100"))).texto
+    assert (
+        "llenar billete correcto II 1100" in leer_pdf(_pdf(_text(size, 750, "llenar billete correcto II 1100"))).texto
+    )
 
 
 @pytest.mark.parametrize(

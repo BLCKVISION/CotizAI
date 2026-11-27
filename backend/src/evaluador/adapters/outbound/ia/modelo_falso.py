@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import cast
 
 from pydantic import BaseModel
 
@@ -13,12 +14,12 @@ class ModeloFalso:
         self.llamadas: list[tuple[str, str]] = []
         self.llamadas_imagen: list[tuple[str, str]] = []  # (instrucciones, mime)
 
-    def estructurar(
-        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
-    ):
+    def estructurar[M: BaseModel](
+        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[M], temperature: float = 0
+    ) -> M:
         self.llamadas.append((instrucciones, contenido_no_confiable))
         r = self._respuestas[esquema]
-        return r(contenido_no_confiable) if callable(r) else r
+        return cast(M, r(contenido_no_confiable) if callable(r) else r)
 
     def estructurar_imagen(
         self, *, instrucciones: str, imagen: bytes, mime: str, esquema: type[BaseModel]

@@ -17,9 +17,9 @@ class ModeloAnthropic:
         )
         self._modelo = modelo
 
-    def estructurar(
-        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
-    ):
+    def estructurar[M: BaseModel](
+        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[M], temperature: float = 0
+    ) -> M:
         sistema, usuario = construir_mensajes(instrucciones, contenido_no_confiable, esquema)
         r = self._http.post(
             "/v1/messages",

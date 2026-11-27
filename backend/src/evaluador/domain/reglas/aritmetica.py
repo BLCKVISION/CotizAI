@@ -36,7 +36,7 @@ def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
         if is_single_charge(ln) and total is not None and (ln.precio_unitario is None or precio == total):
             suma += total  # a single charge, such as freight
             continue
-        if None in (cant, precio, total):
+        if cant is None or precio is None or total is None:
             hallazgos.append(
                 Hallazgo(
                     CodigoHallazgo.LECTURA,

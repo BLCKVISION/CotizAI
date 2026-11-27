@@ -16,7 +16,6 @@ class TenantsEnMemoria:
     def por_codigo(self, codigo: str) -> Tenant | None:
         return self._por_codigo.get(codigo)
 
-
     def guardar(self, tenant: Tenant) -> None:
         self._por_codigo[tenant.codigo] = tenant
 

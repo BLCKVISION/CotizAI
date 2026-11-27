@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 from evaluador.adapters.outbound.almacen.cifrado import AlmacenCifrado
 from evaluador.adapters.outbound.exchange_rates.bcv import BcvExchangeRateSource
@@ -119,7 +120,7 @@ def _record_cipher(config: Configuracion) -> RecordCipher | None:
     return RecordCipher(key)
 
 
-def _colecciones(config: Configuracion | None) -> dict:
+def _colecciones(config: Configuracion | None) -> dict[str, Any]:
     tipos = {
         "proyectos": Proyecto,
         "propuestas": Propuesta,
@@ -184,9 +185,7 @@ def construir_contenedor(
     rates = CollectionExchangeRates(datos.pop("exchange_rates"), reloj)
     gestion = Gestion(**datos, usuarios=usuarios, almacen=almacen, ids=ids, reloj=reloj, auditoria=auditoria)
     ai_services = ai_services or lazy_services(config)
-    resolve_rates = ResolveRates(
-        rate_source or BcvExchangeRateSource(today=lambda: reloj.ahora().date()), rates, reloj
-    )
+    resolve_rates = ResolveRates(rate_source or BcvExchangeRateSource(today=lambda: reloj.ahora().date()), rates, reloj)
     get_evaluation = GetProjectEvaluation(proyectos, evaluations)
     ocr = TesseractOcr.if_available()
     transcriber = lazy_transcriber(config, vision_model, ocr)
@@ -217,6 +216,7 @@ def construir_contenedor(
         ids=ids,
         audit=auditoria,
     )
+
     def count_self_service_accounts() -> int:
         found = (tenants.por_id(u.tenant_id) for u in usuarios.all())
         return sum(1 for t in found if t is not None and t.codigo.startswith(SELF_SERVICE_PREFIX))
@@ -267,12 +267,22 @@ def construir_contenedor(
         transcribe_image=TranscribeImage(transcriber),
         proposal_markdown=proposal_markdown,
         delete_proposal=DeleteProposal(
-            projects=proyectos, management=gestion, evaluations=evaluations, decisions=reviews, audit=auditoria,
+            projects=proyectos,
+            management=gestion,
+            evaluations=evaluations,
+            decisions=reviews,
+            audit=auditoria,
             forget_text=proposal_markdown.forget,
         ),
         delete_project=DeleteProject(
-            projects=proyectos, proposals=datos["propuestas"], notes=datos["notas"], evaluations=evaluations,
-            decisions=reviews, store=gestion, audit=auditoria, forget_text=proposal_markdown.forget,
+            projects=proyectos,
+            proposals=datos["propuestas"],
+            notes=datos["notas"],
+            evaluations=evaluations,
+            decisions=reviews,
+            store=gestion,
+            audit=auditoria,
+            forget_text=proposal_markdown.forget,
             forget_runs=evaluations.forget_runs,
         ),
         evaluation_history=EvaluationHistory(proyectos, evaluations, gestion),

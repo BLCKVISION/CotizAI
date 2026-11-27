@@ -244,9 +244,7 @@ class EvaluateProject:
             )
         return outcomes
 
-    def _rates_for(
-        self, tenant_id: str, target: str, outcomes: list[_Outcome]
-    ) -> tuple[list[TasaDeCambio], bool]:
+    def _rates_for(self, tenant_id: str, target: str, outcomes: list[_Outcome]) -> tuple[list[TasaDeCambio], bool]:
         needed = any(
             o.evaluation.breakdown is not None and o.evaluation.breakdown.moneda not in (None, target) for o in outcomes
         )

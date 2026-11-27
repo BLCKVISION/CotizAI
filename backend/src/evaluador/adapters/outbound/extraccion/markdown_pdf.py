@@ -30,7 +30,7 @@ def _table(rows: list[list[str | None]]) -> str:
 
 def _inside(obj: dict[str, Any], box: Box) -> bool:
     x, y = (obj["x0"] + obj["x1"]) / 2, (obj["top"] + obj["bottom"]) / 2
-    return box[0] <= x <= box[2] and box[1] <= y <= box[3]
+    return bool(box[0] <= x <= box[2] and box[1] <= y <= box[3])
 
 
 def _is_table(rows: list[list[str | None]]) -> bool:
@@ -68,7 +68,7 @@ def _page(visible: Any) -> str:
     def beside(box: Box) -> float:
         """A box is read after the loose lines standing to its left, so a title and its subtitle stay together."""
         tops = [line["top"] for line in lines if line["x1"] <= box[0] and box[1] <= line["top"] <= box[3]]
-        return max([box[1], *tops]) + 0.1
+        return float(max([box[1], *tops])) + 0.1
 
     blocks = [_Block(beside(box), box[0], "table", content) for box, content in tables]
     for box in frames:

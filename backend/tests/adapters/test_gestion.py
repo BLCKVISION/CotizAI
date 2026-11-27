@@ -80,8 +80,9 @@ def _m(v):
 
 
 def _linea(categoria):
-    return Linea(descripcion=categoria, categoria=categoria, cantidad=_m("11"), precio_unitario=_m("100"),
-                 total_linea=_m("1100"))
+    return Linea(
+        descripcion=categoria, categoria=categoria, cantidad=_m("11"), precio_unitario=_m("100"), total_linea=_m("1100")
+    )
 
 
 def test_total_falso_sin_subtotal_se_detecta():

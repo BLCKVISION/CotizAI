@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
-from .extraccion import ExtraccionPropuesta, Monto
+from .extraccion import ExtraccionPropuesta, Linea, Monto
 
 CENTAVOS = Decimal("0.01")
 _MAX_EXPONENTE = 30
@@ -25,7 +25,7 @@ def a_centavos(valor: Decimal) -> Decimal:
     return valor.quantize(CENTAVOS, rounding=ROUND_HALF_UP)
 
 
-def is_descriptive(linea) -> bool:
+def is_descriptive(linea: Linea) -> bool:
     """No price at all: the line says what is included, its cost is in another one."""
     return linea.precio_unitario is None and linea.total_linea is None
 

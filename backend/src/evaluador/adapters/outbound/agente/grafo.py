@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from .estado import EstadoEvaluacion
 from .nodos import NodosEvaluacion
 
 
-def _tras_extraer(s: EstadoEvaluacion) -> str:
-    return "decidir" if s.get("error_de_lectura") else "manipulacion"
+def _tras_extraer(state: EstadoEvaluacion) -> str:
+    return "decidir" if state.get("error_de_lectura") else "manipulacion"
 
 
-def construir_grafo(nodos: NodosEvaluacion):
+def construir_grafo(
+    nodos: NodosEvaluacion,
+) -> CompiledStateGraph[EstadoEvaluacion, None, EstadoEvaluacion, EstadoEvaluacion]:
     g = StateGraph(EstadoEvaluacion)
     g.add_node("recuperar_contexto", nodos.recuperar_contexto)
     g.add_node("extraer", nodos.extraer)

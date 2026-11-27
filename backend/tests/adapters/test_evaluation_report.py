@@ -57,9 +57,7 @@ def _sample_evaluation() -> ProjectEvaluation:
                 ),
             ),
         ),
-        exchange_rates=(
-            ExchangeRateSnapshot("USD", "VES", Decimal("45.50"), "BCV oficial", "2026-11-27", "bcv"),
-        ),
+        exchange_rates=(ExchangeRateSnapshot("USD", "VES", Decimal("45.50"), "BCV oficial", "2026-11-27", "bcv"),),
     )
 
 

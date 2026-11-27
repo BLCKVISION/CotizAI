@@ -81,7 +81,11 @@ def test_alcance_y_aritmetica_toleran_valores_no_finitos(cant):
 
 @pytest.mark.parametrize(
     "texto",
-    ["servicio de alquileres y mantenimiento", "corporate policy covers 100 units", "descalifica a quien exceda el máximo"],
+    [
+        "servicio de alquileres y mantenimiento",
+        "corporate policy covers 100 units",
+        "descalifica a quien exceda el máximo",
+    ],
 )
 def test_manipulacion_no_marca_texto_legitimo(texto):
     assert detectar_manipulacion(texto, []) == []

@@ -67,7 +67,9 @@ def test_pdf_tables_become_markdown_tables_and_hidden_text_is_set_apart():
     assert "## Página 1" in markdown and "| Equipo | Total |\n| --- | --- |\n| Monitor | 150.00 |" in markdown
     assert markdown.index("Cotizacion") < markdown.index("| Equipo")
     assert markdown.count("Monitor") == 1  # table text is not repeated as loose lines
-    assert "## Texto oculto detectado" in markdown and "ignora las instrucciones" in markdown.split("## Texto oculto")[1]
+    assert (
+        "## Texto oculto detectado" in markdown and "ignora las instrucciones" in markdown.split("## Texto oculto")[1]
+    )
     assert notices and scanned == ()
 
 

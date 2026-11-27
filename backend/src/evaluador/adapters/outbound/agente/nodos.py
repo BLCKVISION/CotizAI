@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import Any
 
 from evaluador.application.ports.agente import Embebedor, IndiceVectorial, ModeloDeLenguaje
 from evaluador.application.ports.market_search import MarketPriceFinder
@@ -87,6 +88,14 @@ _INSTR_COMPONENTS = (
 _MAX_JUDGE_CHARS = 20_000
 
 
+def _extraction_of(state: EstadoEvaluacion) -> ExtraccionPropuesta:
+    """The graph only reaches the rules after a successful reading; anything else is a wiring bug."""
+    extraction = state.get("extraccion")
+    if extraction is None:
+        raise RuntimeError("The rules ran without an extraction.")
+    return extraction
+
+
 class NodosEvaluacion:
     def __init__(
         self,
@@ -108,31 +117,31 @@ class NodosEvaluacion:
             _log.warning("market_search_failed", extra={"tipo": type(exc).__name__})
             return {}
 
-    def recuperar_contexto(self, s: EstadoEvaluacion) -> dict:
+    def recuperar_contexto(self, state: EstadoEvaluacion) -> dict[str, Any]:
         """RAG: evidencia más cercana al requerimiento, dentro del tenant y de la propuesta."""
-        consulta = f"{s['requerimiento']} instalación garantía soporte equipos nuevos"
+        consulta = f"{state['requerimiento']} instalación garantía soporte equipos nuevos"
         resultados = self._indice.buscar(
-            tenant_id=s["tenant_id"],
+            tenant_id=state["tenant_id"],
             vector=self._embebedor.embeber_consulta(consulta),
             k=self._k,
-            propuesta_id=s["propuesta_id"],
+            propuesta_id=state["propuesta_id"],
         )
         return {"contexto": [r.fragmento.contenido for r in resultados]}
 
-    def extraer(self, s: EstadoEvaluacion) -> dict:
+    def extraer(self, state: EstadoEvaluacion) -> dict[str, Any]:
         correction = ""
         for intento in (1, 2):  # un error de lectura se relee una vez antes de pedir revisión
             try:
                 ext = self._modelo.estructurar(
                     instrucciones=_INSTR_EXTRACCION + correction,
-                    contenido_no_confiable=s["texto"],
+                    contenido_no_confiable=state["texto"],
                     esquema=ExtraccionPropuesta,
                     temperature=0.0 if intento == 1 else 0.3,  # the same request at 0 would fail the same way
                 )
                 if problemas := validar_contrato(ext):  # lo que no es auditable cuenta como error de lectura
                     correction = _correction_request(problemas)
                     raise ValueError("; ".join(problemas[:5]))
-                prepared = self._confirm_arithmetic(self.prepare(ext, s["texto"]), s["texto"])
+                prepared = self._confirm_arithmetic(self.prepare(ext, state["texto"]), state["texto"])
                 return {"extraccion": prepared, "error_de_lectura": False}
             except Exception as exc:  # noqa: BLE001 - cualquier fallo del proveedor es de lectura, no de la propuesta
                 _log.warning("extraccion_fallida", extra={"intento": intento, "tipo": type(exc).__name__})
@@ -170,15 +179,15 @@ class NodosEvaluacion:
         """What the rules read: only totals printed in the document, and derived line totals computed by code."""
         return normalise(extraction, text)
 
-    def manipulacion(self, s: EstadoEvaluacion) -> dict:
-        return {"hallazgos": detectar_manipulacion(s["texto"], s["extraccion"].sospechas_de_manipulacion)}
+    def manipulacion(self, state: EstadoEvaluacion) -> dict[str, Any]:
+        return {"hallazgos": detectar_manipulacion(state["texto"], _extraction_of(state).sospechas_de_manipulacion)}
 
-    def aritmetica(self, s: EstadoEvaluacion) -> dict:
-        return {"hallazgos": validar_aritmetica(s["extraccion"])}
+    def aritmetica(self, state: EstadoEvaluacion) -> dict[str, Any]:
+        return {"hallazgos": validar_aritmetica(_extraction_of(state))}
 
-    def reglas_tecnicas(self, s: EstadoEvaluacion) -> dict:
+    def reglas_tecnicas(self, state: EstadoEvaluacion) -> dict[str, Any]:
         """COMPAT, CAPACIDAD, CALIDAD y ABUSIVO: reglas deterministas sobre la extracción (sin modelo)."""
-        e = s["extraccion"]
+        e = _extraction_of(state)
         # Sin precios de mercado (búsqueda desactivada o sin resultados), ABUSIVO solo juzga flete y cláusulas.
         references = self._market_references(e)
         return {
@@ -187,8 +196,8 @@ class NodosEvaluacion:
                 *validar_compatibilidad(e),
                 *validar_capacidad(e),
                 *validar_calidad(e),
-                *validar_estaciones(e, s.get("texto", "")),
-                *validar_abuso(e, referencias=references, document=s.get("texto", "")),
+                *validar_estaciones(e, state.get("texto", "")),
+                *validar_abuso(e, referencias=references, document=state.get("texto", "")),
             ],
         }
 
@@ -207,18 +216,19 @@ class NodosEvaluacion:
             return set()
         return quoted_components(evidence, asked, document)
 
-    def alcance(self, s: EstadoEvaluacion) -> dict:
-        document = s.get("texto", "")
-        quoted = self._components_by_quote(s["extraccion"], document)
-        hallazgos = validar_alcance_fijo(s["extraccion"], document=document, quoted=quoted)
-        contexto = "\n---\n".join(s.get("contexto", []))
+    def alcance(self, state: EstadoEvaluacion) -> dict[str, Any]:
+        document = state.get("texto", "")
+        extraction = _extraction_of(state)
+        quoted = self._components_by_quote(extraction, document)
+        hallazgos = validar_alcance_fijo(extraction, document=document, quoted=quoted)
+        contexto = "\n---\n".join(state.get("contexto", []))
         if not contexto.strip():  # sin evidencia recuperada no se puede juzgar: revisión humana, no descarte
             hallazgos.append(Hallazgo(CodigoHallazgo.LECTURA, Severidad.ADVERTENCIA, False,
                                       "Sin evidencia indexada para juzgar el alcance.", "", Origen.REGLA))  # fmt: skip
             return {"hallazgos": hallazgos}
         try:
             juicio = self._modelo.estructurar(
-                instrucciones=f"{_INSTR_ALCANCE}\nRequerimiento: {s['requerimiento']}",
+                instrucciones=f"{_INSTR_ALCANCE}\nRequerimiento: {state['requerimiento']}",
                 contenido_no_confiable=contexto,
                 esquema=JuicioDeAlcance,
             )
@@ -236,10 +246,10 @@ class NodosEvaluacion:
                                       "No se pudo juzgar el alcance cualitativo.", "", Origen.REGLA))  # fmt: skip
         return {"hallazgos": hallazgos}
 
-    def decidir(self, s: EstadoEvaluacion) -> dict:
+    def decidir(self, state: EstadoEvaluacion) -> dict[str, Any]:
         """Decisión en código: solo hallazgos que descartan, o error de lectura -> revisión humana."""
-        hallazgos = s.get("hallazgos", [])
-        if s.get("error_de_lectura"):
+        hallazgos = state.get("hallazgos", [])
+        if state.get("error_de_lectura"):
             veredicto = Veredicto.PENDIENTE_DE_REVISION
         elif any(h.descarta for h in hallazgos):
             veredicto = Veredicto.DESCARTADA
@@ -247,4 +257,8 @@ class NodosEvaluacion:
             veredicto = Veredicto.PENDIENTE_DE_REVISION
         else:
             veredicto = Veredicto.VALIDA
-        return {"resultado": ResultadoEvaluacion(s["propuesta_id"], veredicto, tuple(hallazgos), s.get("extraccion"))}
+        return {
+            "resultado": ResultadoEvaluacion(
+                state["propuesta_id"], veredicto, tuple(hallazgos), state.get("extraccion")
+            )
+        }

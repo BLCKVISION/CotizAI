@@ -6,10 +6,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
 
-from evaluador.application.ports.salida import ProyectoRepositorio
+from evaluador.application.ports.salida import Collection, ProyectoRepositorio
 from evaluador.application.use_cases.evaluate_project import ProjectEvaluationRepository
 from evaluador.application.use_cases.gestion import Gestion
 from evaluador.domain.errores import NoEncontrado
+from evaluador.domain.gestion import Proveedor
 from evaluador.domain.identidad import Permiso, Usuario
 from evaluador.domain.project_evaluation import ProjectEvaluation
 from evaluador.domain.supplier_history import SupplierRecord, build_directory
@@ -21,7 +22,12 @@ class ArchivingEvaluations:
     Only a new run is archived: removing a file from the current result keeps its date, so it adds nothing.
     """
 
-    def __init__(self, current, runs, new_id: Callable[[], str]) -> None:
+    def __init__(
+        self,
+        current: Collection[ProjectEvaluation],
+        runs: Collection[ProjectEvaluation],
+        new_id: Callable[[], str],
+    ) -> None:
         self._current, self._runs, self._new_id = current, runs, new_id
 
     def guardar(self, entidad: ProjectEvaluation) -> None:
@@ -92,7 +98,12 @@ class SupplierDirectory:
 
 
 class GetSupplierDirectory:
-    def __init__(self, projects: ProyectoRepositorio, evaluations: ProjectEvaluationRepository, suppliers) -> None:
+    def __init__(
+        self,
+        projects: ProyectoRepositorio,
+        evaluations: ProjectEvaluationRepository,
+        suppliers: Collection[Proveedor],
+    ) -> None:
         self._projects, self._evaluations, self._suppliers = projects, evaluations, suppliers
 
     def execute(self, actor: Usuario) -> SupplierDirectory:

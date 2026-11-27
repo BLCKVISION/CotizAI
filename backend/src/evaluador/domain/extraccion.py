@@ -66,7 +66,7 @@ class Linea(_Base):
 
     @model_validator(mode="after")
     def _included_unit_price_is_zero(self) -> Linea:
-        """"Included" as the unit price of a line that totals zero is a price of zero, not an unreadable amount."""
+        """ "Included" as the unit price of a line that totals zero is a price of zero, not an unreadable amount."""
         price, total = self.precio_unitario, self.total_linea
         if price is not None and total is not None and _is_zero(total.valor) and _means_included(price.valor):
             self.precio_unitario = Monto(literal=price.literal, valor="0")

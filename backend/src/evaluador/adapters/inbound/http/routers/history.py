@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Query, Request, Response
 
@@ -18,7 +18,7 @@ router = APIRouter(tags=["history"])
 Session = Annotated[SesionAutenticada, Depends(sesion_actual)]  # each use case checks the permission
 
 
-def _record(record: SupplierRecord) -> dict:
+def _record(record: SupplierRecord) -> dict[str, Any]:
     registration = record.registration
     return {
         "key": record.key,
@@ -33,13 +33,13 @@ def _record(record: SupplierRecord) -> dict:
 
 
 @router.get("/suppliers/history")
-def supplier_directory(request: Request, session: Session) -> dict:
+def supplier_directory(request: Request, session: Session) -> dict[str, Any]:
     directory = request.app.state.contenedor.supplier_directory.execute(session.usuario)
     return {"restricted": directory.restricted, "suppliers": [_record(r) for r in directory.records]}
 
 
 @router.get("/proyectos/{proyecto_id}/evaluation-runs")
-def evaluation_runs(proyecto_id: ProyectoId, request: Request, session: Session) -> list[dict]:
+def evaluation_runs(proyecto_id: ProyectoId, request: Request, session: Session) -> list[dict[str, Any]]:
     return [asdict(r) for r in request.app.state.contenedor.evaluation_history.list(session.usuario, proyecto_id)]
 
 

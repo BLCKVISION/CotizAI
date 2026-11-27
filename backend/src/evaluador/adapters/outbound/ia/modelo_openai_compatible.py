@@ -22,26 +22,34 @@ class ModeloOpenAICompatible:
         self._http = httpx.Client(base_url=base_url.rstrip("/"), headers=cab, timeout=timeout)
         self._modelo = modelo
 
-    def estructurar(
-        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel], temperature: float = 0
-    ):
-        r = post_with_retry(lambda: self._http.post(
-            "/chat/completions",
-            json={
-                "model": self._modelo,
-                "temperature": temperature,
-                "max_tokens": MAX_ANSWER_TOKENS,
-                "response_format": {"type": "json_object"},
-                "messages": construir_mensajes(instrucciones, contenido_no_confiable, esquema),
-            },
-        ))
+    def estructurar[M: BaseModel](
+        self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[M], temperature: float = 0
+    ) -> M:
+        r = post_with_retry(
+            lambda: self._http.post(
+                "/chat/completions",
+                json={
+                    "model": self._modelo,
+                    "temperature": temperature,
+                    "max_tokens": MAX_ANSWER_TOKENS,
+                    "response_format": {"type": "json_object"},
+                    "messages": construir_mensajes(instrucciones, contenido_no_confiable, esquema),
+                },
+            )
+        )
         r.raise_for_status()
         choice = r.json()["choices"][0]
         try:
             return validate_reply(choice["message"]["content"] or "", esquema)
         except (ValueError, json.JSONDecodeError):
             # finish_reason "length" means the answer was cut off by the token cap: the JSON is incomplete, not wrong.
-            _log.warning("respuesta_no_valida", extra={"finish_reason": choice.get("finish_reason"), "caracteres": len(choice["message"]["content"] or "")})
+            _log.warning(
+                "respuesta_no_valida",
+                extra={
+                    "finish_reason": choice.get("finish_reason"),
+                    "caracteres": len(choice["message"]["content"] or ""),
+                },
+            )
             raise
 
     def estructurar_imagen(
