@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import PurePath
 
 from evaluador.application.ports.agente import ModeloConVision
@@ -10,6 +11,7 @@ from evaluador.domain.errores import DatoInvalido
 
 from .imagen import leer_imagen
 from .pdf import leer_pdf
+from .pdf_scanned import read_scanned_pages
 from .xlsx import leer_xlsx
 
 MAX_BYTES = 25 * 1024 * 1024
@@ -44,7 +46,12 @@ def leer_documento(nombre: str, datos: bytes, vision: ModeloConVision | None = N
     if _tipo_por_contenido(datos) != esperado:
         raise DatoInvalido("El contenido del archivo no corresponde a su extensión.")
     if esperado == "pdf":
-        return leer_pdf(datos)
+        content = leer_pdf(datos)
+        if not content.scanned_pages:
+            return content
+        if vision is None:
+            return replace(content, incomplete=bool(content.texto.strip()))
+        return read_scanned_pages(datos, content, vision)
     if esperado == "xlsx":
         return leer_xlsx(datos)
     if vision is None:

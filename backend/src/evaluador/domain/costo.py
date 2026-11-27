@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from .extraccion import ExtraccionPropuesta, Monto
-from .moneda import TasaDeCambio, convertir
+from .moneda import TasaDeCambio, convertir, normalize_currency
 from .montos import a_centavos, base_de, leer_monto
 from .reglas.alcance import normalizar_categoria
 
@@ -110,10 +110,6 @@ def _pasos_de_impuestos(e: ExtraccionPropuesta, incluidos: bool) -> list[PasoDeC
     return pasos
 
 
-def _normalizar_moneda(moneda: str | None) -> str | None:
-    return (moneda.strip().upper() or None) if moneda else None
-
-
 def calcular_costo_real(e: ExtraccionPropuesta) -> CostoReal:
     base = base_de(e)
     origen = "subtotal declarado" if leer_monto(e.totales.subtotal) is not None else "suma de las líneas"
@@ -144,7 +140,7 @@ def calcular_costo_real(e: ExtraccionPropuesta) -> CostoReal:
                     f"el documento declara {declarado} y lo desglosado no lo explica",
                 )
             )
-    return CostoReal(moneda=_normalizar_moneda(e.moneda), pasos=tuple(pasos))
+    return CostoReal(moneda=normalize_currency(e.moneda), pasos=tuple(pasos))
 
 
 def convertir_costo(costo: CostoReal, moneda_destino: str, tasas: Iterable[TasaDeCambio]) -> CostoConvertido:

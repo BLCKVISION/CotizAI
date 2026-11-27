@@ -24,7 +24,9 @@ class DtoSalida(BaseModel):
 
 # ---------- Sesiones ----------
 class IniciarSesionDto(DtoEntrada):
-    correo: Annotated[str, Field(min_length=3, max_length=254, pattern=r"^([^@\s]+@[^@\s]+\.[^@\s]+|[A-Za-z0-9._-]{3,64})$")]  # email or plain username
+    correo: Annotated[
+        str, Field(min_length=3, max_length=254, pattern=r"^([^@\s]+@[^@\s]+\.[^@\s]+|[A-Za-z0-9._-]{3,64})$")
+    ]  # email or plain username
     contrasena: Annotated[SecretStr, Field(min_length=1, max_length=128)]
 
 

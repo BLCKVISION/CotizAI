@@ -14,6 +14,20 @@ from .montos import a_centavos
 
 MONEDA_PIVOTE = "VES"  # el BCV publica sus tasas contra el bolívar
 _CODIGO = re.compile(r"^[A-Z]{3}$")
+# How quotations (and the models that transcribe them) usually write a currency.
+_ALIASES = {
+    "BS": "VES", "BSS": "VES", "BSD": "VES", "VEF": "VES", "BOLIVAR": "VES", "BOLIVARES": "VES",
+    "$": "USD", "US$": "USD", "USD$": "USD", "DOLAR": "USD", "DOLARES": "USD", "€": "EUR", "EURO": "EUR",
+    "EUROS": "EUR",
+}  # fmt: skip
+
+
+def normalize_currency(value: str | None) -> str | None:
+    """ISO code for a currency as written in a document, or None when it is not stated."""
+    if not value:
+        return None
+    key = value.strip().upper().replace(".", "").replace(" ", "").replace("Í", "I").replace("Ó", "O")
+    return _ALIASES.get(key, key) or None
 
 
 class OrigenDeTasa(StrEnum):

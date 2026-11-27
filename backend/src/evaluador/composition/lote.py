@@ -12,6 +12,7 @@ from evaluador.adapters.outbound.ia.fabrica import crear_modelo
 from evaluador.adapters.outbound.memory.indice_vectorial import IndiceEnMemoria
 from evaluador.application.use_cases.evaluar_archivo import EvaluarArchivo
 from evaluador.application.use_cases.lote import ProcesarLote
+from evaluador.composition.ai import market_search_for
 from evaluador.composition.configuracion import Configuracion
 
 
@@ -24,7 +25,7 @@ def construir_lote(config: Configuracion, carpeta: Path) -> ProcesarLote:
         leer=lambda nombre, datos: leer_documento(nombre, datos, vision),  # type: ignore[arg-type]
         embebedor=embebedor,
         indice=indice,
-        motor=MotorLangGraph(modelo, embebedor, indice),
+        motor=MotorLangGraph(modelo, embebedor, indice, market_search_for(config)),
         modelo=modelo,
         requerimiento=config.lote_requerimiento,
         id_fragmento=lambda: str(uuid.uuid4()),

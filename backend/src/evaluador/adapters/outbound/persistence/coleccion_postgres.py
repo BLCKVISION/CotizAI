@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 import psycopg
 from pydantic import TypeAdapter
@@ -26,7 +26,7 @@ def preparar_esquema(url: str) -> None:
         c.execute(_ESQUEMA)
 
 
-class ColeccionPostgres(Generic[T]):
+class ColeccionPostgres[T]:
     def __init__(self, url: str, tipo: str, clase: type[T]) -> None:
         self._url, self._tipo = url, tipo
         self._adaptador: TypeAdapter[T] = TypeAdapter(clase)

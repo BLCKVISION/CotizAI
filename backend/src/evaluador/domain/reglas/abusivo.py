@@ -14,6 +14,7 @@ from decimal import Decimal
 from evaluador.domain.errores import DatoInvalido
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severidad
 from evaluador.domain.extraccion import ExtraccionPropuesta
+from evaluador.domain.moneda import normalize_currency
 from evaluador.domain.montos import base_de, leer_monto
 
 _FUERA = r"(exterior|extranjero|fuera\s+del\s+pa[ií]s|fuera\s+de\s+venezuela|abroad|overseas)"
@@ -57,6 +58,7 @@ class ReferenciaDeMercado:
     precio_unitario: Decimal
     moneda: str
     fuentes: int  # cuántas fuentes independientes respaldan el precio
+    links: tuple[str, ...] = ()  # where the price was found, so a person can check it
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,7 +95,7 @@ def _sobreprecios(
         cita = ln.evidencia.texto or ln.descripcion
         if precio is None or ref.precio_unitario <= 0:
             continue  # el precio ilegible ya lo reporta la aritmética
-        if not e.moneda or e.moneda.strip().upper() != ref.moneda.strip().upper():
+        if not e.moneda or normalize_currency(e.moneda) != normalize_currency(ref.moneda):
             hallazgos.append(
                 _hallazgo(
                     f"Línea {n}: referencia de mercado en {ref.moneda} y propuesta en "
@@ -112,6 +114,8 @@ def _sobreprecios(
                 f"Línea {n}: precio {precio} supera en {exceso.quantize(Decimal('0.1'))} % al de mercado "
                 f"({ref.precio_unitario}; umbral {_pct(p.umbral_sobreprecio)} %)."
             )
+            if ref.links:
+                motivo += f" Fuentes: {', '.join(ref.links[:3])}."
             if ref.fuentes >= p.min_fuentes:
                 hallazgos.append(_hallazgo(motivo, cita))
             else:

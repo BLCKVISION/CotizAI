@@ -76,3 +76,22 @@ def test_falla_si_la_carpeta_del_lote_no_existe(tmp_path):
         )
         != 0
     )
+
+
+def test_requirement_can_come_from_a_file_and_the_package_folder_is_rejected(tmp_path):
+    r, _ = repo(tmp_path)
+    package = tmp_path / "paquete"
+    (package / "propuestas").mkdir(parents=True)
+    (package / "propuestas" / "A.pdf").write_bytes(b"x")
+    statement = package / "proyecto.txt"
+    statement.write_text("Dotar 20 aulas")
+    seen = []
+
+    def factory(config):
+        seen.append(config.lote_requerimiento)
+        return fabrica(config)
+
+    out = ["--salida", str(tmp_path / "salida.json"), "--requerimiento-archivo", str(statement)]
+    assert principal(["--lote", str(package), *out], fabrica=factory, directorio_git=r) == 2
+    assert principal(["--lote", str(package / "propuestas"), *out], fabrica=factory, directorio_git=r) == 0
+    assert seen == ["Dotar 20 aulas"]

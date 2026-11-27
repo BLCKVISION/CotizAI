@@ -66,7 +66,9 @@ def validar_aritmetica(e: ExtraccionPropuesta) -> list[Hallazgo]:
             esperado = suma + sum((i for i in impuestos_sueltos if i is not None), Decimal(0))
             if esperado != declarado:
                 hallazgos.append(
-                    _hallazgo(f"Líneas e impuestos suman {esperado}, el total declarado es {declarado}.", total_m.literal)
+                    _hallazgo(
+                        f"Líneas e impuestos suman {esperado}, el total declarado es {declarado}.", total_m.literal
+                    )
                 )
     total = _d(total_m) if total_m else None
     if total_m and total is not None and sub is not None:

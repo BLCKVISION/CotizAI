@@ -44,6 +44,11 @@ class Configuracion(BaseSettings):
         "protector eléctrico, con instalación, garantía y soporte."
     )
 
+    # --- Platform evaluation and optional web price search ---
+    evaluation_parallelism: int = 3  # proposals evaluated at the same time
+    market_search_enabled: bool = False  # sends product descriptions to a web search model
+    market_search_model: str = "perplexity/sonar"
+
     @property
     def es_produccion(self) -> bool:
         return self.entorno.strip().lower() in {"produccion", "production", "prod"}

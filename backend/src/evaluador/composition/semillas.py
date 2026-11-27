@@ -27,7 +27,13 @@ def sembrar_demo(
         h = c.hasheador.hashear(clave_por_rol)
         for rol in Rol:
             c.usuarios.guardar(
-                Usuario(id=_id_estable(codigo_tenant, rol), tenant_id=tenant.id, correo=f"{rol}@demo.local", hash_contrasena=h, rol=rol)
+                Usuario(
+                    id=_id_estable(codigo_tenant, rol),
+                    tenant_id=tenant.id,
+                    correo=f"{rol}@demo.local",
+                    hash_contrasena=h,
+                    rol=rol,
+                )
             )
     if cuenta_extra:
         correo, clave = cuenta_extra

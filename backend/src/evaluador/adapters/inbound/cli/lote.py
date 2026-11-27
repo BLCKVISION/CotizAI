@@ -14,6 +14,7 @@ from typing import Any
 
 from evaluador.application.use_cases.lote import ProcesarLote, ResultadoLote
 from evaluador.composition.configuracion import Configuracion
+from evaluador.domain.errores import ErrorDeDominio
 
 RETO = "propuesta_servicios"
 _log = logging.getLogger("evaluador.lote")
@@ -57,7 +58,33 @@ def _documento(r: ResultadoLote, commit: str, repositorio: str) -> dict[str, Any
 def _archivos(carpeta: Path) -> list[str]:
     if not carpeta.is_dir():
         raise ErrorDeLote(f"La carpeta del lote no existe: {carpeta}")
-    return sorted(p.name for p in carpeta.iterdir() if p.is_file() and not p.name.startswith("."))
+    if (carpeta / "propuestas").is_dir():
+        raise ErrorDeLote(f"Esa es la carpeta del paquete: pase --lote {carpeta / 'propuestas'}")
+    archivos = sorted(p.name for p in carpeta.iterdir() if p.is_file() and not p.name.startswith("."))
+    if not archivos:
+        raise ErrorDeLote(f"La carpeta del lote no tiene archivos: {carpeta}")
+    return archivos
+
+
+_MAX_REQUIREMENT_CHARS = 8_000
+
+
+def _read_requirement(path: Path) -> str:
+    """Project statement from a TXT/MD file or any document with a text layer (e.g. proyecto.pdf)."""
+    if not path.is_file():
+        raise ErrorDeLote(f"No existe el archivo del requerimiento: {path}")
+    try:
+        if path.suffix.lower() in {".txt", ".md"}:
+            text = path.read_text("utf-8")
+        else:
+            from evaluador.adapters.outbound.extraccion.lector import leer_documento
+
+            text = leer_documento(path.name, path.read_bytes()).texto
+    except (ErrorDeDominio, UnicodeDecodeError) as exc:
+        raise ErrorDeLote(f"No se pudo leer el requerimiento {path.name}: {exc}") from exc
+    if not text.strip():
+        raise ErrorDeLote(f"El requerimiento {path.name} no tiene texto legible (¿está escaneado?).")
+    return text.strip()[:_MAX_REQUIREMENT_CHARS]
 
 
 def _construir_real(config: Configuracion, carpeta: Path) -> ProcesarLote:
@@ -79,6 +106,9 @@ def principal(
     ap.add_argument("--paralelo", type=int, default=cfg.lote_paralelo, help="Archivos procesados a la vez.")
     ap.add_argument("--reintentos", type=int, default=cfg.lote_reintentos, help="Reintentos por archivo que falla.")
     ap.add_argument("--repositorio", default=cfg.lote_repositorio, help="Ruta/URL del repositorio del evento.")
+    ap.add_argument(
+        "--requerimiento-archivo", type=Path, help="PDF o TXT con el requerimiento del proyecto (p. ej. proyecto.pdf)."
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=cfg.nivel_de_log, stream=sys.stderr, format="%(asctime)s %(levelname)s %(message)s")
@@ -90,6 +120,8 @@ def principal(
         repositorio = args.repositorio or _git(git, "remote", "get-url", "origin")
         archivos = _archivos(args.lote)
         cfg = cfg.model_copy(update={"lote_paralelo": args.paralelo, "lote_reintentos": args.reintentos})
+        if args.requerimiento_archivo:
+            cfg = cfg.model_copy(update={"lote_requerimiento": _read_requirement(args.requerimiento_archivo)})
         lote = fabrica(cfg) if fabrica else _construir_real(cfg, args.lote)
         resultado = lote.ejecutar(archivos)
     except ErrorDeLote as exc:

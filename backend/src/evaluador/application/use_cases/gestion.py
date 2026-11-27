@@ -84,6 +84,17 @@ class Gestion:
         self._auditar(actor, "propuesta_descargada", f"{proyecto_id}:{p.archivo}")
         return p, contenido
 
+    def read_for_evaluation(self, actor: Usuario, project_id: str, proposal_id: str) -> bytes:
+        """Content for the engine. Needs permission to evaluate, not to download, and verifies integrity."""
+        actor.exigir(Permiso.INICIAR_EVALUACION)
+        proposal = self._propuesta(actor, project_id, proposal_id)
+        if self._almacen is None:
+            raise ServicioNoDisponible("El almacén cifrado no está configurado.")
+        content = self._almacen.leer(actor.tenant_id, proposal.id)
+        if hashlib.sha256(content).hexdigest() != proposal.sha256:
+            raise ServicioNoDisponible(f"El archivo {proposal.archivo} no coincide con su huella registrada.")
+        return content
+
     def eliminar_propuesta(self, actor: Usuario, proyecto_id: str, propuesta_id: str) -> None:
         actor.exigir(Permiso.CARGAR_DOCUMENTOS)
         self._exigir_recepcion(self._proyecto(actor, proyecto_id))

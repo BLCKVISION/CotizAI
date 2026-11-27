@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
 
-class ColeccionEnMemoria(Generic[T]):
+class ColeccionEnMemoria[T]:
     def __init__(self) -> None:
         self._datos: dict[tuple[str, str], T] = {}
 

@@ -80,3 +80,15 @@ def test_oversized_responses_are_refused():
 def test_redirects_are_not_followed():
     with pytest.raises(TasaNoDisponible):
         source(lambda r: httpx.Response(302, headers={"location": "http://169.254.169.254/"})).fetch()
+
+
+def test_current_markup_with_classes_and_labelled_value_date():
+    """Structure served by bcv.org.ve in November 2026."""
+    html = """
+    <span content="2026-10-01T00:00:00-04:00">otra publicación</span>
+    <div id="dolar" class="col-sm-12 col-xs-12 "><div class="field-content">
+      <div class="centrado textp"> <strong class="strong-tb">926,35920000</strong>  </div></div></div>
+    <div class="pull-right">Fecha Valor: <span property="dc:date" content="2026-11-27T00:00:00-04:00">x</span></div>
+    """
+    [rate] = parse_bcv_rates(html, date(2026, 11, 26))
+    assert (rate.de, rate.valor, rate.fecha) == ("USD", Decimal("926.35920000"), date(2026, 11, 27))

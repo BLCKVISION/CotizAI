@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from evaluador.application.ports.agente import Embebedor, IndiceVectorial, ModeloDeLenguaje
+from evaluador.application.ports.market_search import MarketPriceFinder
 from evaluador.domain.contrato import validar_contrato
 from evaluador.domain.evaluacion import (
     CodigoHallazgo,
@@ -15,7 +16,7 @@ from evaluador.domain.evaluacion import (
     Veredicto,
 )
 from evaluador.domain.extraccion import ExtraccionPropuesta, JuicioDeAlcance
-from evaluador.domain.reglas.abusivo import validar_abuso
+from evaluador.domain.reglas.abusivo import ReferenciaDeMercado, validar_abuso
 from evaluador.domain.reglas.alcance import validar_alcance_fijo
 from evaluador.domain.reglas.aritmetica import validar_aritmetica
 from evaluador.domain.reglas.calidad import validar_calidad
@@ -43,9 +44,24 @@ _INSTR_ALCANCE = (
 
 class NodosEvaluacion:
     def __init__(
-        self, modelo: ModeloDeLenguaje, embebedor: Embebedor, indice: IndiceVectorial, k_contexto: int = 6
+        self,
+        modelo: ModeloDeLenguaje,
+        embebedor: Embebedor,
+        indice: IndiceVectorial,
+        k_contexto: int = 6,
+        market_finder: MarketPriceFinder | None = None,
     ) -> None:
         self._modelo, self._embebedor, self._indice, self._k = modelo, embebedor, indice, k_contexto
+        self._market_finder = market_finder
+
+    def _market_references(self, extraction: ExtraccionPropuesta) -> dict[int, ReferenciaDeMercado]:
+        if self._market_finder is None:
+            return {}
+        try:
+            return self._market_finder.find_references(extraction)
+        except Exception as exc:  # noqa: BLE001 - an optional web lookup must never break an evaluation
+            _log.warning("market_search_failed", extra={"tipo": type(exc).__name__})
+            return {}
 
     def recuperar_contexto(self, s: EstadoEvaluacion) -> dict:
         """RAG: evidencia más cercana al requerimiento, dentro del tenant y de la propuesta."""
@@ -85,9 +101,14 @@ class NodosEvaluacion:
     def reglas_tecnicas(self, s: EstadoEvaluacion) -> dict:
         """COMPAT, CAPACIDAD, CALIDAD y ABUSIVO: reglas deterministas sobre la extracción (sin modelo)."""
         e = s["extraccion"]
-        # Sin precios de mercado todavía (búsqueda web pendiente): ABUSIVO solo juzga flete y cláusulas.
+        # Sin precios de mercado (búsqueda desactivada o sin resultados), ABUSIVO solo juzga flete y cláusulas.
         return {
-            "hallazgos": [*validar_compatibilidad(e), *validar_capacidad(e), *validar_calidad(e), *validar_abuso(e)]
+            "hallazgos": [
+                *validar_compatibilidad(e),
+                *validar_capacidad(e),
+                *validar_calidad(e),
+                *validar_abuso(e, referencias=self._market_references(e)),
+            ]
         }
 
     def alcance(self, s: EstadoEvaluacion) -> dict:

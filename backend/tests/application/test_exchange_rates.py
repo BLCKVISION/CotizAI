@@ -150,3 +150,16 @@ def test_asking_bcv_twice_the_same_day_does_not_duplicate():
 def test_negative_max_age_is_rejected():
     with pytest.raises(DatoInvalido):
         resolver(InMemoryExchangeRates(), Source([]), max_age=-1)
+
+
+def test_bcv_value_date_of_the_next_business_day_is_in_force():
+    repo = InMemoryExchangeRates()
+    monday = bcv(day=date(2026, 11, 30))  # published on Thursday the 26th with a later value date
+    assert resolver(repo, Source([monday])).execute("t1") == [monday]
+
+
+def test_manual_rates_never_apply_before_their_date():
+    repo = InMemoryExchangeRates()
+    repo.save("t1", TasaDeCambio("USD", "VES", Decimal("40"), "x", date(2026, 11, 27), OrigenDeTasa.MANUAL))
+    with pytest.raises(TasaNoDisponible):
+        resolver(repo, Source(None)).execute("t1")

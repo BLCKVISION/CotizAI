@@ -17,4 +17,4 @@ _INSTRUCCIONES = (
 def leer_imagen(datos: bytes, mime: str, vision: ModeloConVision) -> ContenidoLeido:
     t = vision.estructurar_imagen(instrucciones=_INSTRUCCIONES, imagen=datos, mime=mime, esquema=TranscripcionImagen)
     avisos = ["imagen ilegible: requiere revisión humana"] if t.ilegible else []
-    return ContenidoLeido(t.texto.strip(), avisos)
+    return ContenidoLeido(t.texto.strip(), avisos, incomplete=t.ilegible)

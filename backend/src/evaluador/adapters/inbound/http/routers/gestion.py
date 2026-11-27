@@ -63,7 +63,11 @@ def estadisticas(request: Request, s: Sesion) -> dict:
 def auditoria(request: Request, s: Sesion) -> dict:
     g = _g(request)
     eventos = g.auditoria(s.usuario)
-    return {"integra": cadena_integra(eventos), "total": len(eventos), "eventos": [_evento(g, e) for e in eventos[:200]]}
+    return {
+        "integra": cadena_integra(eventos),
+        "total": len(eventos),
+        "eventos": [_evento(g, e) for e in eventos[:200]],
+    }
 
 
 @router.get("/proveedores")

@@ -17,6 +17,8 @@ from evaluador.domain.identidad import Permiso, Usuario
 from evaluador.domain.moneda import OrigenDeTasa, TasaDeCambio
 
 _log = logging.getLogger("evaluador.tasas")
+# The BCV publishes in the evening with the value date of the next business day (up to 4 days over a long weekend).
+_BCV_MAX_DAYS_AHEAD = 4
 
 
 class RegisterManualRate:
@@ -64,9 +66,11 @@ class ResolveRates:
         except TasaNoDisponible:
             _log.warning("tasa_automatica_no_disponible")  # se usa la última vigente registrada
         today = self._clock.ahora().date()
-        in_force = [
-            r for r in self._repository.list_for(tenant_id) if 0 <= (today - r.fecha).days <= self._max_age_days
-        ]
+        in_force = [r for r in self._repository.list_for(tenant_id) if self._is_in_force(r, today)]
         if not in_force:
             raise TasaNoDisponible("No hay una tasa vigente. Registre una manualmente con su fuente y fecha.")
         return in_force
+
+    def _is_in_force(self, rate: TasaDeCambio, today: date) -> bool:
+        earliest = -_BCV_MAX_DAYS_AHEAD if rate.origen is OrigenDeTasa.BCV else 0
+        return earliest <= (today - rate.fecha).days <= self._max_age_days

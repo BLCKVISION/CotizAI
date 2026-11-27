@@ -36,6 +36,7 @@ def leer_pdf(datos: bytes, *, max_paginas: int = MAX_PAGINAS) -> ContenidoLeido:
     secciones: list[str] = []
     ocultos: list[str] = []
     avisos: list[str] = []
+    scanned: list[int] = []
     try:
         with pdfplumber.open(io.BytesIO(datos)) as pdf:
             if len(pdf.pages) > max_paginas:
@@ -48,6 +49,8 @@ def leer_pdf(datos: bytes, *, max_paginas: int = MAX_PAGINAS) -> ContenidoLeido:
                     secciones.append(f"[p.{n}]\n{texto}")
                 elif not pagina.chars:
                     avisos.append(f"p.{n} sin texto (¿escaneada?)")
+                    if pagina.images or pagina.curves or pagina.rects:  # a truly blank page has nothing to read
+                        scanned.append(n)
                 for motivo in sorted({m for m in motivos.values() if m}):
                     oculto = pagina.filter(
                         lambda o, m=motivo, mt=motivos: o.get("object_type") == "char" and mt.get(id(o)) == m
@@ -59,4 +62,4 @@ def leer_pdf(datos: bytes, *, max_paginas: int = MAX_PAGINAS) -> ContenidoLeido:
         raise
     except Exception as exc:  # noqa: BLE001 - PDF corrupto, cifrado o malicioso: error de archivo, sin detalle interno
         raise DatoInvalido("No se pudo leer el PDF.") from exc
-    return ContenidoLeido("\n".join([*secciones, *ocultos]), avisos)
+    return ContenidoLeido("\n".join([*secciones, *ocultos]), avisos, scanned_pages=tuple(scanned))

@@ -17,6 +17,7 @@ select = ["E", "F", "I", "B", "UP", "S"]
 ignore = ["S101"]
 
 [tool.ruff.lint.per-file-ignores]
+"scripts/**" = ["E402"]  # adds src/ to the path before importing
 "tests/**" = ["S105", "S106", "S603", "S607", "E702", "E501"]  # datos ficticios y tablas compactas
 
 [tool.mypy]
@@ -25,5 +26,5 @@ strict = true
 mypy_path = "src"
 
 [[tool.mypy.overrides]]
-module = ["openpyxl.*", "pdfplumber.*"]
+module = ["openpyxl.*", "pdfplumber.*", "pypdfium2.*"]
 ignore_missing_imports = true
