@@ -24,6 +24,8 @@ _STATUS_BY_ERROR: dict[type[e.DomainError], int] = {
     e.NotFound: 404,
     e.InvalidTransition: 409,
     e.InvalidData: 422,
+    e.PayloadTooLarge: 413,
+    e.ServiceUnavailable: 503,
 }
 
 
