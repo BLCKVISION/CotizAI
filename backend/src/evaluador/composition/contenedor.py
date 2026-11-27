@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -16,8 +17,13 @@ from evaluador.adapters.outbound.memory.repositorios import (
     TenantsEnMemoria,
     UsuariosEnMemoria,
 )
-from evaluador.adapters.outbound.persistence.coleccion_postgres import ColeccionPostgres, preparar_esquema
+from evaluador.adapters.outbound.persistence.coleccion_postgres import (
+    ColeccionPostgres,
+    encrypt_plain_records,
+    preparar_esquema,
+)
 from evaluador.adapters.outbound.persistence.exchange_rate_collection import CollectionExchangeRates, RateRecord
+from evaluador.adapters.outbound.persistence.record_cipher import RecordCipher
 from evaluador.adapters.outbound.security.argon2_hasheador import Argon2Hasheador
 from evaluador.adapters.outbound.security.tokens import IdsUuid, JwtTokens, RelojSistema
 from evaluador.application.ports.agente import ModeloConVision
@@ -50,6 +56,9 @@ from evaluador.domain.identidad import PoliticaDeSesion
 from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
 from evaluador.domain.proyecto import Proyecto
 
+_log = logging.getLogger("evaluador.composition")
+
+
 @dataclass(frozen=True, slots=True)
 class Contenedor:
     iniciar_sesion: IniciarSesion
@@ -79,6 +88,15 @@ class Contenedor:
     ids: IdsUuid
 
 
+def _record_cipher(config: Configuracion) -> RecordCipher | None:
+    key = config.clave_cifrado.get_secret_value() if config.clave_cifrado else ""
+    if not key:
+        if config.es_produccion:
+            _log.warning("database_records_not_encrypted")
+        return None
+    return RecordCipher(key)
+
+
 def _colecciones(config: Configuracion | None) -> dict:
     tipos = {
         "proyectos": Proyecto,
@@ -94,7 +112,10 @@ def _colecciones(config: Configuracion | None) -> dict:
     if config is not None and config.persistencia == "postgres":
         url = config.base_de_datos_url.get_secret_value()
         preparar_esquema(url)
-        return {nombre: ColeccionPostgres(url, nombre, clase) for nombre, clase in tipos.items()}
+        cipher = _record_cipher(config)
+        if cipher is not None:
+            encrypt_plain_records(url, cipher)
+        return {nombre: ColeccionPostgres(url, nombre, clase, cipher) for nombre, clase in tipos.items()}
     return {nombre: ColeccionEnMemoria() for nombre in tipos}
 
 
