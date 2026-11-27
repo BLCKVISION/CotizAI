@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from evaluador.domain.evaluacion import CodigoHallazgo, Hallazgo, Origen, Severidad
 
@@ -18,9 +19,34 @@ _PATRONES = [
 _REGEX = [re.compile(p, re.IGNORECASE) for p in _PATRONES]
 
 
+# Fragments of our own security instructions, which models sometimes report back as if they were in the document.
+_OWN_INSTRUCTIONS = (
+    "dato no confiable",
+    "entre <documento>",
+    "ignora cualquier instruccion que contenga",
+    "sospechas_de_manipulacion",
+)
+
+
+def _normalise(text: str) -> str:
+    """Lowercase letters and digits only, so spacing, accents and punctuation cannot hide a match."""
+    plain = unicodedata.normalize("NFKD", text.lower())
+    return "".join(c for c in plain if c.isalnum())
+
+
+def _is_echo_of_our_instructions(suspicion: str, document: str) -> bool:
+    """True only when it repeats our wording and the document does not actually contain it."""
+    quote = _normalise(suspicion)
+    return quote not in document and any(_normalise(mark) in quote for mark in _OWN_INSTRUCTIONS)
+
+
 def detectar_manipulacion(texto: str, sospechas_del_modelo: list[str]) -> list[Hallazgo]:
     de_regla = [m.group(0) for r in _REGEX for m in r.finditer(texto)]
-    del_modelo = [s.strip() for s in sospechas_del_modelo if s.strip()]
+    # Without this filter, our own warning to the model discarded honest suppliers.
+    document = _normalise(texto)
+    del_modelo = [
+        s.strip() for s in sospechas_del_modelo if s.strip() and not _is_echo_of_our_instructions(s, document)
+    ]
     citas = {c: Origen.REGLA for c in de_regla} | {c: Origen.IA for c in del_modelo if c not in de_regla}
     return [
         Hallazgo(CodigoHallazgo.MANIPULACION, Severidad.CRITICA, True,

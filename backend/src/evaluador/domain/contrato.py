@@ -13,6 +13,10 @@ from decimal import Decimal, InvalidOperation
 from .extraccion import ExtraccionPropuesta, Monto
 
 _RUIDO = re.compile(r"[^\d.,\-+]")
+# Words suppliers write instead of a figure when something costs nothing extra.
+_ZERO_WORDS = re.compile(
+    r"\b(inclu[ií]d[oa]s?|gratis|gratuit[oa]|sin (costo|cargo)|bonificad[oa]|cortes[ií]a)\b", re.IGNORECASE
+)
 
 
 def _decimal(texto: str) -> Decimal | None:
@@ -35,6 +39,9 @@ def _interpretaciones(literal: str) -> set[Decimal]:
         candidatas.append(t.replace(mil, "").replace(dec, "."))
     elif punto >= 0 or coma >= 0:
         sep = "." if punto >= 0 else ","
+        head, _, tail = t.rpartition(sep)
+        if t.count(sep) > 1 and len(tail) == 2:  # `15,540,00`: same sign for thousands and cents
+            candidatas.append(f"{head.replace(sep, '')}.{tail}")
         candidatas.append(t.replace(sep, "") if t.count(sep) > 1 else t.replace(sep, "."))  # decimal (1 sola vez)
         candidatas.append(t.replace(sep, ""))  # miles
     else:
@@ -48,6 +55,16 @@ def literal_coincide(literal: str, valor: str) -> bool:
     return v is not None and v in _interpretaciones(literal)
 
 
+def _is_spreadsheet_formula(literal: str) -> bool:
+    return literal.lstrip().startswith("=")
+
+
+def _is_zero_in_words(monto: Monto) -> bool:
+    """«Incluido» read as 0 is faithful. Only zero is accepted: any other figure would be invented."""
+    has_digits = any(c.isdigit() for c in monto.literal)
+    return not has_digits and bool(_ZERO_WORDS.search(monto.literal)) and _decimal(monto.valor.strip()) == 0
+
+
 def _problema_de_monto(monto: Monto | None) -> str | None:
     if monto is None:
         return None
@@ -59,6 +76,10 @@ def _problema_de_monto(monto: Monto | None) -> str | None:
         )
     if _decimal(monto.valor.strip()) is None:
         return f"valor no numérico ({monto.valor!r}) para el literal {monto.literal!r}"
+    if _is_spreadsheet_formula(monto.literal):
+        return None  # the reader hands over the formula and its computed value; arithmetic rules still check it
+    if _is_zero_in_words(monto):
+        return None
     if not literal_coincide(monto.literal, monto.valor):
         return f"valor {monto.valor!r} no corresponde al literal {monto.literal!r}"
     return None

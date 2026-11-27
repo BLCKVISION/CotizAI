@@ -6,6 +6,11 @@ import httpx
 from pydantic import BaseModel
 
 from ._comun import construir_mensajes, extraer_json, imagen_base64, sistema_para_imagen
+from ._retry import post_with_retry
+
+
+# Without a cap the provider reserves the model's whole output window and may refuse a low-credit account (402).
+MAX_ANSWER_TOKENS = 8000
 
 
 class ModeloOpenAICompatible:
@@ -15,15 +20,16 @@ class ModeloOpenAICompatible:
         self._modelo = modelo
 
     def estructurar(self, *, instrucciones: str, contenido_no_confiable: str, esquema: type[BaseModel]):
-        r = self._http.post(
+        r = post_with_retry(lambda: self._http.post(
             "/chat/completions",
             json={
                 "model": self._modelo,
                 "temperature": 0,
+                "max_tokens": MAX_ANSWER_TOKENS,
                 "response_format": {"type": "json_object"},
                 "messages": construir_mensajes(instrucciones, contenido_no_confiable, esquema),
             },
-        )
+        ))
         r.raise_for_status()
         return esquema.model_validate(extraer_json(r.json()["choices"][0]["message"]["content"]))
 
@@ -31,11 +37,12 @@ class ModeloOpenAICompatible:
         self, *, instrucciones: str, imagen: bytes, mime: str, esquema: type[BaseModel]
     ) -> BaseModel:
         url = f"data:{mime};base64,{imagen_base64(imagen)}"
-        r = self._http.post(
+        r = post_with_retry(lambda: self._http.post(
             "/chat/completions",
             json={
                 "model": self._modelo,
                 "temperature": 0,
+                "max_tokens": MAX_ANSWER_TOKENS,
                 "response_format": {"type": "json_object"},
                 "messages": [
                     {"role": "system", "content": sistema_para_imagen(instrucciones, esquema)},
@@ -44,6 +51,6 @@ class ModeloOpenAICompatible:
                         {"type": "image_url", "image_url": {"url": url}}]},
                 ],
             },
-        )  # fmt: skip
+        ))  # fmt: skip
         r.raise_for_status()
         return esquema.model_validate(extraer_json(r.json()["choices"][0]["message"]["content"]))

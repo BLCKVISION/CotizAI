@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class _Base(BaseModel):
@@ -17,6 +17,17 @@ class _Base(BaseModel):
 class Monto(_Base):
     literal: str  # tal como aparece en el documento, p. ej. "1.100,00"
     valor: str  # normalizado con punto decimal, p. ej. "1100.00"
+
+
+def _blank_amount_as_missing(value: object) -> object:
+    """Models often answer `{"literal": null, "valor": null}` for an absent amount; that means `null`."""
+    if isinstance(value, dict):
+        parts = [value.get("literal"), value.get("valor")]
+        if all(part is None or str(part).strip().lower() in ("", "null", "none") for part in parts):
+            return None
+        if str(value.get("valor")).strip().lower() in ("null", "none"):
+            return None  # no figure was read, whatever the literal says
+    return value
 
 
 class Evidencia(_Base):
@@ -36,11 +47,32 @@ class Linea(_Base):
     evidencia: Evidencia = Field(default_factory=Evidencia)
     legibilidad: Literal["alta", "media", "baja"] = "alta"
 
+    _blank = field_validator("cantidad", "precio_unitario", "total_linea", mode="before")(_blank_amount_as_missing)
+
+    @field_validator("especificaciones", mode="before")
+    @classmethod
+    def _specs_as_text(cls, value: object) -> object:
+        """Specs are descriptive: a null or a number there must not make the whole proposal unreadable."""
+        if value is None:
+            return {}
+        if isinstance(value, dict):
+            return {str(k): str(v) for k, v in value.items() if v is not None}
+        return value
+
 
 class Totales(_Base):
     subtotal: Monto | None = None
     impuestos: list[Monto] = Field(default_factory=list)
     total: Monto | None = None
+
+    _blank = field_validator("subtotal", "total", mode="before")(_blank_amount_as_missing)
+
+    @field_validator("impuestos", mode="before")
+    @classmethod
+    def _drop_blank_taxes(cls, value: object) -> object:
+        if isinstance(value, list):
+            return [item for item in value if _blank_amount_as_missing(item) is not None]
+        return [] if value is None else value
 
 
 class Recargo(_Base):
