@@ -83,6 +83,17 @@ class Proyecto:
             moneda=moneda,
         )
 
+    @property
+    def was_awarded(self) -> bool:
+        """Closing without awarding requires a reason, so a closed project without one had been awarded."""
+        return self.estado is E.ADJUDICADO or (self.estado is E.CERRADO and not self.motivo_de_cierre)
+
+    def reopened_for_reception(self) -> Proyecto:
+        """Only for a project left with nothing evaluated; people cannot request this transition."""
+        if self.estado is not E.EN_REVISION_DEL_COMITE:
+            raise TransicionInvalida(f"No se puede reabrir un proyecto en '{self.estado}'.")
+        return replace(self, estado=E.EN_RECEPCION)
+
     def transicionar(self, destino: EstadoProyecto, motivo: str | None = None) -> Proyecto:
         if self.estado not in _TRANSICIONES.get(destino, frozenset()):
             raise TransicionInvalida(f"No se puede pasar de '{self.estado}' a '{destino}'.")

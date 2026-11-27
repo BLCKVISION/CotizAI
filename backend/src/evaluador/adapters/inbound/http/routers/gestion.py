@@ -112,7 +112,7 @@ def proposal_markdown(proyecto_id: ProyectoId, propuesta_id: ProyectoId, request
 
 @router.delete("/proyectos/{proyecto_id}/propuestas/{propuesta_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar(proyecto_id: ProyectoId, propuesta_id: ProyectoId, request: Request, s: Sesion) -> Response:
-    _g(request).eliminar_propuesta(s.usuario, proyecto_id, propuesta_id)
+    request.app.state.contenedor.delete_proposal.execute(s.usuario, proyecto_id, propuesta_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

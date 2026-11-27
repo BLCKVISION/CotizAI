@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
@@ -7,13 +7,16 @@ import { ErrorApi } from '@/core/api/cliente';
 import { useSesion } from '@/core/sesion/SesionProvider';
 import { BackButton } from '@/design/BackButton';
 import { CollapsibleCard } from '@/design/Collapsible';
-import { Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
+import { BotonIcono, Chip, Esqueleto, Icono, Insignia, Tarjeta, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { EncabezadoDePagina, FixedPage, Pagina } from '@/design/layout';
 import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 import { ProjectFlow } from '@/features/flow/ProjectFlow';
+import { Expediente } from '@/features/gestion/Expediente';
 import { Revision } from '@/features/gestion/Revision';
+import { DeleteProjectDialog } from '@/features/proyectos/DeleteProjectDialog';
+import { canBeDeleted } from '@/features/proyectos/deletion';
 import { obtenerProyectoApi, type Proyecto } from '@/features/proyectos/api';
 import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
@@ -91,7 +94,9 @@ function Dato({ icono, etiqueta, valor }: { icono: Parameters<typeof Icono>[0]['
 
 export default function DetalleProyecto() {
   const t = useTema();
+  const router = useRouter();
   const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
+  const [deleting, setDeleting] = useState(false);
   const { conSesion } = useSesion();
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -193,6 +198,10 @@ export default function DetalleProyecto() {
             <Chip key={x.id} etiqueta={x.etiqueta} seleccionado={pestana === x.id} onPress={() => setPestana(x.id)} />
           ))}
         </View>
+        {can(usuario?.rol, 'createProject') && canBeDeleted(proyecto) ? (
+          <BotonIcono nombre="trash-2" etiqueta="Eliminar proyecto" onPress={() => setDeleting(true)} />
+        ) : null}
+        <DeleteProjectDialog project={deleting ? proyecto : null} onClose={() => setDeleting(false)} onDeleted={() => router.replace('/proyectos')} />
       </View>
     </View>
   );
@@ -214,6 +223,7 @@ export default function DetalleProyecto() {
 
       {pestana === 'ficha' ? (
       <View style={{ gap: espacio.md }}>
+      <Expediente proyecto={proyecto} onCambio={() => void refresh()} />
       <CollapsibleCard title="Avance del proceso" detail={e.etiqueta} defaultOpen>
         <LineaDeTiempo actual={proyecto.estado} />
       </CollapsibleCard>

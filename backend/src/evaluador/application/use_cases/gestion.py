@@ -40,10 +40,6 @@ class Gestion:
             key=lambda p: p.archivo.lower(),
         )
 
-    def _exigir_recepcion(self, proyecto: Proyecto) -> None:
-        if proyecto.estado is not EstadoProyecto.EN_RECEPCION:
-            raise TransicionInvalida("Solo se modifican propuestas mientras el proyecto está en recepción.")
-
     def _require_open_for_uploads(self, proyecto: Proyecto) -> None:
         """New offers may arrive after an evaluation; removing evaluated evidence is still not allowed."""
         if proyecto.estado not in (EstadoProyecto.EN_RECEPCION, EstadoProyecto.EN_REVISION_DEL_COMITE):
@@ -100,14 +96,20 @@ class Gestion:
             raise ServicioNoDisponible(f"El archivo {proposal.archivo} no coincide con su huella registrada.")
         return content
 
-    def eliminar_propuesta(self, actor: Usuario, proyecto_id: str, propuesta_id: str) -> None:
+    def erase_file(self, tenant_id: str, proposal_id: str) -> None:
+        if self._almacen is not None:
+            self._almacen.eliminar(tenant_id, proposal_id)
+
+    def eliminar_propuesta(self, actor: Usuario, proyecto_id: str, propuesta_id: str) -> Propuesta:
+        """Removes the file and its record. Use `DeleteProposal`, which also drops the results."""
         actor.exigir(Permiso.CARGAR_DOCUMENTOS)
-        self._exigir_recepcion(self._proyecto(actor, proyecto_id))
+        self._require_open_for_uploads(self._proyecto(actor, proyecto_id))
         p = self._propuesta(actor, proyecto_id, propuesta_id)
         self._propuestas.eliminar(actor.tenant_id, p.id)
         if self._almacen is not None:
             self._almacen.eliminar(actor.tenant_id, p.id)
-        self._auditar(actor, "propuesta_eliminada", f"{proyecto_id}:{p.archivo}")
+        self._auditar(actor, "propuesta_eliminada", f"{proyecto_id}:{p.archivo}:{p.sha256}")
+        return p
 
     # ---------- Notas e historial ----------
     def notas_de(self, actor: Usuario, proyecto_id: str) -> list[Nota]:

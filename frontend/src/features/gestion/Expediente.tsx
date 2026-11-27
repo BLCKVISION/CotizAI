@@ -8,6 +8,7 @@ import { mensajeDeError, useDatos } from '@/core/useDatos';
 import { Aviso, Cargando, ErrorConReintento, Fila } from '@/design/bloques';
 import { CollapsibleCard } from '@/design/Collapsible';
 import { Boton, BotonIcono, Icono, type NombreIcono, Texto } from '@/design/componentes';
+import { ConfirmDialog } from '@/design/ConfirmDialog';
 import { useTema } from '@/design/tema';
 import { showToast } from '@/design/toastStore';
 import { espacio, radio } from '@/design/tokens';
@@ -90,13 +91,13 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
     onCambio?.();
   });
   const subir = (archivos: File[]) => void flow.upload(proyecto.id, archivos);
-  const [porEliminar, setPorEliminar] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<Propuesta | null>(null);
   const [asMarkdown, setAsMarkdown] = useState<Propuesta | null>(null);
   // Same rule as downloading the file: the text is its content.
   const canRead = can(usuario?.rol, 'upload') || can(usuario?.rol, 'seeResults');
   // New offers are accepted until the project is awarded or closed; evaluated evidence cannot be deleted.
   const editable = can(usuario?.rol, 'upload') && (proyecto.estado === 'en_recepcion' || proyecto.estado === 'en_revision_del_comite');
-  const removable = editable && proyecto.estado === 'en_recepcion';
+  const removable = editable; // evaluated files can be deleted too: their result goes with them
 
   const descargar = async (p: Propuesta) => {
     try {
@@ -112,16 +113,18 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
     }
   };
 
-  const eliminar = async (p: Propuesta) => {
-    if (porEliminar !== p.id) return setPorEliminar(p.id);
+  const remove = async () => {
+    const p = toDelete;
+    if (!p) return;
+    setToDelete(null);
     try {
       await conSesion(eliminarPropuestaApi(proyecto.id, p.id));
+      showToast({ tone: 'success', title: 'Archivo eliminado', detail: p.archivo });
       recargar();
       onCambio?.();
     } catch (e) {
       showToast({ tone: 'error', title: mensajeDeError(e), detail: p.archivo });
     }
-    setPorEliminar(null);
   };
 
   const n = datos?.length ?? 0;
@@ -147,18 +150,27 @@ export function Expediente({ proyecto, onCambio }: { proyecto: Proyecto; onCambi
           </View>
           {datos.map((p) => (
             <Fila key={p.id} icono={ICONOS[p.formato] ?? 'file'} titulo={p.archivo}
-              detalle={porEliminar === p.id ? 'Pulse otra vez la papelera para eliminarla.' : `${p.formato.toUpperCase()} · ${tamano(p.tamano)} · huella ${p.sha256.slice(0, 10)}`}
+              detalle={`${p.formato.toUpperCase()} · ${tamano(p.tamano)} · huella ${p.sha256.slice(0, 10)}`}
               derecha={
                 <View style={{ flexDirection: 'row' }}>
                   {canRead ? <BotonIcono nombre="file-text" etiqueta={`Ver ${p.archivo} en Markdown`} onPress={() => setAsMarkdown(p)} /> : null}
                   {usuario && Platform.OS === 'web' ? <BotonIcono nombre="download" etiqueta={`Descargar ${p.archivo}`} onPress={() => descargar(p)} /> : null}
-                  {removable ? <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.archivo}`} onPress={() => eliminar(p)} /> : null}
+                  {removable ? <BotonIcono nombre="trash-2" etiqueta={`Eliminar ${p.archivo}`} onPress={() => setToDelete(p)} /> : null}
                 </View>
               } />
           ))}
         </CollapsibleCard>
       )}
       </View>
+      <ConfirmDialog
+        visible={toDelete !== null}
+        title="¿Eliminar este archivo?"
+        description={`Se borrará «${toDelete?.archivo ?? ''}». Si ya fue evaluado, también se borran su resultado y su verificación. No se puede deshacer.`}
+        confirmLabel="Sí, eliminar"
+        confirmIcon="trash-2"
+        onCancel={() => setToDelete(null)}
+        onConfirm={() => void remove()}
+      />
       <MarkdownDialog projectId={proyecto.id} proposal={asMarkdown} onClose={() => setAsMarkdown(null)} />
       <UploadFlow visible={flow.visible} items={flow.items} busy={flow.busy} onClose={flow.close} />
     </View>

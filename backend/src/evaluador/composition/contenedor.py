@@ -23,6 +23,7 @@ from evaluador.adapters.outbound.security.tokens import IdsUuid, JwtTokens, Relo
 from evaluador.application.ports.agente import ModeloConVision
 from evaluador.application.ports.exchange_rates import ExchangeRateSource
 from evaluador.application.use_cases.autenticacion import AutenticarToken, CerrarSesion, IniciarSesion
+from evaluador.application.use_cases.deletion import DeleteProject, DeleteProposal
 from evaluador.application.use_cases.evaluate_project import (
     AskProject,
     EvaluateProject,
@@ -67,6 +68,8 @@ class Contenedor:
     register_manual_rate: RegisterManualRate
     transcribe_image: TranscribeImage
     proposal_markdown: GetProposalMarkdown
+    delete_proposal: DeleteProposal
+    delete_project: DeleteProject
     # Expuestos para scripts de semillas y pruebas
     tenants: TenantsEnMemoria
     usuarios: UsuariosEnMemoria
@@ -127,6 +130,7 @@ def construir_contenedor(
     get_evaluation = GetProjectEvaluation(proyectos, evaluations)
     ocr = TesseractOcr.if_available()
     transcriber = lazy_transcriber(config, vision_model, ocr)
+    proposal_markdown = GetProposalMarkdown(gestion, DocumentToMarkdown(transcriber, lambda: ocr))
     return Contenedor(
         iniciar_sesion=IniciarSesion(tenants, usuarios, sesiones, hasheador, tokens, ids, reloj, auditoria, politica),
         autenticar_token=AutenticarToken(tenants, usuarios, sesiones, tokens, reloj, politica),
@@ -154,7 +158,15 @@ def construir_contenedor(
         resolve_rates=resolve_rates,
         register_manual_rate=RegisterManualRate(rates, reloj, auditoria),
         transcribe_image=TranscribeImage(transcriber),
-        proposal_markdown=GetProposalMarkdown(gestion, DocumentToMarkdown(transcriber, lambda: ocr)),
+        proposal_markdown=proposal_markdown,
+        delete_proposal=DeleteProposal(
+            projects=proyectos, management=gestion, evaluations=evaluations, decisions=reviews, audit=auditoria,
+            forget_text=proposal_markdown.forget,
+        ),
+        delete_project=DeleteProject(
+            projects=proyectos, proposals=datos["propuestas"], notes=datos["notas"], evaluations=evaluations,
+            decisions=reviews, store=gestion, audit=auditoria, forget_text=proposal_markdown.forget,
+        ),
         tenants=tenants,
         usuarios=usuarios,
         hasheador=hasheador,

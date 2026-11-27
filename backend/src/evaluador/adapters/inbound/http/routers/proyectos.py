@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Request, status
+from fastapi import APIRouter, Depends, Path, Request, Response, status
 
 from evaluador.adapters.inbound.http.dtos import ID_PATRON, CrearProyectoDto, ProyectoRespuesta, TransicionDto
 from evaluador.adapters.inbound.http.guards import exigir
@@ -40,6 +40,16 @@ def obtener_proyecto(
     return ProyectoRespuesta.desde_dominio(
         request.app.state.contenedor.obtener_proyecto.ejecutar(sesion.usuario, proyecto_id)
     )
+
+
+@router.delete("/{proyecto_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_project(
+    proyecto_id: ProyectoId,
+    request: Request,
+    sesion: Annotated[SesionAutenticada, Depends(exigir(Permiso.CREAR_PROYECTO))],
+) -> Response:
+    request.app.state.contenedor.delete_project.execute(sesion.usuario, proyecto_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{proyecto_id}/transiciones")

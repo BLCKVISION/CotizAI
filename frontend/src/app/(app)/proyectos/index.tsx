@@ -7,7 +7,7 @@ import { useSesion } from '@/core/sesion/SesionProvider';
 import { useDatos } from '@/core/useDatos';
 import { BackButton } from '@/design/BackButton';
 import { Cargando, ErrorConReintento } from '@/design/bloques';
-import { Boton, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
+import { Boton, BotonIcono, Chip, EstadoVacio, Icono, type NombreIcono, Texto } from '@/design/componentes';
 import { useDispositivo } from '@/design/dispositivo';
 import { Entrada, soloWeb } from '@/design/efectos';
 import { FixedPage } from '@/design/layout';
@@ -17,7 +17,9 @@ import { espacio, radio, texto } from '@/design/tokens';
 import { estadisticasApi } from '@/features/gestion/api';
 import { FOLDER_HEIGHT, FolderCard } from '@/features/projects/FolderCard';
 import { NewProjectDialog } from '@/features/projects/NewProjectDialog';
-import { type EstadoProyecto, listarProyectosApi } from '@/features/proyectos/api';
+import { type EstadoProyecto, listarProyectosApi, type Proyecto } from '@/features/proyectos/api';
+import { DeleteProjectDialog } from '@/features/proyectos/DeleteProjectDialog';
+import { canBeDeleted } from '@/features/proyectos/deletion';
 import { ESTADOS, formatoDinero, formatoFecha, infoEstado, ORDEN_DE_ESTADOS } from '@/features/proyectos/estados';
 
 type Filter = 'all' | EstadoProyecto;
@@ -69,6 +71,7 @@ export default function Projects() {
   const canCreate = can(usuario?.rol, 'createProject'); // UX only: the backend is the authority
   const params = useLocalSearchParams<{ new?: string }>();
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<Proyecto | null>(null);
   const dialogOpen = canCreate && (creating || params.new === '1');
   const create = () => setCreating(true);
   const closeDialog = () => {
@@ -161,6 +164,12 @@ export default function Projects() {
                     preview={`${formatoDinero(p.presupuesto_referencial, p.moneda)} · ${p.requerimiento}`}
                     onPress={() => router.push(`/proyectos/${p.id}` as Href)}
                   />
+                  {/* A sibling of the folder, not inside it: pressing it must not open the project. */}
+                  {canCreate && canBeDeleted(p) ? (
+                    <View style={{ position: 'absolute', top: 6, right: 6, zIndex: 5, borderRadius: radio.pildora, backgroundColor: 'rgba(255,255,255,0.92)' }}>
+                      <BotonIcono nombre="trash-2" etiqueta={`Eliminar proyecto ${p.nombre}`} onPress={() => setDeleting(p)} />
+                    </View>
+                  ) : null}
                 </Entrada>
               </View>
             );
@@ -168,6 +177,7 @@ export default function Projects() {
         </ScrollView>
       )}
       <NewProjectDialog visible={dialogOpen} onClose={closeDialog} />
+      <DeleteProjectDialog project={deleting} onClose={() => setDeleting(null)} onDeleted={recargar} />
     </FixedPage>
   );
 }

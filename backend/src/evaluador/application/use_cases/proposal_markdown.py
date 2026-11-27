@@ -20,6 +20,10 @@ class GetProposalMarkdown:
         self._cache: OrderedDict[tuple[str, str], MarkdownDocument] = OrderedDict()
         self._lock = threading.Lock()
 
+    def forget(self, tenant_id: str, sha256: str) -> None:
+        with self._lock:
+            self._cache.pop((tenant_id, sha256), None)
+
     def execute(self, actor: Usuario, project_id: str, proposal_id: str) -> tuple[str, MarkdownDocument]:
         # Same permission and audit trail as downloading the file: the text is its content.
         proposal, content = self._management.descargar(actor, project_id, proposal_id)

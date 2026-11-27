@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { can } from '../src/core/auth/permissions';
+import { canBeDeleted } from '../src/features/proyectos/deletion';
 import { checklist, currentStep, defaultSelection, EVALUATION_STEPS, finalAnswer, highlightTerms, issues, outcomes, splitHighlights, recommendation, selectionProblem } from '../src/features/flow/flow';
 
 const finding = (code: string, discards = true, reason = `motivo ${code}`) => ({ code, discards, reason, evidence: '', origin: 'regla' });
@@ -140,5 +141,17 @@ describe('evaluation beside the document', () => {
     assert.deepEqual(marked('B550M (socket AM4, 4xDIMM) | (DDR4 3200MHz)'), ['socket AM4', 'DDR4']);
     assert.deepEqual(marked('LPDDR4 y DDR48 y Socket AM45'), []);
     assert.equal(splitHighlights('abc DDR4.', ['ddr4']).map((f) => f.text).join(''), 'abc DDR4.');
+  });
+});
+
+describe('deleting projects', () => {
+  const project = (estado: string, motivo: string | null = null) => ({ estado, motivo_de_cierre: motivo });
+  it('hides the button for awarded purchases and running evaluations', () => {
+    assert.ok(canBeDeleted(project('en_recepcion')));
+    assert.ok(canBeDeleted(project('en_revision_del_comite')));
+    assert.ok(canBeDeleted(project('cerrado', 'Se canceló la compra')));
+    assert.ok(!canBeDeleted(project('adjudicado')));
+    assert.ok(!canBeDeleted(project('cerrado')));
+    assert.ok(!canBeDeleted(project('en_evaluacion')));
   });
 });

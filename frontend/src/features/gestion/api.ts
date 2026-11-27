@@ -49,6 +49,7 @@ export const ACCIONES: Record<string, string> = {
   propuesta_cargada: 'Cargó una propuesta',
   propuesta_descargada: 'Descargó una propuesta',
   propuesta_eliminada: 'Eliminó una propuesta',
+  proyecto_eliminado: 'Eliminó un proyecto',
   nota_agregada: 'Agregó una nota de revisión',
   proveedor_registrado: 'Registró un proveedor',
   login_exitoso: 'Inició sesión',

@@ -267,7 +267,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
               {error ? <ErrorConReintento texto={error} onReintentar={() => void (seesResults ? reload() : evaluate())} /> : null}
               {/* With a single proposal there is nothing to choose. */}
               {list.length > 1 ? <AnalysisStep proposals={list} selected={selected} evaluated={evaluated} onChange={setSelection} /> : null}
-              <Expediente proyecto={project} onCambio={() => { proposals.recargar(); onProjectChange(); }} />
+              <Expediente proyecto={project} onCambio={() => { proposals.recargar(); if (seesResults) void reload(); onProjectChange(); }} />
               <RatePanel rates={rates} error={ratesError} canRegister={can(role, 'registerRate')} onSave={saveRate} />
             </>
           ) : null}

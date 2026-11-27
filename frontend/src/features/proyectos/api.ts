@@ -22,6 +22,7 @@ export type NuevoProyecto = {
 };
 
 export const listarProyectosApi = (token: string) => peticion<Proyecto[]>('/proyectos', { token });
+export const deleteProjectApi = (id: string) => (token: string) => peticion<void>(`/proyectos/${id}`, { metodo: 'DELETE', token });
 export const obtenerProyectoApi = (id: string) => (token: string) => peticion<Proyecto>(`/proyectos/${id}`, { token });
 export const crearProyectoApi = (datos: NuevoProyecto) => (token: string) =>
   peticion<Proyecto>('/proyectos', { metodo: 'POST', cuerpo: datos, token });
