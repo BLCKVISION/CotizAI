@@ -6,14 +6,23 @@ import { useSesion } from '@/core/sesion/SesionProvider';
 import { mensajeDeError } from '@/core/useDatos';
 
 import {
-  evaluateProjectApi,
   type ExchangeRate,
   getEvaluationApi,
   getExchangeRatesApi,
+  getRunStatusApi,
   type ManualRate,
   type ProjectEvaluation,
   registerManualRateApi,
+  startEvaluationRunApi,
 } from './api';
+
+const POLL_MS = 1500;
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+/** What a role that may start evaluations but not read them gets back when the run ends. */
+const restrictedResult = (projectId: string): ProjectEvaluation => ({
+  project_id: projectId, evaluated_at: new Date().toISOString(), target_currency: '', evaluated_count: 0,
+  restricted: true, ranking: [], items: [], exchange_rates: [], warnings: [],
+});
 
 export function useProjectEvaluation(projectId: string, canViewResults: boolean) {
   const { conSesion } = useSesion();
@@ -24,6 +33,7 @@ export function useProjectEvaluation(projectId: string, canViewResults: boolean)
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [runId, setRunId] = useState<string | null>(null);
   const busy = useRef(false);
 
   const loadRates = useCallback(async () => {
@@ -73,7 +83,20 @@ export function useProjectEvaluation(projectId: string, canViewResults: boolean)
     setRunning(true);
     setError(null);
     try {
-      setEvaluation(await conSesion(evaluateProjectApi(projectId, proposalIds)));
+      // The run lives on the server: closing the dialog or losing the connection for a moment does not stop it.
+      const started = await conSesion(startEvaluationRunApi(projectId, proposalIds));
+      setRunId(started.run_id);
+      let status = await conSesion(getRunStatusApi(projectId, started.run_id));
+      while (status.status === 'running') {
+        await sleep(POLL_MS);
+        status = await conSesion(getRunStatusApi(projectId, started.run_id));
+      }
+      if (status.status === 'failed') {
+        setError(status.error || 'La evaluación no se pudo completar.');
+        return false;
+      }
+      if (canViewResults) await loadEvaluation();
+      else setEvaluation(restrictedResult(projectId));
       void loadRates();
       return true;
     } catch (e) {
@@ -95,5 +118,5 @@ export function useProjectEvaluation(projectId: string, canViewResults: boolean)
     }
   };
 
-  return { evaluation, rates, ratesError, loading, running, elapsed, error, run, saveRate, reload: loadEvaluation };
+  return { runId, evaluation, rates, ratesError, loading, running, elapsed, error, run, saveRate, reload: loadEvaluation };
 }

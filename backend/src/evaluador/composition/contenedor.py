@@ -41,6 +41,7 @@ from evaluador.application.use_cases.ask_portfolio import AskPortfolio
 from evaluador.application.use_cases.assistant.chat import AskAssistant, AssistantServices
 from evaluador.application.use_cases.assistant.tools import AssistantTools
 from evaluador.application.use_cases.autenticacion import AutenticarToken, CerrarSesion, IniciarSesion
+from evaluador.application.use_cases.decision_trace import DecisionTraceStore, StartEvaluationRun
 from evaluador.application.use_cases.deletion import DeleteProject, DeleteProposal
 from evaluador.application.use_cases.evaluate_project import (
     AskProject,
@@ -74,6 +75,7 @@ from evaluador.domain.gestion import Evento, Nota, Propuesta, Proveedor
 from evaluador.domain.identidad import PoliticaDeSesion
 from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
 from evaluador.domain.proyecto import Proyecto
+from evaluador.domain.trace_events import TraceRun
 
 _log = logging.getLogger("evaluador.composition")
 
@@ -89,6 +91,8 @@ class Contenedor:
     transicionar_proyecto: TransicionarProyecto
     gestion: Gestion
     evaluate_project: EvaluateProject
+    decision_trace: DecisionTraceStore
+    start_evaluation_run: StartEvaluationRun
     get_project_evaluation: GetProjectEvaluation
     review_proposals: ReviewProposals
     ask_project: AskProject
@@ -129,6 +133,7 @@ def _colecciones(config: Configuracion | None) -> dict[str, Any]:
         "eventos": Evento,
         "evaluations": ProjectEvaluation,
         "evaluation_runs": ProjectEvaluation,
+        "decision_traces": TraceRun,
         "reviews": ReviewDecision,
         "exchange_rates": RateRecord,
     }
@@ -180,6 +185,7 @@ def construir_contenedor(
     almacen = None
     if config is not None and config.clave_cifrado and config.clave_cifrado.get_secret_value():
         almacen = AlmacenCifrado(config.directorio_documentos, config.clave_cifrado.get_secret_value())
+    trace_runs = datos.pop("decision_traces")
     evaluations = ArchivingEvaluations(datos.pop("evaluations"), datos.pop("evaluation_runs"), ids.nuevo)
     reviews = datos.pop("reviews")
     rates = CollectionExchangeRates(datos.pop("exchange_rates"), reloj)
@@ -218,6 +224,7 @@ def construir_contenedor(
         ids=ids,
         audit=auditoria,
     )
+
     def count_self_service_accounts() -> int:
         found = (tenants.por_id(u.tenant_id) for u in usuarios.all())
         return sum(1 for t in found if t is not None and t.codigo.startswith(SELF_SERVICE_PREFIX))
@@ -242,7 +249,10 @@ def construir_contenedor(
         audit=auditoria,
         parallelism=config.evaluation_parallelism if config else 3,
     )
+    decision_trace = DecisionTraceStore(trace_runs, reloj, ids.nuevo)
     return Contenedor(
+        decision_trace=decision_trace,
+        start_evaluation_run=StartEvaluationRun(decision_trace, evaluate_project),
         ask_assistant=ask_assistant,
         register_account=register_account,
         iniciar_sesion=IniciarSesion(tenants, usuarios, sesiones, hasheador, tokens, ids, reloj, auditoria, politica),

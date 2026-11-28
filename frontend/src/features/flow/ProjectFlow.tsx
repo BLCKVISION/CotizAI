@@ -57,7 +57,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
   const seesResults = can(role, 'seeResults');
   const closed = project.estado === 'adjudicado' || project.estado === 'cerrado';
   const proposals = useDatos(propuestasApi(project.id), project.id);
-  const { evaluation, rates, ratesError, loading, running, elapsed, error, run, saveRate, reload } = useProjectEvaluation(project.id, seesResults);
+  const { runId, evaluation, rates, ratesError, loading, running, elapsed, error, run, saveRate, reload } = useProjectEvaluation(project.id, seesResults);
   const results = evaluation && !evaluation.restricted ? evaluation : null;
   const reviews = useDatos(
     (token) => (seesResults && results ? getReviewsApi(project.id)(token) : Promise.resolve([])),
@@ -445,6 +445,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
         files={list.filter((p) => selected.has(p.id)).map((p) => p.archivo)}
         evaluation={evaluation}
         error={error}
+        trace={can(role, 'viewTrace') ? { projectId: project.id, runId } : undefined}
         onClose={() => {
           setShowProcess(false);
           if (!running) goTo(null);

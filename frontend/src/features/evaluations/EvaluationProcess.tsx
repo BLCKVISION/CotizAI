@@ -10,6 +10,7 @@ import { useTema } from '@/design/tema';
 import { espacio, radio } from '@/design/tokens';
 
 import type { ProjectEvaluation } from './api';
+import { DecisionTimeline } from './DecisionTimeline';
 import { estimateProgress, STAGES } from './progress';
 
 const STAGE_ICONS: NombreIcono[] = ['file-text', 'percent', 'check-square', 'dollar-sign', 'award'];
@@ -96,10 +97,12 @@ type Props = {
   files: string[];
   evaluation: ProjectEvaluation | null;
   error: string | null;
+  /** Admin only. Without them the timeline is never rendered, so no request for the trace is made. */
+  trace?: { projectId: string; runId: string | null };
   onClose: () => void;
 };
 
-export function EvaluationProcess({ visible, running, elapsed, files, evaluation, error, onClose }: Props) {
+export function EvaluationProcess({ visible, running, elapsed, files, evaluation, error, trace, onClose }: Props) {
   const t = useTema();
   const progress = estimateProgress(elapsed, files.length);
   const failed = !running && error !== null;
@@ -145,6 +148,8 @@ export function EvaluationProcess({ visible, running, elapsed, files, evaluation
           ))}
         </View>
       )}
+
+      {trace ? <DecisionTimeline key={trace.runId ?? 'none'} projectId={trace.projectId} runId={trace.runId} active={visible} /> : null}
 
       {finished && evaluation ? (
         <Entrada>

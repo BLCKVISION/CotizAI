@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
+from collections.abc import AsyncIterator
 from dataclasses import asdict
 from datetime import datetime
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Path, Query, Request, Response, status
+from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response, status
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import StreamingResponse
 from pydantic import Field
 
 from evaluador.adapters.inbound.http.dtos import ID_PATRON, DtoEntrada, DtoSalida
@@ -158,6 +163,114 @@ def evaluate_project(
     result = request.app.state.contenedor.evaluate_project.execute(session.usuario, proyecto_id, selected)
     restricted = not session.usuario.tiene(Permiso.VER_RESULTADOS)
     return ProjectEvaluationResponseDto.from_domain(result, restricted=restricted)
+
+
+class RunStartedDto(DtoSalida):
+    run_id: str
+
+
+class RunStatusDto(DtoSalida):
+    run_id: str
+    status: str
+    error: str
+
+
+class TraceEventDto(DtoSalida):
+    id: str
+    run_id: str
+    seq: int
+    timestamp: datetime
+    type: str
+    title: str
+    summary: str
+    metadata: dict[str, object]
+
+
+class TraceResponseDto(DtoSalida):
+    run_id: str
+    status: str
+    error: str
+    events: list[TraceEventDto]
+
+
+RunId = Annotated[str, Path(pattern=ID_PATRON)]
+_STREAM_WAIT_SECONDS = 15.0  # also the heartbeat: a comment line keeps proxies from closing an idle stream
+_STREAM_MAX_SECONDS = 30 * 60
+
+
+@router.post("/{proyecto_id}/evaluations/runs", status_code=status.HTTP_202_ACCEPTED)
+def start_evaluation_run(
+    proyecto_id: ProjectId,
+    request: Request,
+    session: Annotated[SesionAutenticada, Depends(exigir(Permiso.INICIAR_EVALUACION))],
+    dto: EvaluationRequestDto | None = None,
+) -> RunStartedDto:
+    """Starts the evaluation in the background. Follow it with the status route; the admin can also stream it."""
+    selected = dto.proposal_ids if dto else None
+    run_id = request.app.state.contenedor.start_evaluation_run.execute(session.usuario, proyecto_id, selected)
+    return RunStartedDto(run_id=run_id)
+
+
+@router.get("/{proyecto_id}/evaluations/runs/{run_id}")
+def get_evaluation_run_status(
+    proyecto_id: ProjectId,
+    run_id: RunId,
+    request: Request,
+    session: Annotated[SesionAutenticada, Depends(exigir(Permiso.INICIAR_EVALUACION))],
+) -> RunStatusDto:
+    run = request.app.state.contenedor.decision_trace.status(session.usuario, proyecto_id, run_id)
+    return RunStatusDto(run_id=run.id, status=run.status, error=run.error)
+
+
+@router.get("/{proyecto_id}/evaluations/runs/{run_id}/trace")
+def get_evaluation_trace(
+    proyecto_id: ProjectId,
+    run_id: RunId,
+    request: Request,
+    session: Annotated[SesionAutenticada, Depends(exigir(Permiso.VIEW_DECISION_TRACE))],
+) -> TraceResponseDto:
+    run = request.app.state.contenedor.decision_trace.trace(session.usuario, proyecto_id, run_id)
+    events = [
+        TraceEventDto(
+            id=e.id, run_id=e.run_id, seq=e.seq, timestamp=e.timestamp, type=e.type.value, title=e.title,
+            summary=e.summary, metadata=dict(e.metadata),
+        )
+        for e in run.events
+    ]  # fmt: skip
+    return TraceResponseDto(run_id=run.id, status=run.status, error=run.error, events=events)
+
+
+@router.get("/{proyecto_id}/evaluations/runs/{run_id}/stream")
+async def stream_evaluation_trace(
+    proyecto_id: ProjectId,
+    run_id: RunId,
+    request: Request,
+    session: Annotated[SesionAutenticada, Depends(exigir(Permiso.VIEW_DECISION_TRACE))],
+    last_event_id: Annotated[int, Header(ge=0, le=1_000_000)] = 0,
+) -> StreamingResponse:
+    """Server-Sent Events. `Last-Event-ID` (the last `seq` seen) resumes after a dropped connection."""
+    store = request.app.state.contenedor.decision_trace
+    # Authorise and check the run exists before the 200 starts: a stranger gets a plain 403/404.
+    await run_in_threadpool(store.trace, session.usuario, proyecto_id, run_id, last_event_id)
+
+    async def events() -> AsyncIterator[str]:
+        seen, waited = last_event_id, 0.0
+        while waited < _STREAM_MAX_SECONDS and not await request.is_disconnected():
+            run = await run_in_threadpool(store.wait, session.usuario, proyecto_id, run_id, seen, _STREAM_WAIT_SECONDS)
+            for event in run.events:
+                seen = event.seq
+                yield f"id: {event.seq}\nevent: trace\ndata: {json.dumps(event.to_wire(), ensure_ascii=False)}\n\n"
+            if run.status != "running" and not run.events:
+                yield f"event: end\ndata: {json.dumps({'status': run.status, 'error': run.error})}\n\n"
+                return
+            if not run.events:
+                waited += _STREAM_WAIT_SECONDS
+                yield ": heartbeat\n\n"
+                await asyncio.sleep(0)
+
+    return StreamingResponse(
+        events(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
+    )
 
 
 @router.get("/{proyecto_id}/evaluations")

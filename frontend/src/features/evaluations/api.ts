@@ -72,6 +72,25 @@ export type Answer = { answer: string; citations: { number: number; filename: st
 export type ReportFormat = 'pdf' | 'xlsx' | 'md';
 
 const evaluationsPath = (projectId: string) => `/proyectos/${projectId}/evaluations`;
+export const runPath = (projectId: string, runId: string) => `${evaluationsPath(projectId)}/runs/${runId}`;
+
+export type RunStatus = { run_id: string; status: 'running' | 'completed' | 'failed'; error: string };
+export type TraceHistory = { run_id: string; status: RunStatus['status']; error: string; events: unknown[] };
+
+/** Starts the evaluation in the background (202). Follow it with `getRunStatusApi`; the admin also streams it. */
+export const startEvaluationRunApi = (projectId: string, proposalIds?: string[]) => (token: string) =>
+  peticion<{ run_id: string }>(`${evaluationsPath(projectId)}/runs`, {
+    metodo: 'POST',
+    cuerpo: proposalIds ? { proposal_ids: proposalIds } : undefined,
+    token,
+  });
+
+export const getRunStatusApi = (projectId: string, runId: string) => (token: string) =>
+  peticion<RunStatus>(runPath(projectId, runId), { token });
+
+/** Saved trace of a run (admin only). Also the polling fallback where streaming fetch is not available. */
+export const getTraceApi = (projectId: string, runId: string) => (token: string) =>
+  peticion<TraceHistory>(`${runPath(projectId, runId)}/trace`, { token });
 
 /** Without `proposalIds` every proposal is evaluated; with them, only those (the rest keep their result). */
 export const evaluateProjectApi = (projectId: string, proposalIds?: string[]) => (token: string) =>

@@ -28,6 +28,7 @@ class Permiso(StrEnum):
     VER_AUDITORIA = "ver_auditoria"
     REGISTRAR_TASA = "registrar_tasa"
     MANAGE_TEAM = "manage_team"
+    VIEW_DECISION_TRACE = "view_decision_trace"
 
 
 # Matriz de la sección 4.1 del documento de arquitectura (mínimo privilegio).
@@ -59,6 +60,8 @@ PERMISOS_POR_ROL: dict[Rol, frozenset[Permiso]] = {
             Permiso.ANOTAR_REVISION,
             Permiso.REGISTRAR_TASA,
             Permiso.MANAGE_TEAM,
+            # Admin-only: the live trace shows how the agent reasoned over private documents.
+            Permiso.VIEW_DECISION_TRACE,
         }
     ),
 }

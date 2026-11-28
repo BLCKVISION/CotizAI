@@ -104,3 +104,31 @@ def describe_node(node: str, update: Mapping[str, Any], text_length: int) -> lis
         status = {Veredicto.DESCARTADA: ALERT, Veredicto.VALIDA: OK}.get(verdict, INFO)
         return [TraceStep("verdict", "Veredicto decidido por el código", status, (reasons[verdict],))]
     return []
+
+
+_FINDING_STEPS = frozenset({"manipulation", "arithmetic", "technical", "scope"})
+
+
+def safe_summary(step: TraceStep, update: Mapping[str, Any]) -> str:
+    """Text for the live trace: only counts and rule codes, never what the documents or the model said.
+
+    `TraceStep.detail` is written for people who may read the results and can carry supplier names, quoted
+    evidence and links. The live trace is a second channel, so it gets a summary built from structure alone.
+    """
+    findings: Sequence[Hallazgo] = update.get("hallazgos") or ()
+    if step.step == "extraction":
+        extraction = update.get("extraccion")
+        return (
+            f"{len(extraction.lineas)} líneas transcritas, cada una con su cita."
+            if extraction is not None
+            else "No se pudo transcribir la propuesta."
+        )
+    if step.step == "market":
+        queries = update.get("consultas") or {}
+        if not queries.get("enabled"):
+            return "Búsqueda web desactivada: no se consultó."
+        return f"{len(queries.get('references') or ())} referencias de precio con fuentes citadas."
+    if step.step in _FINDING_STEPS and findings:
+        codes = ", ".join(sorted({f.codigo.value for f in findings}))
+        return f"{len(findings)} hallazgo(s): {codes}. {sum(1 for f in findings if f.descarta)} descartan."
+    return " ".join(step.detail)  # the remaining texts are fixed templates or counts
