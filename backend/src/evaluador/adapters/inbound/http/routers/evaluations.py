@@ -180,8 +180,9 @@ def download_report(
     container = request.app.state.contenedor
     evaluation = container.get_project_evaluation.execute(session.usuario, proyecto_id)
     project = container.obtener_proyecto.ejecutar(session.usuario, proyecto_id)
+    decisions = container.review_proposals.current(session.usuario, proyecto_id)
     return Response(
-        ReportFileRenderer().evaluation(evaluation, project.nombre, fmt),
+        ReportFileRenderer().evaluation(evaluation, project.nombre, fmt, decisions),
         media_type=REPORT_MEDIA_TYPES[fmt],
         headers={"Content-Disposition": f'attachment; filename="informe-evaluacion.{fmt}"'},
     )

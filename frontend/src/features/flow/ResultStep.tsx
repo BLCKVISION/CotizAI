@@ -10,6 +10,7 @@ import type { ProjectEvaluation, ReportFormat, ReviewDecision } from '@/features
 import { AskCard } from '@/features/evaluations/AskCard';
 import { formatMoney } from '@/features/evaluations/format';
 
+import { ComparisonCard } from './ComparisonCard';
 import { finalAnswer, issues, type Outcome, outcomes } from './flow';
 
 type Item = ProjectEvaluation['items'][number];
@@ -99,6 +100,7 @@ export function ResultStep({ evaluation, decisions, onOpen, onDownload }: Props)
           </Texto>
         </View>
       </Entrada>
+      <ComparisonCard evaluation={evaluation} decisions={decisions} initiallyOpen onDownload={onDownload} />
       {/* The server's "no valid proposal" notice only repeats the answer above. */}
       {evaluation.warnings.filter((w) => answer.approved || !w.startsWith('Ninguna propuesta resultó válida')).map((w) => (
         <Aviso key={w} tono="aviso" texto={w} />
@@ -112,8 +114,6 @@ export function ResultStep({ evaluation, decisions, onOpen, onDownload }: Props)
         </Entrada>
       ))}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: espacio.sm }}>
-        <Boton etiqueta="Descargar PDF" icono="file-text" variante="secundario" onPress={() => onDownload('pdf')} />
-        <Boton etiqueta="Descargar Excel" icono="grid" variante="secundario" onPress={() => onDownload('xlsx')} />
         <Boton etiqueta="Descargar Markdown" icono="file-text" variante="secundario" onPress={() => onDownload('md')} />
       </View>
       <AskCard projectId={evaluation.project_id} />

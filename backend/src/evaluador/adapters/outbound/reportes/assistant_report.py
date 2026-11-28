@@ -11,6 +11,12 @@ from collections.abc import Sequence
 from decimal import Decimal
 from typing import Any
 
+from evaluador.adapters.outbound.reportes.decision_sections import (
+    DecisionSummary,
+    decision_label,
+    headline,
+    summarise,
+)
 from evaluador.adapters.outbound.reportes.documents import ReportDocument, Section, render_pdf, render_xlsx
 from evaluador.adapters.outbound.reportes.evaluation_report import (
     _CRITERIA,
@@ -24,7 +30,7 @@ from evaluador.adapters.outbound.reportes.evaluation_report import (
 )
 from evaluador.application.ports.assistant import ReportFormat
 from evaluador.domain.assistant.analysis import Comparison, Recommendation
-from evaluador.domain.project_evaluation import ProjectEvaluation
+from evaluador.domain.project_evaluation import ProjectEvaluation, ReviewDecision
 from evaluador.domain.proyecto import Proyecto
 
 _PRIORITIES = {"high": "Alta", "medium": "Media", "low": "Baja"}
@@ -57,10 +63,51 @@ def _binary(document: ReportDocument, fmt: ReportFormat) -> bytes:
     return render_pdf(document) if fmt == "pdf" else render_xlsx(document)
 
 
-def _evaluation_document(evaluation: ProjectEvaluation, project_name: str) -> ReportDocument:
+_DECISION_HEADER = ("Propuesta", "Resultado de la IA", "Decisión del comité", "Comentario", "Verificó", "Fecha")
+_COMPARISON_HEADER = ("Puesto", "Proveedor", "Mejor", "Decisión", "Puntaje", "Costo comparable", "Dif. con la mejor")
+
+
+def _decision_rows(summary: DecisionSummary) -> list[tuple[str, ...]]:
+    return [
+        (
+            r.item.supplier or r.item.filename,
+            _VERDICTS.get(r.item.verdict, r.item.verdict),
+            decision_label(r.decision),
+            r.decision.comment if r.decision else "",
+            r.decision.decided_by if r.decision else "",
+            r.decision.creado.isoformat(timespec="minutes") if r.decision else "",
+        )
+        for r in summary.rows
+    ]
+
+
+def _decision_markdown(summary: DecisionSummary, currency: str) -> str:
+    comparison = [
+        [
+            str(r.position),
+            _text(r.item.supplier or r.item.filename),
+            "Sí" if r.is_best else "",
+            decision_label(r.decision),
+            str(r.item.score) if r.item.score is not None else "—",
+            _amount(r.cost, currency),
+            _amount(r.difference, currency),
+        ]
+        for r in summary.rows
+    ]
+    decisions = [[_text(value) or "—" for value in row] for row in _decision_rows(summary)]
+    lines = ["", "## Comparación para elegir la mejor", "", _text(headline(summary)), ""]
+    lines += _table(_COMPARISON_HEADER, comparison)
+    lines += ["", "## Decisión del comité", "", *_table(_DECISION_HEADER, decisions)]
+    return "\n".join(lines) + "\n"
+
+
+def _evaluation_document(
+    evaluation: ProjectEvaluation, project_name: str, decisions: Sequence[ReviewDecision] | None
+) -> ReportDocument:
     items = evaluation.items
+    summary = summarise(evaluation, decisions or ())
     best = next((i for i in items if i.verdict == "valida"), None)
-    recommendation = (
+    recommendation = headline(summary) if decisions is not None else (
         f"Mejor propuesta válida: {best.supplier or best.filename}, con {best.score} puntos de 100."
         if best
         else "No hay propuestas válidas: no se emite recomendación."
@@ -82,6 +129,21 @@ def _evaluation_document(evaluation: ProjectEvaluation, project_name: str) -> Re
         observations += [(i.filename, f"Aviso de lectura: {w}") for w in i.reading_warnings]
     sections = [
         Section("Resumen", notes=notes),
+        Section(
+            "Comparación de propuestas",
+            _COMPARISON_HEADER,
+            [
+                (r.position, r.item.supplier or r.item.filename, "Sí" if r.is_best else "", decision_label(r.decision),
+                 r.item.score, r.cost, r.difference)
+                for r in summary.rows
+            ],
+            notes=(
+                f"Montos en {evaluation.target_currency}. Un valor positivo cuesta más que la mejor opción.",
+                "La mejor opción es la primera del ranking aprobada por el comité o, si falta verificarla, válida.",
+            ),
+            widths=(1, 4, 1, 2, 1, 2, 2),
+        ),
+        Section("Decisión del comité", _DECISION_HEADER, _decision_rows(summary), widths=(3, 2, 2, 4, 3, 2)),
         Section(
             "Ranking",
             ("Puesto", "Archivo", "Proveedor", "Resultado", "Puntaje", "Moneda", "Costo real", "Costo convertido"),
@@ -134,16 +196,28 @@ def _evaluation_document(evaluation: ProjectEvaluation, project_name: str) -> Re
         [(role, " ", " ", " ") for role in ("Evaluador", "Aprobador", "Auditor")],
         widths=(2, 4, 4, 2),
     )
+    if decisions is None:
+        sections = [s for s in sections if s.title not in ("Comparación de propuestas", "Decisión del comité")]
     return ReportDocument("Informe de evaluación", (*sections, signatures))
 
 
 class ReportFileRenderer:
-    def evaluation(self, evaluation: ProjectEvaluation, project_name: str, fmt: ReportFormat) -> bytes:
+    def evaluation(
+        self,
+        evaluation: ProjectEvaluation,
+        project_name: str,
+        fmt: ReportFormat,
+        decisions: Sequence[ReviewDecision] | None = None,
+    ) -> bytes:
+        """`decisions=None` leaves the committee out, for reports of past runs that keep no decisions."""
         if fmt == "csv":
             return (_BOM + render_csv_report(evaluation)).encode()
         if fmt == "md":
-            return render_markdown_report(evaluation, project_name).encode()
-        return _binary(_evaluation_document(evaluation, project_name), fmt)
+            report = render_markdown_report(evaluation, project_name)
+            if decisions is not None:
+                report += _decision_markdown(summarise(evaluation, decisions), evaluation.target_currency)
+            return report.encode()
+        return _binary(_evaluation_document(evaluation, project_name, decisions), fmt)
 
     def comparison(self, comparison: Comparison, fmt: ReportFormat) -> bytes:
         if fmt in ("pdf", "xlsx"):

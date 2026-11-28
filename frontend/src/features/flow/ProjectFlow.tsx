@@ -29,6 +29,7 @@ import type { Proyecto } from '@/features/proyectos/api';
 import { UploadFlow } from '@/features/uploads/UploadFlow';
 
 import { DocumentTile } from './DocumentTile';
+import { ComparisonCard } from './ComparisonCard';
 import { currentStep, defaultSelection, EVALUATION_STEPS, MAX_PER_RUN, pendingVerification, selectionProblem, type StepId } from './flow';
 import { PreparationHero } from './PreparationHero';
 import { ProjectDocuments } from './ProjectDocuments';
@@ -185,7 +186,6 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
       <>
         {addButton}
         {evaluateOthers}
-        {seesResults && Platform.OS === 'web' ? <Boton etiqueta="Descargar informe (PDF)" icono="download" variante="secundario" onPress={() => void download('pdf')} /> : null}
         {pending.length === 0 && seesResults ? <Boton etiqueta="Ver la respuesta final" icono="arrow-right" onPress={() => goTo('result')} /> : null}
       </>
     );
@@ -199,6 +199,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
     );
   }
 
+  const comparisonCard = results ? <ComparisonCard evaluation={results} decisions={decisions} onDownload={(f) => void download(f)} /> : null;
   const verifying = step === 'verification' && open !== null && seesResults;
   const wide = dispositivo === 'escritorio';
   // On a wide screen the answer sits under the document, on the left; on narrow ones it stays in the bottom bar.
@@ -336,6 +337,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
                 {documentsPanel}
               </ScrollView>
               <ScrollView key={`eval-${open.proposal_id}`} showsVerticalScrollIndicator={false} style={{ flex: 8, minWidth: 0, borderRadius: radio.xl }} contentContainerStyle={{ paddingBottom: espacio.sm }}>
+                {comparisonCard ? <View style={{ marginBottom: espacio.md }}>{comparisonCard}</View> : null}
                 <Entrada>
                   <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
                 </Entrada>
@@ -343,6 +345,7 @@ export function ProjectFlow({ project, onProjectChange }: { project: Proyecto; o
             </View>
           ) : (
             <ScrollView key={open.proposal_id} style={{ flex: 1 }} contentContainerStyle={{ gap: espacio.md, paddingBottom: espacio.sm }}>
+              {comparisonCard}
               <VerdictSheet item={open} decision={decisionFor(open.proposal_id)} />
               <DocumentTile filename={open.filename} onOpen={() => setViewing(open.proposal_id)} />
               {downloadCurrent}
